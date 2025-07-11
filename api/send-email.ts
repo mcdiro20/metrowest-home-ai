@@ -1,18 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export async function POST(request: NextRequest) {
+export default async function handler(req: any, res: any) {
+  // Handle CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, message: 'Method not allowed' });
+  }
+
   try {
-    const { email, beforeImage, afterImage, selectedStyle, roomType, subscribe } = await request.json();
+    const { email, beforeImage, afterImage, selectedStyle, roomType, subscribe } = req.body;
 
     // Validate required fields
     if (!email || !afterImage) {
-      return NextResponse.json(
-        { success: false, message: 'Missing required fields' },
-        { status: 400 }
-      );
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields'
+      });
     }
 
     // Create email HTML template
@@ -112,7 +124,7 @@ export async function POST(request: NextRequest) {
           
           <div class="content">
             <h2>Hello!</h2>
-            <p>Your AI-generated <strong>${roomType}</strong> transformation in <strong>${selectedStyle}</strong> style is complete!</p>
+            <p>Your AI-generated <strong>${roomType || 'kitchen'}</strong> transformation in <strong>${selectedStyle || 'AI Generated'}</strong> style is complete!</p>
             
             <div class="image-comparison">
               ${beforeImage ? `
@@ -130,7 +142,7 @@ export async function POST(request: NextRequest) {
             <p>Love what you see? Connect with local MetroWest contractors to bring this vision to life!</p>
             
             <div style="text-align: center;">
-              <a href="https://metrowesthome.ai/contractors" class="cta-button">Get Free Quotes from Local Contractors</a>
+              <a href="https://metrowest-home-76jk6msqy-metrowest-home-improvement.vercel.app/" class="cta-button">Get Free Quotes from Local Contractors</a>
             </div>
             
             <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #6b7280;">
@@ -150,23 +162,22 @@ export async function POST(request: NextRequest) {
 
     // Send email using Resend
     const { data, error } = await resend.emails.send({
-      from: 'MetroWest Home AI <noreply@metrowesthome.ai>',
+      from: 'MetroWest Home AI <noreply@resend.dev>',
       to: [email],
-      subject: `🏠 Your ${selectedStyle} ${roomType} design is ready!`,
+      subject: `🏠 Your ${selectedStyle || 'AI Generated'} ${roomType || 'kitchen'} design is ready!`,
       html: emailHtml,
     });
 
     if (error) {
       console.error('Resend error:', error);
-      return NextResponse.json(
-        { success: false, message: 'Failed to send email' },
-        { status: 500 }
-      );
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send email'
+      });
     }
 
     // Handle newsletter subscription
     if (subscribe) {
-      // In production, you'd save this to your database
       console.log(`Newsletter subscription: ${email}`);
     }
 
@@ -177,7 +188,7 @@ export async function POST(request: NextRequest) {
       selectedStyle 
     });
 
-    return NextResponse.json({
+    return res.status(200).json({
       success: true,
       message: 'Design images sent successfully! Check your inbox.',
       emailId: data?.id
@@ -185,21 +196,9 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Email API error:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: 500 }
-    );
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
   }
-}
-
-// Handle CORS for development
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  });
 }
