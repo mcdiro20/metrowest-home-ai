@@ -22,6 +22,21 @@ export default async function handler(req, res) {
     console.log('📧 Room type:', roomType);
     console.log('📧 Subscribe:', subscribe);
 
+    // Debug environment variables extensively
+    console.log('🔍 ALL Environment Variables:');
+    console.log('🔍 process.env keys:', Object.keys(process.env));
+    console.log('🔍 NODE_ENV:', process.env.NODE_ENV);
+    console.log('🔍 VERCEL:', process.env.VERCEL);
+    console.log('🔍 VERCEL_ENV:', process.env.VERCEL_ENV);
+    
+    // Check for different possible env var names
+    console.log('🔍 RESEND_API_KEY:', process.env.RESEND_API_KEY ? 'EXISTS' : 'MISSING');
+    console.log('🔍 VITE_RESEND_API_KEY:', process.env.VITE_RESEND_API_KEY ? 'EXISTS' : 'MISSING');
+    console.log('🔍 NEXT_PUBLIC_RESEND_API_KEY:', process.env.NEXT_PUBLIC_RESEND_API_KEY ? 'EXISTS' : 'MISSING');
+    
+    console.log('🔍 VITE_OPENAI_API_KEY:', process.env.VITE_OPENAI_API_KEY ? 'EXISTS' : 'MISSING');
+    console.log('🔍 OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? 'EXISTS' : 'MISSING');
+
     // Basic validation
     if (!email) {
       return res.status(400).json({ 

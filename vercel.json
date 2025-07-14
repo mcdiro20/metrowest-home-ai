@@ -1,0 +1,11 @@
+{
+  "functions": {
+    "api/send-email.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "env": {
+    "RESEND_API_KEY": "@resend-api-key",
+    "VITE_OPENAI_API_KEY": "@openai-api-key"
+  }
+}
