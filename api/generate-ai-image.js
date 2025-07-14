@@ -17,8 +17,11 @@ export default async function handler(req, res) {
 
     console.log('🎨 AI Image Generation Request:');
     console.log('🎨 Room type:', roomType);
-    console.log('🎨 Selected style:', selectedStyle?.name);
-    console.log('🎨 Prompt length:', prompt?.length);
+    console.log('🎨 Selected style:', selectedStyle);
+    console.log('🎨 Style ID:', selectedStyle?.id);
+    console.log('🎨 Style name:', selectedStyle?.name);
+    console.log('🎨 Style prompt:', selectedStyle?.prompt);
+    console.log('🎨 Custom prompt length:', prompt?.length);
     console.log('🎨 Image data length:', imageData?.length);
 
     // Check for OpenAI API key
@@ -41,21 +44,45 @@ export default async function handler(req, res) {
 
     console.log('🎨 Using OpenAI API for real image generation');
 
-    // Enhanced prompt for better results
-    const enhancedPrompt = `Transform this exact room image: ${prompt}. 
+    // Create style-specific prompt based on selected style
+    let stylePrompt = '';
+    if (selectedStyle && selectedStyle.prompt) {
+      stylePrompt = selectedStyle.prompt;
+      console.log('🎨 Using style-specific prompt:', stylePrompt);
+    } else {
+      // Fallback generic prompts by room type
+      const genericPrompts = {
+        kitchen: 'modern kitchen with updated cabinets, countertops, and appliances',
+        backyard: 'beautiful landscaped outdoor space with modern features',
+        bathroom: 'modern spa-like bathroom with updated fixtures',
+        'living-room': 'contemporary living room with modern furniture and decor'
+      };
+      stylePrompt = genericPrompts[roomType] || genericPrompts.kitchen;
+      console.log('🎨 Using generic prompt for room type:', stylePrompt);
+    }
 
-CRITICAL REQUIREMENTS:
+    // Enhanced prompt that emphasizes the selected style
+    const enhancedPrompt = `Transform this exact room image into a ${selectedStyle?.name || 'renovated'} style space. 
+
+STYLE REQUIREMENTS:
+${stylePrompt}
+
+CRITICAL LAYOUT REQUIREMENTS:
 - Keep the EXACT same room layout, dimensions, and architectural features
-- Keep windows, doors, and structural elements in the same positions
-- Only change: cabinets, countertops, appliances, flooring, paint, lighting, fixtures
+- Keep windows, doors, and structural elements in the same positions  
+- Keep the same room proportions and ceiling height
+- Only change: cabinets, countertops, appliances, flooring, paint, lighting, fixtures, furniture
 - Result must look like a professional renovation of THIS SPECIFIC room
+
+QUALITY REQUIREMENTS:
 - Photorealistic, high-quality interior design photography
 - Professional lighting and composition
-- ${selectedStyle?.name ? `Style: ${selectedStyle.name}` : ''}
+- ${selectedStyle?.name ? `Strong emphasis on ${selectedStyle.name} design elements` : 'Modern design elements'}
+- The transformation should be dramatic but architecturally accurate to the original space
 
-The transformation should be dramatic but architecturally accurate to the original space.`;
+The final result should clearly show the ${selectedStyle?.name || 'renovated'} style while maintaining the exact layout of the original room.`;
 
-    console.log('🎨 Enhanced prompt:', enhancedPrompt);
+    console.log('🎨 Final enhanced prompt:', enhancedPrompt);
 
     // Generate image using DALL-E 3
     const response = await openai.images.generate({
@@ -73,12 +100,14 @@ The transformation should be dramatic but architecturally accurate to the origin
       throw new Error('No image URL returned from OpenAI');
     }
 
-    console.log('✅ AI image generated successfully');
+    console.log('✅ AI image generated successfully with style:', selectedStyle?.name);
 
     return res.status(200).json({
       success: true,
       generatedImageUrl: generatedImageUrl,
-      message: 'AI image generated successfully'
+      message: `AI image generated successfully with ${selectedStyle?.name || 'custom'} style`,
+      appliedStyle: selectedStyle?.name,
+      stylePrompt: stylePrompt
     });
 
   } catch (error) {

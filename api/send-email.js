@@ -21,6 +21,8 @@ export default async function handler(req, res) {
     console.log('📧 Selected style:', selectedStyle);
     console.log('📧 Room type:', roomType);
     console.log('📧 Subscribe:', subscribe);
+    console.log('📧 Before image data type:', typeof beforeImage);
+    console.log('📧 Before image starts with data:', beforeImage?.startsWith?.('data:'));
 
     // Debug environment variables extensively
     console.log('🔍 ALL Environment Variables:');
@@ -64,6 +66,13 @@ export default async function handler(req, res) {
       const { Resend } = await import('resend');
       const resend = new Resend(process.env.RESEND_API_KEY);
 
+      // Validate images before sending
+      const hasBeforeImage = beforeImage && beforeImage.startsWith('data:');
+      const hasAfterImage = afterImage && (afterImage.startsWith('http') || afterImage.startsWith('data:'));
+      
+      console.log('📧 Has valid before image:', hasBeforeImage);
+      console.log('📧 Has valid after image:', hasAfterImage);
+
       const emailResult = await resend.emails.send({
         from: 'MetroWest Home AI <onboarding@resend.dev>',
         to: [email],
@@ -74,32 +83,28 @@ export default async function handler(req, res) {
             <p>Hello!</p>
             <p>Your AI-generated <strong>${roomType || 'space'}</strong> transformation in <strong>${selectedStyle || 'custom'}</strong> style is complete!</p>
             
-            <div style="display: flex; gap: 20px; margin: 20px 0; flex-wrap: wrap;">
-              ${beforeImage ? `<div style="flex: 1; min-width: 250px;">
+            <div style="margin: 30px 0;">
+              ${hasBeforeImage ? `<div style="margin-bottom: 30px;">
                 <h3 style="margin-bottom: 10px; color: #374151;">Before:</h3>
-                <img src="${beforeImage}" style="width: 100%; max-width: 300px; border-radius: 8px; border: 2px solid #e5e7eb;" alt="Before" />
+                <img src="${beforeImage}" style="width: 100%; max-width: 500px; border-radius: 8px; border: 3px solid #e5e7eb; display: block;" alt="Your Original Kitchen" />
               </div>` : ''}
               
-              ${afterImage ? `<div style="flex: 1; min-width: 250px;">
+              ${hasAfterImage ? `<div style="margin-bottom: 30px;">
                 <h3 style="margin-bottom: 10px; color: #059669;">After (AI Generated):</h3>
-                <img src="${afterImage}" style="width: 100%; max-width: 300px; border-radius: 8px; border: 2px solid #10b981;" alt="After" />
+                <img src="${afterImage}" style="width: 100%; max-width: 500px; border-radius: 8px; border: 3px solid #10b981; display: block;" alt="AI Generated ${selectedStyle || 'Renovation'}" />
               </div>` : ''}
             </div>
             
-            <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3>Before:</h3>
-              <img src="${beforeImage}" style="max-width: 300px; border-radius: 8px;" alt="Before" />
-            </div>
+            ${!hasBeforeImage ? '<p style="color: #ef4444; font-style: italic;">⚠️ Original image could not be included</p>' : ''}
+            ${!hasAfterImage ? '<p style="color: #ef4444; font-style: italic;">⚠️ AI generated image could not be included</p>' : ''}
             
-            ${afterImage ? `<div style="margin: 20px 0;">
-              <h3>After (AI Generated):</h3>
-              <img src="${afterImage}" style="max-width: 300px; border-radius: 8px;" alt="After" />
-            </div>` : ''}
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #3b82f6;">
               <h4 style="color: #374151; margin-bottom: 10px;">✨ Your Transformation Details:</h4>
               <ul style="color: #6b7280; margin: 0; padding-left: 20px;">
                 <li><strong>Room Type:</strong> ${roomType || 'Kitchen'}</li>
                 <li><strong>Design Style:</strong> ${selectedStyle || 'Custom'}</li>
                 <li><strong>AI Technology:</strong> DALL-E 3 by OpenAI</li>
+                <li><strong>Generated:</strong> ${new Date().toLocaleDateString()}</li>
               </ul>
             </div>
             

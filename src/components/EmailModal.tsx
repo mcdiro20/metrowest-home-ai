@@ -33,22 +33,42 @@ const EmailModal: React.FC<EmailModalProps> = ({
       console.log('📧 Attempting to send email to:', email);
       console.log('📧 Before image:', beforeImage);
       console.log('📧 After image:', uploadedImage);
+      console.log('📧 Selected style:', selectedStyle);
+      console.log('📧 Room type:', roomType);
       
       // Convert beforeImage (blob URL) to base64 for email
       let beforeImageBase64 = '';
       if (beforeImage) {
         try {
+          console.log('📧 Converting before image blob to base64...');
           const response = await fetch(beforeImage);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch blob: ${response.status}`);
+          }
           const blob = await response.blob();
+          console.log('📧 Blob size:', blob.size, 'type:', blob.type);
           beforeImageBase64 = await new Promise((resolve) => {
             const reader = new FileReader();
             reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = () => {
+              console.error('📧 FileReader error');
+              resolve('');
+            };
             reader.readAsDataURL(blob);
           });
           console.log('📧 Converted before image to base64, length:', beforeImageBase64.length);
         } catch (error) {
           console.error('❌ Failed to convert before image:', error);
+          beforeImageBase64 = '';
         }
+      }
+      
+      // Validate we have both images
+      if (!beforeImageBase64) {
+        console.warn('⚠️ No before image available');
+      }
+      if (!uploadedImage) {
+        console.warn('⚠️ No after image available');
       }
       
       // Call the actual API endpoint
