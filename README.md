@@ -4,7 +4,7 @@ Transform your kitchen and backyard with AI-powered design renderings. Upload yo
 
 ## Features
 
-- 🏠 AI-powered home design transformations
+- 🏠 AI-powered home design transformations using DALL-E 3
 - 🎨 Multiple design styles (Modern Minimalist, Farmhouse Chic, etc.)
 - 📧 Email delivery of high-resolution before/after images
 - 🏘️ Exclusively for MetroWest Massachusetts homeowners
@@ -25,7 +25,7 @@ Transform your kitchen and backyard with AI-powered design renderings. Upload yo
    ```
    
    Add your API keys:
-   - `VITE_OPENAI_API_KEY`: Your OpenAI API key for image generation
+   - `VITE_OPENAI_API_KEY`: Your OpenAI API key for DALL-E 3 image generation
    - `RESEND_API_KEY`: Your Resend API key for email sending
 
 3. **Start development server:**
@@ -33,22 +33,21 @@ Transform your kitchen and backyard with AI-powered design renderings. Upload yo
    npm run dev
    ```
 
-   **Note**: In development mode, email sending is simulated and stored in localStorage. For testing the actual email API locally, you would need to run `vercel dev` in a separate terminal, but this is not required for basic development and testing.
+### Production Deployment (Vercel + Resend + OpenAI)
 
-### Production Deployment (Vercel + Resend)
+#### Required API Keys:
 
-#### Cost: **FREE** for starter usage
-- Vercel: Free tier (100GB bandwidth)
-- Resend: Free tier (3,000 emails/month)
+1. **Get OpenAI API Key:**
+   - Sign up at [platform.openai.com](https://platform.openai.com)
+   - Create API key (pay-per-use, ~$0.04 per DALL-E 3 image)
 
-#### Setup Steps:
-
-1. **Get Resend API Key:**
+2. **Get Resend API Key:**
    - Sign up at [resend.com](https://resend.com)
    - Create API key (free tier: 3,000 emails/month)
-   - Verify your domain or use their test domain
 
-2. **Deploy to Vercel:**
+#### Deploy to Vercel:
+
+1. **Deploy to Vercel:**
    ```bash
    # Install Vercel CLI
    npm i -g vercel
@@ -57,32 +56,14 @@ Transform your kitchen and backyard with AI-powered design renderings. Upload yo
    vercel
    ```
 
-3. **Set Environment Variables in Vercel:**
+2. **Set Environment Variables in Vercel:**
    - Go to your Vercel dashboard
    - Add environment variables:
      - `VITE_OPENAI_API_KEY`: Your OpenAI key
      - `RESEND_API_KEY`: Your Resend key
 
-4. **Configure Domain (Optional):**
-   - Add your custom domain in Vercel
-   - Update Resend domain settings
-
-## Email Service Options
-
-### 1. Vercel + Resend (Recommended - FREE)
-- **Cost**: $0/month for 3,000 emails
-- **Setup**: Included in this project
-- **Pros**: Excellent deliverability, simple setup
-
-### 2. Netlify + EmailJS (Alternative - FREE)
-- **Cost**: $0/month for 200 emails
-- **Setup**: Client-side email sending
-- **Pros**: No backend required
-
-### 3. Railway + Gmail SMTP (Budget Option)
-- **Cost**: ~$5/month hosting
-- **Setup**: Node.js backend with Nodemailer
-- **Pros**: More control, higher limits
+3. **Redeploy:**
+   - Redeploy your site after adding environment variables
 
 ## API Endpoints
 
@@ -110,50 +91,39 @@ Send AI-generated design images via email.
 }
 ```
 
-## Architecture
-
-```
-Frontend (React + Vite)
-├── AI Image Generation (OpenAI DALL-E)
-├── Style Selection Modal
-├── Email Collection
-└── API Integration
-
-Backend (Vercel Serverless)
-├── /api/send-email
-├── Email Templates (HTML)
-└── Resend Integration
-
-Email Service (Resend)
-├── Transactional Emails
-├── Newsletter Management
-└── Delivery Analytics
-```
-
 ## Development vs Production
 
 ### Development Mode
-- Uses demo images for AI generation
-- Stores email data in localStorage
-- Simulates email sending
+- Uses demo images for AI generation (no OpenAI API calls)
+- Stores email data in localStorage (no real emails sent)
+- All features work for testing
 
 ### Production Mode
-- Real OpenAI API integration
-- Vercel serverless functions
-- Resend email delivery
-- Analytics and tracking
+- Real DALL-E 3 API integration for AI image generation
+- Real email sending via Resend
+- Vercel serverless functions handle backend
 
 ## Cost Breakdown
 
-### Free Tier Limits:
-- **Vercel**: 100GB bandwidth, 100 serverless function executions/day
-- **Resend**: 3,000 emails/month, 100 emails/day
-- **OpenAI**: Pay-per-use (~$0.04 per image)
+### API Costs:
+- **OpenAI DALL-E 3**: ~$0.04 per image generation
+- **Resend**: Free tier (3,000 emails/month)
+- **Vercel**: Free tier for hosting
 
 ### Estimated Monthly Costs:
-- **0-100 users**: $0/month (free tiers)
-- **100-1000 users**: ~$10-20/month (mostly OpenAI costs)
-- **1000+ users**: Scale with usage-based pricing
+- **0-100 users**: ~$5-15/month (mostly OpenAI)
+- **100-500 users**: ~$20-50/month
+- **500+ users**: Scale with usage
+
+## Environment Variables
+
+### Required for Production:
+- `VITE_OPENAI_API_KEY`: OpenAI API key for DALL-E 3
+- `RESEND_API_KEY`: Resend API key for emails
+
+### Optional:
+- Custom domain configuration
+- Analytics tracking IDs
 
 ## Support
 
