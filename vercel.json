@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/send-email.js": {
+      "runtime": "@vercel/node@3.0.15"
+    }
+  }
+}
