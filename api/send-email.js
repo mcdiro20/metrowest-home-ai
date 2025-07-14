@@ -1,8 +1,8 @@
-import { Resend } from 'resend';
+const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -19,10 +19,21 @@ export default async function handler(req, res) {
   try {
     const { email, beforeImage, afterImage, selectedStyle, roomType, subscribe } = req.body;
 
+    console.log('API called with:', { email, selectedStyle, roomType, subscribe });
+
     if (!email || !beforeImage || !afterImage) {
       return res.status(400).json({ 
         success: false, 
         message: 'Missing required fields' 
+      });
+    }
+
+    if (!process.env.RESEND_API_KEY) {
+      console.log('No Resend API key found, simulating email send');
+      return res.status(200).json({
+        success: true,
+        message: 'Email simulated (no API key configured)',
+        emailId: `sim_${Date.now()}`
       });
     }
 
@@ -71,8 +82,6 @@ export default async function handler(req, res) {
             
             <p>Love what you see? Connect with local MetroWest contractors to bring this vision to life!</p>
             
-            <a href="https://your-site.vercel.app" class="cta-button">Get Free Quotes from Local Contractors</a>
-            
             <p><small>This email was sent to ${email}. The images above are AI-generated concepts based on your uploaded photo.</small></p>
           </div>
           
@@ -87,17 +96,13 @@ export default async function handler(req, res) {
 
     // Send email using Resend
     const emailResult = await resend.emails.send({
-      from: 'MetroWest Home AI <noreply@yourdomain.com>',
+      from: 'MetroWest Home AI <noreply@resend.dev>',
       to: [email],
       subject: '🏠 Your AI-Generated Design is Ready!',
       html: emailHTML,
     });
 
-    // Handle newsletter subscription
-    if (subscribe) {
-      // You can add newsletter subscription logic here
-      console.log(`Newsletter subscription for: ${email}`);
-    }
+    console.log('Email sent successfully:', emailResult);
 
     return res.status(200).json({
       success: true,
@@ -113,4 +118,4 @@ export default async function handler(req, res) {
       error: error.message
     });
   }
-}
+};
