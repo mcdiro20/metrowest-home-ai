@@ -1,10 +1,6 @@
-// ✅ Tell Vercel what runtime to use
-export const config = {
-  runtime: "nodejs18.x",
-};
+const { Resend } = require('resend');
 
-// Vercel serverless function for sending emails
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -40,8 +36,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // Dynamic import of Resend (only when needed)
-    const { Resend } = await import('resend');
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     // Generate email HTML
@@ -124,4 +118,4 @@ export default async function handler(req, res) {
       error: error.message
     });
   }
-}
+};
