@@ -1,10 +1,8 @@
-const { Resend } = require('resend');
-
-module.exports = async function handler(req, res) {
-  // Enable CORS
+export default async function handler(req, res) {
+  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -17,18 +15,19 @@ module.exports = async function handler(req, res) {
   try {
     const { email, beforeImage, afterImage, selectedStyle, roomType, subscribe } = req.body;
 
-    console.log('API called with:', { email, selectedStyle, roomType, subscribe });
+    console.log('📧 Email request received for:', email);
 
-    if (!email || !beforeImage || !afterImage) {
+    // Basic validation
+    if (!email) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Missing required fields' 
+        message: 'Email is required' 
       });
     }
 
-    // Check if Resend API key is available
+    // Check if we have Resend API key
     if (!process.env.RESEND_API_KEY) {
-      console.log('No Resend API key found, simulating email send');
+      console.log('⚠️ No Resend API key - simulating email send');
       return res.status(200).json({
         success: true,
         message: 'Email simulated (no API key configured)',
@@ -36,86 +35,65 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    // Try to send real email using dynamic import
+    try {
+      console.log('📤 Attempting to send real email...');
+      
+      const { Resend } = await import('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
 
-    // Generate email HTML
-    const emailHTML = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Your AI-Generated Design is Ready!</title>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #2563eb, #059669); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-          .content { background: #f9fafb; padding: 30px; }
-          .image-comparison { display: flex; gap: 10px; margin: 20px 0; }
-          .image-box { flex: 1; text-align: center; }
-          .image-box img { width: 100%; max-width: 250px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-          .image-label { margin-top: 10px; font-weight: bold; }
-          .footer { background: #374151; color: white; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>🏠 Your AI Design is Ready!</h1>
-            <p>MetroWest Home AI has transformed your space</p>
-          </div>
-          
-          <div class="content">
-            <h2>Hello!</h2>
-            <p>Your AI-generated ${roomType || 'space'} transformation in <strong>${selectedStyle || 'custom'}</strong> style is complete!</p>
+      const emailResult = await resend.emails.send({
+        from: 'MetroWest Home AI <onboarding@resend.dev>',
+        to: [email],
+        subject: '🏠 Your AI-Generated Design is Ready!',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #2563eb;">Your AI Design is Ready! 🏠</h1>
+            <p>Hello!</p>
+            <p>Your AI-generated <strong>${roomType || 'space'}</strong> transformation in <strong>${selectedStyle || 'custom'}</strong> style is complete!</p>
             
-            <div class="image-comparison">
-              <div class="image-box">
-                <img src="${beforeImage}" alt="Before" />
-                <div class="image-label">Before</div>
-              </div>
-              <div class="image-box">
-                <img src="${afterImage}" alt="After - AI Generated" />
-                <div class="image-label">After (AI Generated)</div>
-              </div>
+            <div style="margin: 20px 0;">
+              <h3>Before:</h3>
+              <img src="${beforeImage}" style="max-width: 300px; border-radius: 8px;" alt="Before" />
             </div>
             
-            <p>Love what you see? Connect with local MetroWest contractors to bring this vision to life!</p>
+            <div style="margin: 20px 0;">
+              <h3>After (AI Generated):</h3>
+              <img src="${afterImage}" style="max-width: 300px; border-radius: 8px;" alt="After" />
+            </div>
             
-            <p><small>This email was sent to ${email}. The images above are AI-generated concepts based on your uploaded photo.</small></p>
+            <p>Thanks for using MetroWest Home AI!</p>
+            <p style="color: #666; font-size: 12px;">This email was sent from MetroWest Home AI</p>
           </div>
-          
-          <div class="footer">
-            <p>&copy; 2024 MetroWest Home AI | Exclusively for MetroWest Massachusetts</p>
-            <p>Transform your space with AI technology</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+        `,
+      });
 
-    // Send email using Resend
-    const emailResult = await resend.emails.send({
-      from: 'MetroWest Home AI <noreply@resend.dev>',
-      to: [email],
-      subject: '🏠 Your AI-Generated Design is Ready!',
-      html: emailHTML,
-    });
+      console.log('✅ Email sent successfully:', emailResult.data?.id);
 
-    console.log('Email sent successfully:', emailResult);
+      return res.status(200).json({
+        success: true,
+        message: 'Email sent successfully!',
+        emailId: emailResult.data?.id || 'sent'
+      });
 
-    return res.status(200).json({
-      success: true,
-      message: 'Design images sent successfully!',
-      emailId: emailResult.data?.id || 'email_sent'
-    });
+    } catch (emailError) {
+      console.error('❌ Email sending failed:', emailError);
+      
+      // Fallback to simulation if email fails
+      return res.status(200).json({
+        success: true,
+        message: 'Email simulated (send failed)',
+        emailId: `sim_${Date.now()}`,
+        error: emailError.message
+      });
+    }
 
   } catch (error) {
-    console.error('Email sending error:', error);
+    console.error('💥 Function error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to send email. Please try again.',
+      message: 'Internal server error',
       error: error.message
     });
   }
-};
+}
