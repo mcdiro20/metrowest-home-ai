@@ -1,14 +1,6 @@
 import OpenAI from 'openai';
 
-// Initialize OpenAI client only if API key is available
-let openai: OpenAI | null = null;
 
-if (import.meta.env.VITE_OPENAI_API_KEY) {
-  openai = new OpenAI({
-    apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-    dangerouslyAllowBrowser: true // Only for development - in production, use backend API
-  });
-}
 
 export interface AIImageRequest {
   imageFile: File;
@@ -27,19 +19,19 @@ export interface AIImageResponse {
 export class AIImageService {
   private static generatePrompt(roomType: string, selectedStyle?: {id: string; name: string; prompt: string}): string {
     const basePrompts = {
-      kitchen: "Transform this kitchen into a beautiful, modern space with updated cabinets, countertops, and appliances. Keep the same layout but make it look completely renovated with contemporary design elements.",
-      backyard: "Transform this backyard into a beautiful outdoor living space with landscaping, seating areas, and modern outdoor features. Make it look like a professionally designed outdoor oasis.",
-      bathroom: "Transform this bathroom into a modern, spa-like space with updated fixtures, tiles, and lighting. Keep the same layout but make it look completely renovated.",
-      'living-room': "Transform this living room into a modern, stylish space with updated furniture, lighting, and decor. Make it look professionally designed and inviting."
+      kitchen: "Transform this exact kitchen layout into a beautiful, renovated space. Keep the same room dimensions, window placements, and basic layout, but completely update the cabinets, countertops, appliances, flooring, and lighting. Make it look like a professional renovation of this specific kitchen.",
+      backyard: "Transform this exact backyard space into a beautiful outdoor living area. Keep the same yard dimensions and basic layout, but add professional landscaping, seating areas, and modern outdoor features that work with this specific space.",
+      bathroom: "Transform this exact bathroom into a modern, spa-like space. Keep the same room dimensions and layout, but completely update the fixtures, tiles, vanity, and lighting to create a luxurious renovation of this specific bathroom.",
+      'living-room': "Transform this exact living room into a modern, stylish space. Keep the same room dimensions and layout, but completely update the furniture, lighting, paint, and decor to create a professionally designed version of this specific room."
     };
 
     let prompt = basePrompts[roomType as keyof typeof basePrompts] || basePrompts.kitchen;
     
     if (selectedStyle) {
-      prompt = `Transform this ${roomType} with ${selectedStyle.prompt}. Keep the same layout but completely renovate it with this design aesthetic.`;
+      prompt = `Transform this exact ${roomType} with ${selectedStyle.prompt}. Keep the same room dimensions, layout, and architectural features, but completely renovate it with this design aesthetic. The result should look like a professional renovation of this specific space.`;
     }
     
-    prompt += " The result should be photorealistic and show a clear transformation while maintaining the room's basic structure and proportions. High quality, professional interior design, architectural photography style.";
+    prompt += " IMPORTANT: Keep the exact same room layout, dimensions, window locations, and architectural features. Only change the finishes, fixtures, furniture, and design elements. The result should be photorealistic, high quality, professional interior design photography style.";
     
     return prompt;
   }
@@ -51,49 +43,9 @@ export class AIImageService {
       // Create original image URL
       const originalImageUrl = URL.createObjectURL(request.imageFile);
       
-      // Check if OpenAI API key is available and we're in production
-      if (openai && import.meta.env.VITE_OPENAI_API_KEY && !import.meta.env.DEV) {
-        try {
-          // Generate the prompt
-          const prompt = request.prompt || this.generatePrompt(request.roomType, request.selectedStyle);
-          
-          // Enhanced prompt for better results
-          const enhancedPrompt = `Create a photorealistic interior design rendering: ${prompt}. Style: photorealistic, architectural photography, interior design magazine quality, professional lighting, high-end finishes.`;
-
-          console.log('🎨 Generating AI image with prompt:', enhancedPrompt);
-
-          const response = await openai.images.generate({
-            model: "dall-e-3",
-            prompt: enhancedPrompt,
-            n: 1,
-            size: "1024x1024",
-            quality: "hd",
-            style: "natural"
-          });
-
-          const generatedImageUrl = response.data[0]?.url;
-          
-          if (!generatedImageUrl) {
-            throw new Error('Failed to generate image');
-          }
-
-          const processingTime = Date.now() - startTime;
-
-          return {
-            originalImage: originalImageUrl,
-            generatedImage: generatedImageUrl,
-            prompt: enhancedPrompt,
-            processingTime
-          };
-        } catch (apiError) {
-          console.warn('OpenAI API call failed, falling back to simulation:', apiError);
-          return this.simulateAIProcessing(request, originalImageUrl, startTime);
-        }
-      } else {
-        // Development mode or no API key - use simulation
-        console.log('🎨 Using AI simulation mode');
-        return this.simulateAIProcessing(request, originalImageUrl, startTime);
-      }
+      // Use the backend API endpoint for AI generation
+      return await this.generateViaBackend(request, originalImageUrl, startTime);
+      
     } catch (error) {
       console.error('AI Image Generation Error:', error);
       // Fallback to simulation if there's any error
@@ -102,6 +54,65 @@ export class AIImageService {
     }
   }
 
+  // Generate AI image via backend API
+  private static async generateViaBackend(
+    request: AIImageRequest, 
+    originalImageUrl: string, 
+    startTime: number
+  ): Promise<AIImageResponse> {
+    try {
+      console.log('🎨 Sending image to backend for AI processing...');
+      
+      // Convert file to base64
+      const base64Image = await this.fileToBase64(request.imageFile);
+      
+      // Generate the prompt
+      const prompt = request.prompt || this.generatePrompt(request.roomType, request.selectedStyle);
+      
+      const response = await fetch('/api/generate-ai-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          imageData: base64Image,
+          prompt: prompt,
+          roomType: request.roomType,
+          selectedStyle: request.selectedStyle
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.message || 'AI generation failed');
+      }
+      
+      const processingTime = Date.now() - startTime;
+      
+      return {
+        originalImage: originalImageUrl,
+        generatedImage: result.generatedImageUrl,
+        prompt: prompt,
+        processingTime
+      };
+      
+    } catch (error) {
+      console.error('Backend AI generation failed:', error);
+      // Fallback to simulation
+      return this.simulateAIProcessing(request, originalImageUrl, startTime);
+    }
+  }
+
+  // Convert file to base64
+  private static fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
   // Simulate AI processing with demo images
   private static async simulateAIProcessing(
     request: AIImageRequest, 
