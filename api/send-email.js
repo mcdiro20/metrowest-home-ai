@@ -1,8 +1,5 @@
-const { Resend } = require('resend');
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-module.exports = async (req, res) => {
+// Vercel serverless function for sending emails
+export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -28,6 +25,7 @@ module.exports = async (req, res) => {
       });
     }
 
+    // Check if Resend API key is available
     if (!process.env.RESEND_API_KEY) {
       console.log('No Resend API key found, simulating email send');
       return res.status(200).json({
@@ -36,6 +34,10 @@ module.exports = async (req, res) => {
         emailId: `sim_${Date.now()}`
       });
     }
+
+    // Dynamic import of Resend (only when needed)
+    const { Resend } = await import('resend');
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
     // Generate email HTML
     const emailHTML = `
@@ -54,7 +56,6 @@ module.exports = async (req, res) => {
           .image-box { flex: 1; text-align: center; }
           .image-box img { width: 100%; max-width: 250px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
           .image-label { margin-top: 10px; font-weight: bold; }
-          .cta-button { display: inline-block; background: linear-gradient(135deg, #2563eb, #059669); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; margin: 20px 0; }
           .footer { background: #374151; color: white; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; }
         </style>
       </head>
@@ -118,4 +119,4 @@ module.exports = async (req, res) => {
       error: error.message
     });
   }
-};
+}
