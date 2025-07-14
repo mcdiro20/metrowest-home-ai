@@ -34,6 +34,23 @@ const EmailModal: React.FC<EmailModalProps> = ({
       console.log('📧 Before image:', beforeImage);
       console.log('📧 After image:', uploadedImage);
       
+      // Convert beforeImage (blob URL) to base64 for email
+      let beforeImageBase64 = '';
+      if (beforeImage) {
+        try {
+          const response = await fetch(beforeImage);
+          const blob = await response.blob();
+          beforeImageBase64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+          console.log('📧 Converted before image to base64, length:', beforeImageBase64.length);
+        } catch (error) {
+          console.error('❌ Failed to convert before image:', error);
+        }
+      }
+      
       // Call the actual API endpoint
       const response = await fetch('/api/send-email', {
         method: 'POST',
@@ -42,7 +59,7 @@ const EmailModal: React.FC<EmailModalProps> = ({
         },
         body: JSON.stringify({
           email: email,
-          beforeImage: beforeImage,
+          beforeImage: beforeImageBase64,
           afterImage: uploadedImage,
           selectedStyle: selectedStyle,
           roomType: roomType,

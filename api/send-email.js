@@ -74,18 +74,46 @@ export default async function handler(req, res) {
             <p>Hello!</p>
             <p>Your AI-generated <strong>${roomType || 'space'}</strong> transformation in <strong>${selectedStyle || 'custom'}</strong> style is complete!</p>
             
-            ${beforeImage ? `<div style="margin: 20px 0;">
+            <div style="display: flex; gap: 20px; margin: 20px 0; flex-wrap: wrap;">
+              ${beforeImage ? `<div style="flex: 1; min-width: 250px;">
+                <h3 style="margin-bottom: 10px; color: #374151;">Before:</h3>
+                <img src="${beforeImage}" style="width: 100%; max-width: 300px; border-radius: 8px; border: 2px solid #e5e7eb;" alt="Before" />
+              </div>` : ''}
+              
+              ${afterImage ? `<div style="flex: 1; min-width: 250px;">
+                <h3 style="margin-bottom: 10px; color: #059669;">After (AI Generated):</h3>
+                <img src="${afterImage}" style="width: 100%; max-width: 300px; border-radius: 8px; border: 2px solid #10b981;" alt="After" />
+              </div>` : ''}
+            </div>
+            
+            <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3>Before:</h3>
               <img src="${beforeImage}" style="max-width: 300px; border-radius: 8px;" alt="Before" />
-            </div>` : ''}
+            </div>
             
             ${afterImage ? `<div style="margin: 20px 0;">
               <h3>After (AI Generated):</h3>
               <img src="${afterImage}" style="max-width: 300px; border-radius: 8px;" alt="After" />
             </div>` : ''}
+              <h4 style="color: #374151; margin-bottom: 10px;">✨ Your Transformation Details:</h4>
+              <ul style="color: #6b7280; margin: 0; padding-left: 20px;">
+                <li><strong>Room Type:</strong> ${roomType || 'Kitchen'}</li>
+                <li><strong>Design Style:</strong> ${selectedStyle || 'Custom'}</li>
+                <li><strong>AI Technology:</strong> DALL-E 3 by OpenAI</li>
+              </ul>
+            </div>
+            
+            <div style="background: linear-gradient(135deg, #3b82f6, #10b981); color: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+              <h3 style="margin: 0 0 10px 0;">Ready to Make This Real?</h3>
+              <p style="margin: 0; opacity: 0.9;">Connect with trusted MetroWest contractors to bring your AI design to life!</p>
+            </div>
             
             <p>Thanks for using MetroWest Home AI!</p>
-            <p style="color: #666; font-size: 12px;">This email was sent from MetroWest Home AI</p>
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+            <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+              This email was sent from MetroWest Home AI<br>
+              Exclusively serving MetroWest Massachusetts homeowners
+            </p>
           </div>
         `,
       });
@@ -106,7 +134,7 @@ export default async function handler(req, res) {
       return res.status(200).json({
         success: true,
         message: 'Email simulated (send failed)',
-        emailId: `sim_${Date.now()}`,
+        emailId: \`sim_${Date.now()}`,
         error: emailError.message
       });
     }
