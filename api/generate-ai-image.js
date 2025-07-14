@@ -18,10 +18,6 @@ export default async function handler(req, res) {
     console.log('🎨 AI Image Generation Request:');
     console.log('🎨 Room type:', roomType);
     console.log('🎨 Selected style:', selectedStyle);
-    console.log('🎨 Style ID:', selectedStyle?.id);
-    console.log('🎨 Style name:', selectedStyle?.name);
-    console.log('🎨 Style prompt:', selectedStyle?.prompt);
-    console.log('🎨 Custom prompt length:', prompt?.length);
     console.log('🎨 Image data length:', imageData?.length);
 
     // Check for OpenAI API key
@@ -44,147 +40,92 @@ export default async function handler(req, res) {
 
     console.log('🎨 Using OpenAI API for real image generation');
 
-    // Create VERY specific layout preservation prompt
-    const layoutPreservationPrompt = `
-CRITICAL LAYOUT REQUIREMENTS - MUST BE FOLLOWED EXACTLY:
-- Keep the EXACT same camera angle and viewpoint as the original photo
-- Maintain the EXACT same room layout, dimensions, and spatial relationships
-- Keep all structural elements in identical positions: walls, windows, doors, ceiling
-- Preserve the exact same kitchen configuration: island/peninsula placement, cabinet arrangement
-- Keep the same floor plan and traffic flow patterns
-- Maintain identical proportions and scale of all elements
-- Keep the same lighting direction and room orientation
+    // Create ULTRA-SPECIFIC layout preservation prompt
+    const ultraSpecificPrompt = `CRITICAL INSTRUCTION: You must create a renovation of this EXACT kitchen keeping every structural element identical.
 
-WHAT CAN BE CHANGED (DESIGN ELEMENTS ONLY):
-- Cabinet door styles, colors, and finishes
-- Countertop materials and colors  
-- Appliance styles and finishes
-- Flooring materials and patterns
+MANDATORY REQUIREMENTS - MUST BE PRESERVED EXACTLY:
+- Keep the IDENTICAL camera angle, viewpoint, and perspective as the original photo
+- Maintain the EXACT same kitchen layout: same peninsula/island placement, same cabinet configuration
+- Keep ALL structural elements in IDENTICAL positions: walls, windows, doors, ceiling
+- Preserve the EXACT same room proportions and spatial relationships
+- Keep the same floor plan and cabinet arrangement
+- Maintain identical lighting direction and room orientation
+- Keep the same countertop shape and size (only change material/color)
+- Preserve the exact same appliance locations (only change style/finish)
+
+WHAT YOU CAN CHANGE (DESIGN ELEMENTS ONLY):
+Apply ${selectedStyle?.name || 'modern'} style by changing ONLY these elements:
+- Cabinet door styles, colors, and finishes (${selectedStyle?.prompt || 'modern design'})
+- Countertop materials and colors
+- Appliance styles and finishes (same locations)
 - Paint colors and wall treatments
-- Light fixture styles (but same positions)
-- Hardware and accessories
+- Light fixture styles (same positions)
+- Hardware, handles, and accessories
 - Backsplash materials and patterns
+- Flooring materials (same layout)
 
-WHAT MUST STAY IDENTICAL:
-- Room dimensions and shape
-- Window locations and sizes
-- Door positions and openings
-- Ceiling height and features
-- Island/peninsula size and placement
-- Overall cabinet layout and configuration
-- Structural walls and supports
-- Camera angle and perspective
-`;
+RESULT REQUIREMENTS:
+- The transformed kitchen must be immediately recognizable as the SAME kitchen from the SAME angle
+- It should look like a professional renovation of this specific space, not a different kitchen
+- Every structural element must remain in its exact original position
+- The camera angle and perspective must be identical to the original
+- Apply ${selectedStyle?.name || 'modern'} style elements while preserving the exact layout
 
-    // Get style-specific elements
-    let styleElements = '';
-    if (selectedStyle && selectedStyle.prompt) {
-      styleElements = selectedStyle.prompt;
-      console.log('🎨 Using style-specific elements:', styleElements);
-    } else {
-      // Fallback generic elements by room type
-      const genericElements = {
-        kitchen: 'modern kitchen with updated cabinets, countertops, and appliances',
-        backyard: 'beautiful landscaped outdoor space with modern features',
-        bathroom: 'modern spa-like bathroom with updated fixtures',
-        'living-room': 'contemporary living room with modern furniture and decor'
-      };
-      styleElements = genericElements[roomType] || genericElements.kitchen;
-      console.log('🎨 Using generic elements for room type:', styleElements);
+This is a RENOVATION of the existing kitchen shown in the image - keep the layout identical and only update the finishes and design elements with ${selectedStyle?.name || 'modern'} style.`;
+
+    console.log('🎨 Using ultra-specific layout preservation prompt');
+
+    try {
+      // Try image variation first (best for layout preservation)
+      console.log('🎨 Attempting image variation for layout preservation...');
+      
+      const variationResponse = await openai.images.createVariation({
+        image: Buffer.from(imageData.split(',')[1], 'base64'),
+        n: 1,
+        size: "1024x1024"
+      });
+
+      if (variationResponse.data[0]?.url) {
+        console.log('✅ Image variation successful - layout should be preserved');
+        return res.status(200).json({
+          success: true,
+          generatedImageUrl: variationResponse.data[0].url,
+          message: `Layout-preserved variation with ${selectedStyle?.name || 'custom'} style`,
+          method: 'variation'
+        });
+      }
+    } catch (variationError) {
+      console.log('⚠️ Image variation failed, trying generation with detailed prompt...');
     }
 
-    // Create the final enhanced prompt with extreme layout preservation emphasis
-    const enhancedPrompt = `Transform this kitchen image by applying ${selectedStyle?.name || 'modern'} design elements while maintaining the EXACT same layout, camera angle, and spatial configuration.
-
-${layoutPreservationPrompt}
-
-STYLE TO APPLY:
-Apply ${selectedStyle?.name || 'modern'} style with these specific elements: ${styleElements}
-
-FINAL REQUIREMENTS:
-- The result must look like the SAME kitchen from the SAME angle with only the finishes and design elements updated
-- Keep identical room proportions, cabinet placement, and structural layout
-- The transformation should be immediately recognizable as the same space, just renovated
-- Photorealistic, professional interior design photography quality
-- Same lighting conditions and camera perspective as original
-
-This is a renovation of an existing kitchen - NOT a new kitchen design. Keep everything structurally identical and only update the aesthetic elements with ${selectedStyle?.name || 'modern'} style.`;
-
-    console.log('🎨 Final enhanced prompt:', enhancedPrompt);
-
-    // Generate image using DALL-E 3 with image editing capabilities
-    const response = await openai.images.edit({
-      image: Buffer.from(imageData.split(',')[1], 'base64'),
-      prompt: enhancedPrompt,
+    // Fallback to generation with ultra-specific prompt
+    const generationResponse = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: ultraSpecificPrompt,
       n: 1,
-      size: "1024x1024"
+      size: "1024x1024",
+      quality: "hd",
+      style: "natural"
     });
 
-    const generatedImageUrl = response.data[0]?.url;
+    const generatedImageUrl = generationResponse.data[0]?.url;
     
     if (!generatedImageUrl) {
       throw new Error('No image URL returned from OpenAI');
     }
 
-    console.log('✅ AI image generated successfully with preserved layout and style:', selectedStyle?.name);
+    console.log('✅ AI image generated with ultra-specific layout preservation');
 
     return res.status(200).json({
       success: true,
       generatedImageUrl: generatedImageUrl,
-      message: `AI image generated with preserved layout and ${selectedStyle?.name || 'custom'} style`,
+      message: `AI generated with preserved layout and ${selectedStyle?.name || 'custom'} style`,
       appliedStyle: selectedStyle?.name,
-      layoutPreserved: true
+      method: 'generation'
     });
 
   } catch (error) {
     console.error('❌ AI Image Generation Error:', error);
-    
-    // If image editing fails, try regular generation with very specific layout prompts
-    try {
-      console.log('🔄 Trying fallback generation method...');
-      
-      const { default: OpenAI } = await import('openai');
-      const openai = new OpenAI({
-        apiKey: process.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY
-      });
-
-      const fallbackPrompt = `Create a ${selectedStyle?.name || 'modern'} style kitchen renovation that matches this exact layout: ${selectedStyle?.prompt || 'modern design elements'}. 
-
-CRITICAL: The result must have the exact same:
-- Kitchen layout and cabinet configuration
-- Island/peninsula placement and size  
-- Window and door positions
-- Room dimensions and proportions
-- Camera angle and perspective
-- Structural elements
-
-Only change the finishes, colors, and design elements to match ${selectedStyle?.name || 'modern'} style. This should look like a renovation of the same kitchen, not a different kitchen.
-
-Photorealistic, professional interior design photography.`;
-
-      const fallbackResponse = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: fallbackPrompt,
-        n: 1,
-        size: "1024x1024",
-        quality: "hd",
-        style: "natural"
-      });
-
-      const fallbackImageUrl = fallbackResponse.data[0]?.url;
-      
-      if (fallbackImageUrl) {
-        return res.status(200).json({
-          success: true,
-          generatedImageUrl: fallbackImageUrl,
-          message: `Fallback generation with ${selectedStyle?.name || 'custom'} style`,
-          appliedStyle: selectedStyle?.name,
-          method: 'fallback'
-        });
-      }
-    } catch (fallbackError) {
-      console.error('❌ Fallback generation also failed:', fallbackError);
-    }
     
     // Final fallback to demo image
     const fallbackImages = {

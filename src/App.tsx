@@ -10,6 +10,7 @@ import InspirationFeed from './components/InspirationFeed';
 import HowItWorksSection from './components/HowItWorksSection';
 import WhyChooseUsSection from './components/WhyChooseUsSection';
 import Footer from './components/Footer';
+import { CustomerService } from './services/customerService';
 
 function App() {
   const [showZipCodeModal, setShowZipCodeModal] = useState(false);
@@ -18,12 +19,14 @@ function App() {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string | undefined>();
-  const [aiResult, setAiResult] = useState<{originalImage: string; generatedImage: string; prompt: string} | undefined>();
+  const [aiResult, setAiResult] = useState<{originalImage: string; originalImageBase64?: string; generatedImage: string; prompt: string} | undefined>();
   const [uploadedFile, setUploadedFile] = useState<File | undefined>();
   const [selectedStyle, setSelectedStyle] = useState<{id: string; name: string; prompt: string} | undefined>();
   const [userZipCode, setUserZipCode] = useState<string>('');
   const [roomType, setRoomType] = useState<string>('kitchen');
   const [emailSubmitted, setEmailSubmitted] = useState(false);
+  const [currentCustomerId, setCurrentCustomerId] = useState<string | undefined>();
+  const [currentDesignRequestId, setCurrentDesignRequestId] = useState<string | undefined>();
 
   const handleUploadClick = () => {
     setShowZipCodeModal(true);
@@ -53,6 +56,20 @@ function App() {
   };
 
   const handleAIProcessingComplete = (result: {originalImage: string; generatedImage: string; prompt: string}) => {
+    // Save design request to database
+    const saveDesignRequest = async () => {
+      if (userZipCode) {
+        try {
+          // This will be called when we have customer ID from email modal
+          console.log('📊 Design request will be saved after email submission');
+        } catch (error) {
+          console.error('❌ Failed to save design request:', error);
+        }
+      }
+    };
+    
+    saveDesignRequest();
+    
     setAiResult(result);
     setUploadedImage(result.generatedImage);
     setShowAIProcessingModal(false);
@@ -138,9 +155,11 @@ function App() {
         isOpen={showEmailModal} 
         onClose={closeEmailModal}
         uploadedImage={aiResult?.generatedImage}
-        beforeImage={aiResult?.originalImage}
+        beforeImage={aiResult?.originalImageBase64 || aiResult?.originalImage}
         selectedStyle={selectedStyle?.name}
         roomType={roomType}
+        zipCode={userZipCode}
+        designRequestId={currentDesignRequestId}
         onEmailSubmitted={handleEmailSubmitted}
       />
       

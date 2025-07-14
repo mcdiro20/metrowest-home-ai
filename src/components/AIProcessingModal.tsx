@@ -54,6 +54,14 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         const hasOpenAIKey = import.meta.env.VITE_OPENAI_API_KEY;
         console.log('🎨 OpenAI API key available:', !!hasOpenAIKey);
         
+        // Store the original image as base64 for email
+        const originalImageBase64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = () => resolve('');
+          reader.readAsDataURL(uploadedFile);
+        });
+        
         if (hasOpenAIKey) {
           try {
             // Import and use AI service
@@ -104,6 +112,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
 
         const result = {
           originalImage: originalImageUrl,
+          originalImageBase64: originalImageBase64,
           generatedImage: generatedImageUrl,
           prompt: selectedStyle?.prompt || 'AI-generated design transformation'
         };

@@ -8,6 +8,8 @@ interface EmailModalProps {
   beforeImage?: string;
   selectedStyle?: string;
   roomType?: string;
+  zipCode?: string;
+  designRequestId?: string;
   onEmailSubmitted?: () => void;
 }
 
@@ -18,9 +20,13 @@ const EmailModal: React.FC<EmailModalProps> = ({
   beforeImage, 
   selectedStyle,
   roomType,
+  zipCode,
+  designRequestId,
   onEmailSubmitted 
 }) => {
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [subscribe, setSubscribe] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -31,41 +37,20 @@ const EmailModal: React.FC<EmailModalProps> = ({
     
     try {
       console.log('📧 Attempting to send email to:', email);
-      console.log('📧 Before image:', beforeImage);
+      
+      console.log('📧 Before image type:', typeof beforeImage);
+      console.log('📧 Before image starts with data:', beforeImage?.startsWith?.('data:'));
+      console.log('📧 Before image length:', beforeImage?.length);
       console.log('📧 After image:', uploadedImage);
       console.log('📧 Selected style:', selectedStyle);
       console.log('📧 Room type:', roomType);
       
-      // Convert beforeImage (blob URL) to base64 for email
-      let beforeImageBase64 = '';
-      if (beforeImage) {
-        try {
-          console.log('📧 Converting before image blob to base64...');
-          const response = await fetch(beforeImage);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch blob: ${response.status}`);
-          }
-          const blob = await response.blob();
-          console.log('📧 Blob size:', blob.size, 'type:', blob.type);
-          beforeImageBase64 = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = () => {
-              console.error('📧 FileReader error');
-              resolve('');
-            };
-            reader.readAsDataURL(blob);
-          });
-          console.log('📧 Converted before image to base64, length:', beforeImageBase64.length);
-        } catch (error) {
-          console.error('❌ Failed to convert before image:', error);
-          beforeImageBase64 = '';
-        }
-      }
+      // Use the beforeImage directly (should already be base64)
+      let beforeImageBase64 = beforeImage || '';
       
       // Validate we have both images
       if (!beforeImageBase64) {
-        console.warn('⚠️ No before image available');
+        console.warn('⚠️ No before image available or conversion failed');
       }
       if (!uploadedImage) {
         console.warn('⚠️ No after image available');
@@ -83,7 +68,8 @@ const EmailModal: React.FC<EmailModalProps> = ({
           afterImage: uploadedImage,
           selectedStyle: selectedStyle,
           roomType: roomType,
-          subscribe: subscribe
+          subscribe: subscribe,
+          zipCode: zipCode
         })
       });
       
@@ -92,6 +78,35 @@ const EmailModal: React.FC<EmailModalProps> = ({
       
       if (!result.success) {
         throw new Error(result.message || 'Failed to send email');
+      }
+      
+      // Notify contractors with lead data
+      try {
+        const contractorResponse = await fetch('/api/notify-contractor', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: name || undefined,
+            email: email,
+            phone: phone || undefined,
+            zip: zipCode,
+            room_type: roomType,
+            style: selectedStyle,
+            image_url: beforeImage,
+            ai_url: uploadedImage,
+            render_count: 1,
+            wants_quote: subscribe, // Using subscribe as proxy for interest
+            social_engaged: false,
+            is_repeat_visitor: false
+          })
+        });
+        
+        const contractorResult = await contractorResponse.json();
+        console.log('🎯 Contractor notification result:', contractorResult);
+      } catch (contractorError) {
+        console.error('❌ Contractor notification failed:', contractorError);
       }
       
       setIsSubmitting(false);
@@ -106,6 +121,8 @@ const EmailModal: React.FC<EmailModalProps> = ({
         }
         setIsSuccess(false);
         setEmail('');
+        setName('');
+        setPhone('');
         setSubscribe(false);
       }, 3000);
     } catch (error) {
@@ -184,12 +201,32 @@ const EmailModal: React.FC<EmailModalProps> = ({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your name (optional)"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-colors"
+              />
+            </div>
+
+            <div>
+              <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email address"
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-colors"
                 required
+              />
+            </div>
+
+            <div>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Phone number (optional)"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-colors"
               />
             </div>
 
@@ -201,7 +238,7 @@ const EmailModal: React.FC<EmailModalProps> = ({
                 className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
               />
               <span className="text-sm text-gray-600">
-                Subscribe for weekly home design ideas and tips
+                Get quotes from local contractors & weekly design tips
               </span>
             </label>
 
