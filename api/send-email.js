@@ -1,3 +1,8 @@
+// ✅ Tell Vercel what runtime to use
+export const config = {
+  runtime: "nodejs18.x",
+};
+
 // Vercel serverless function for sending emails
 export default async function handler(req, res) {
   // Enable CORS
