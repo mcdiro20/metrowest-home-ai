@@ -16,6 +16,11 @@ export default async function handler(req, res) {
     const { email, beforeImage, afterImage, selectedStyle, roomType, subscribe } = req.body;
 
     console.log('📧 Email request received for:', email);
+    console.log('📧 Before image length:', beforeImage?.length || 'undefined');
+    console.log('📧 After image URL:', afterImage);
+    console.log('📧 Selected style:', selectedStyle);
+    console.log('📧 Room type:', roomType);
+    console.log('📧 Subscribe:', subscribe);
 
     // Basic validation
     if (!email) {
@@ -27,7 +32,8 @@ export default async function handler(req, res) {
 
     // Check if we have Resend API key
     if (!process.env.RESEND_API_KEY) {
-      console.log('⚠️ No Resend API key - simulating email send');
+      console.log('⚠️ No Resend API key found in environment variables');
+      console.log('⚠️ Available env vars:', Object.keys(process.env).filter(key => key.includes('RESEND')));
       return res.status(200).json({
         success: true,
         message: 'Email simulated (no API key configured)',
@@ -37,7 +43,8 @@ export default async function handler(req, res) {
 
     // Try to send real email using dynamic import
     try {
-      console.log('📤 Attempting to send real email...');
+      console.log('📤 Attempting to send real email with Resend...');
+      console.log('📤 API key starts with:', process.env.RESEND_API_KEY?.substring(0, 10) + '...');
       
       const { Resend } = await import('resend');
       const resend = new Resend(process.env.RESEND_API_KEY);
@@ -45,22 +52,22 @@ export default async function handler(req, res) {
       const emailResult = await resend.emails.send({
         from: 'MetroWest Home AI <onboarding@resend.dev>',
         to: [email],
-        subject: '🏠 Your AI-Generated Design is Ready!',
+        subject: 'Your AI-Generated Design is Ready!',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #2563eb;">Your AI Design is Ready! 🏠</h1>
+            <h1 style="color: #2563eb;">Your AI Design is Ready!</h1>
             <p>Hello!</p>
             <p>Your AI-generated <strong>${roomType || 'space'}</strong> transformation in <strong>${selectedStyle || 'custom'}</strong> style is complete!</p>
             
-            <div style="margin: 20px 0;">
+            ${beforeImage ? `<div style="margin: 20px 0;">
               <h3>Before:</h3>
               <img src="${beforeImage}" style="max-width: 300px; border-radius: 8px;" alt="Before" />
-            </div>
+            </div>` : ''}
             
-            <div style="margin: 20px 0;">
+            ${afterImage ? `<div style="margin: 20px 0;">
               <h3>After (AI Generated):</h3>
               <img src="${afterImage}" style="max-width: 300px; border-radius: 8px;" alt="After" />
-            </div>
+            </div>` : ''}
             
             <p>Thanks for using MetroWest Home AI!</p>
             <p style="color: #666; font-size: 12px;">This email was sent from MetroWest Home AI</p>
@@ -68,7 +75,7 @@ export default async function handler(req, res) {
         `,
       });
 
-      console.log('✅ Email sent successfully:', emailResult.data?.id);
+      console.log('✅ Email sent successfully! ID:', emailResult.data?.id);
 
       return res.status(200).json({
         success: true,
@@ -77,7 +84,8 @@ export default async function handler(req, res) {
       });
 
     } catch (emailError) {
-      console.error('❌ Email sending failed:', emailError);
+      console.error('❌ Email sending failed:', emailError.message);
+      console.error('❌ Full error:', emailError);
       
       // Fallback to simulation if email fails
       return res.status(200).json({
@@ -89,7 +97,8 @@ export default async function handler(req, res) {
     }
 
   } catch (error) {
-    console.error('💥 Function error:', error);
+    console.error('💥 Function error:', error.message);
+    console.error('💥 Full error:', error);
     return res.status(500).json({
       success: false,
       message: 'Internal server error',

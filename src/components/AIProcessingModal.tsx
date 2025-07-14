@@ -41,24 +41,53 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         // Stage 2: Generating (30-90%)
         setStage('generating');
         
-        // Simulate AI processing with demo images
+        console.log('🎨 Starting AI image generation...');
+        console.log('🎨 Uploaded file:', uploadedFile?.name);
+        console.log('🎨 Selected style:', selectedStyle);
+        console.log('🎨 Room type:', roomType);
+        
+        // Try to use actual AI service
+        let generatedImageUrl;
         const originalImageUrl = URL.createObjectURL(uploadedFile);
         
-        // Demo images for different styles
-        const demoImages = {
-          kitchen: [
-            'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=1024',
-            'https://images.pexels.com/photos/2089698/pexels-photo-2089698.jpeg?auto=compress&cs=tinysrgb&w=1024',
-            'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1024'
-          ],
-          backyard: [
-            'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1024',
-            'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=1024'
-          ]
-        };
+        // Check if we have OpenAI API key
+        const hasOpenAIKey = import.meta.env.VITE_OPENAI_API_KEY;
+        console.log('🎨 OpenAI API key available:', !!hasOpenAIKey);
         
-        const imagePool = demoImages[roomType as keyof typeof demoImages] || demoImages.kitchen;
-        const randomImage = imagePool[Math.floor(Math.random() * imagePool.length)];
+        if (hasOpenAIKey) {
+          try {
+            // Import and use AI service
+            const { AIImageService } = await import('../services/aiImageService');
+            const aiResult = await AIImageService.generateDesign({
+              imageFile: uploadedFile,
+              roomType: roomType as any,
+              selectedStyle: selectedStyle
+            });
+            generatedImageUrl = aiResult.generatedImage;
+            console.log('✅ AI generation successful');
+          } catch (aiError) {
+            console.error('❌ AI generation failed:', aiError);
+            // Fallback to demo image
+            generatedImageUrl = 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=1024';
+          }
+        } else {
+          console.log('⚠️ No OpenAI key - using demo image');
+          // Demo images for different styles
+          const demoImages = {
+            kitchen: [
+              'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=1024',
+              'https://images.pexels.com/photos/2089698/pexels-photo-2089698.jpeg?auto=compress&cs=tinysrgb&w=1024',
+              'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1024'
+            ],
+            backyard: [
+              'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1024',
+              'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=1024'
+            ]
+          };
+          
+          const imagePool = demoImages[roomType as keyof typeof demoImages] || demoImages.kitchen;
+          generatedImageUrl = imagePool[Math.floor(Math.random() * imagePool.length)];
+        }
 
         // Update progress during generation
         for (let i = 30; i <= 90; i += 3) {
@@ -75,15 +104,16 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
 
         const result = {
           originalImage: originalImageUrl,
-          generatedImage: randomImage,
+          generatedImage: generatedImageUrl,
           prompt: selectedStyle?.prompt || 'AI-generated design transformation'
         };
 
+        console.log('🎨 Final result:', result);
         setTimeout(() => {
           onComplete(result);
         }, 1000);
       } catch (error) {
-        console.error('AI Processing Error:', error);
+        console.error('❌ AI Processing Error:', error);
         setTimeout(() => {
           onClose();
         }, 3000);

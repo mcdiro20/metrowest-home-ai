@@ -30,35 +30,32 @@ const EmailModal: React.FC<EmailModalProps> = ({
     setIsSubmitting(true);
     
     try {
-      // Simulate email sending (development mode)
-      const emailId = `email_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      console.log('📧 Attempting to send email to:', email);
+      console.log('📧 Before image:', beforeImage);
+      console.log('📧 After image:', uploadedImage);
       
-      const emailData = {
-        id: emailId,
-        recipient: email,
-        sentAt: new Date().toISOString(),
-        roomType: roomType,
-        selectedStyle: selectedStyle,
-        subscribe: subscribe,
-        beforeImageUrl: beforeImage,
-        afterImageUrl: uploadedImage
-      };
+      // Call the actual API endpoint
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: email,
+          beforeImage: beforeImage,
+          afterImage: uploadedImage,
+          selectedStyle: selectedStyle,
+          roomType: roomType,
+          subscribe: subscribe
+        })
+      });
       
-      console.log('📧 Development Mode: Simulating email send with data:', emailData);
+      const result = await response.json();
+      console.log('📧 API Response:', result);
       
-      // Store email data locally for testing
-      const sentEmails = JSON.parse(localStorage.getItem('sentEmails') || '[]');
-      const emailRecord = {
-        ...emailData,
-        id: Date.now().toString(),
-        sentAt: new Date().toISOString(),
-        status: 'sent'
-      };
-      sentEmails.push(emailRecord);
-      localStorage.setItem('sentEmails', JSON.stringify(sentEmails));
-      
-      // Simulate realistic network delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to send email');
+      }
       
       setIsSubmitting(false);
       setIsSuccess(true);
@@ -75,8 +72,10 @@ const EmailModal: React.FC<EmailModalProps> = ({
         setSubscribe(false);
       }, 3000);
     } catch (error) {
-      console.error('Email submission error:', error);
+      console.error('❌ Email submission error:', error);
       setIsSubmitting(false);
+      // Show error to user
+      alert(`Email failed: ${error.message}`);
     }
   };
 
