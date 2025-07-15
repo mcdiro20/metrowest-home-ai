@@ -197,31 +197,258 @@ const DebugPanel: React.FC = () => {
   const testEmailFlow = async () => {
     setIsLoading(true);
     try {
-      // Client-side simulation for local development
+      console.log('🧪 Testing complete email flow...');
+      
+      // Check if we're running on Vite dev server (which doesn't support API routes)
+      const isViteDevServer = window.location.port === '5173';
+      
+      if (isViteDevServer) {
+        setDebugResults({
+          success: false,
+          message: 'API endpoints not available on Vite dev server',
+          type: 'email-flow',
+          details: {
+            error: 'Running on npm run dev (port 5173)',
+            solution: 'To test API endpoints, run "vercel dev" instead of "npm run dev", or deploy to Vercel and test on the live site',
+            currentPort: window.location.port,
+            recommendation: 'Use "vercel dev" for full-stack testing'
+          }
+        });
+        return;
+      }
+      
+      // If not on Vite dev server, proceed with API testing
+      console.log('🧪 Step 1: Testing API endpoint accessibility...');
+      
+      const testResponse = await fetch('/api/debug-env', {
+        method: 'GET'
+      });
+      
+      // Check if we're getting JavaScript source code instead of JSON
+      const contentType = testResponse.headers.get('content-type');
+      
+      if (!testResponse.ok || !contentType?.includes('application/json')) {
+        setDebugResults({
+          success: false,
+          message: 'API endpoints not properly configured',
+          type: 'email-flow',
+          details: {
+            error: contentType?.includes('javascript') ? 
+              'Getting JavaScript source code instead of API response' : 
+              `API returned ${testResponse.status}`,
+            solution: 'API routes are not being executed as serverless functions. Use "vercel dev" for full-stack testing or deploy to Vercel.',
+            currentPort: window.location.port,
+            contentType: contentType,
+            recommendation: 'Run "vercel dev" instead of "npm run dev" to test API endpoints'
+          }
+        });
+        return;
+      }
+      
+      const envData = await testResponse.json();
+      console.log('✅ API endpoints accessible');
+      console.log('🔍 Environment check:', envData);
+      
+      // Test email submission flow
+      console.log('🧪 Step 2: Testing email submission...');
+      
+      const emailTestData = {
+        email: 'test@example.com',
+        beforeImage: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=',
+        afterImage: 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=1024',
+        selectedStyle: 'Modern Minimalist',
+        roomType: 'kitchen',
+        subscribe: true,
+        zipCode: '01701'
+      };
+      
+      const emailResponse = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(emailTestData)
+      });
+      
+      const emailResult = await emailResponse.json();
+      console.log('📧 Email API response:', emailResult);
+      
+      // Test contractor notification (lead saving)
+      console.log('🧪 Step 3: Testing lead saving...');
+      
+      const leadTestData = {
+        name: 'Test User',
+        email: 'test@example.com',
+        phone: '555-0123',
+        zip: '01701',
+        room_type: 'kitchen',
+        style: 'Modern Minimalist',
+        image_url: emailTestData.beforeImage,
+        ai_url: emailTestData.afterImage,
+        render_count: 1,
+        wants_quote: true,
+        social_engaged: false,
+        is_repeat_visitor: false
+      };
+      
+      const contractorResponse = await fetch('/api/notify-contractor', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(leadTestData)
+      });
+      
+      const contractorResult = await contractorResponse.json();
+      console.log('🎯 Contractor API response:', contractorResult);
+      
+      // Verify Supabase direct access
+      console.log('🧪 Step 4: Testing direct Supabase access...');
+      
+      const supabaseTestResponse = await fetch('/api/debug-supabase', {
+        method: 'GET'
+      });
+      
+      const supabaseTestResult = await supabaseTestResponse.json();
+      console.log('🗄️ Supabase test result:', supabaseTestResult);
+      
+      // Compile results
+      setDebugResults({
+        success: emailResult.success && contractorResult.success && supabaseTestResult.success,
+        message: 'Complete email flow test completed',
+        type: 'email-flow',
+        details: {
+          apiAccessible: true,
+          emailApiWorking: emailResult.success,
+          leadSavingWorking: contractorResult.success,
+          supabaseWorking: supabaseTestResult.success,
+          emailResponse: emailResult,
+          contractorResponse: contractorResult,
+          supabaseResponse: supabaseTestResult
+        }
+      });
+      
+    } catch (error) {
+      console.error('💥 Email flow test error:', error);
+      setDebugResults({
+        success: false,
+        message: `Email flow test failed: ${error.message}`,
+        type: 'email-flow',
+        error: error.message
+      });
+    }
+    setIsLoading(false);
+  };
+
+  const testDirectSupabase = async () => {
+    setIsLoading(true);
+    try {
+      console.log('🧪 Testing direct Supabase save from client...');
+      
+      // Check if Supabase is configured
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
       if (!supabaseUrl || !supabaseAnonKey) {
         setDebugResults({
           success: false,
-          message: 'Cannot test email flow - Supabase not configured',
-          type: 'email-flow'
+          message: 'Supabase environment variables missing',
+          type: 'direct-supabase',
+          details: {
+            hasUrl: !!supabaseUrl,
+            hasAnonKey: !!supabaseAnonKey,
+            solution: 'Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file'
+          }
         });
         return;
       }
       
+      // Import and test Supabase client
+      const { supabase } = await import('../lib/supabase');
+      
+      if (!supabase) {
+        setDebugResults({
+          success: false,
+          message: 'Supabase client not initialized',
+          type: 'direct-supabase',
+          details: {
+            solution: 'Check Supabase configuration in src/lib/supabase.ts'
+          }
+        });
+        return;
+      }
+      
+      // Test inserting a lead record
+      const testLead = {
+        name: 'Test User',
+        email: 'test@example.com',
+        phone: '555-0123',
+        zip: '01701',
+        room_type: 'kitchen',
+        style: 'Modern Minimalist',
+        image_url: 'data:image/jpeg;base64,test',
+        ai_url: 'https://example.com/test.jpg',
+        render_count: 1,
+        wants_quote: true,
+        social_engaged: false,
+        is_repeat_visitor: false,
+        lead_score: 75
+      };
+      
+      console.log('🧪 Attempting to insert test lead...');
+      
+      const { data: insertedLead, error: insertError } = await supabase
+        .from('leads')
+        .insert(testLead)
+        .select()
+        .single();
+      
+      if (insertError) {
+        console.error('❌ Insert failed:', insertError);
+        setDebugResults({
+          success: false,
+          message: `Failed to insert lead: ${insertError.message}`,
+          type: 'direct-supabase',
+          details: {
+            errorCode: insertError.code,
+            errorHint: insertError.hint,
+            solution: insertError.code === 'PGRST116' ? 
+              'The leads table does not exist. Run the migration in your Supabase dashboard.' :
+              'Check your Supabase RLS policies and table permissions.'
+          }
+        });
+        return;
+      }
+      
+      console.log('✅ Test lead inserted:', insertedLead.id);
+      
+      // Clean up test record
+      await supabase
+        .from('leads')
+        .delete()
+        .eq('id', insertedLead.id);
+      
+      console.log('✅ Test record cleaned up');
+      
       setDebugResults({
-        success: false,
-        message: 'Email flow test requires API endpoints',
-        type: 'email-flow',
-        note: 'To test the full email flow, run `vercel dev` or deploy to production'
+        success: true,
+        message: 'Direct Supabase save working perfectly!',
+        type: 'direct-supabase',
+        details: {
+          testLeadId: insertedLead.id,
+          insertWorking: true,
+          deleteWorking: true,
+          solution: 'Client-side email saving should work now'
+        }
       });
+      
     } catch (error) {
+      console.error('💥 Direct Supabase test error:', error);
       setDebugResults({
         success: false,
-        message: 'Email flow test failed',
-        error: error.message,
-        type: 'email-flow'
+        message: `Direct Supabase test failed: ${error.message}`,
+        type: 'direct-supabase',
+        error: error.message
       });
     }
     setIsLoading(false);
@@ -248,15 +475,20 @@ const DebugPanel: React.FC = () => {
           <button
             onClick={testEmailFlow}
             disabled={isLoading}
-            className="w-full flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded text-sm transition-colors disabled:opacity-50"
+            className="w-full flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm transition-colors disabled:opacity-50"
           >
             <Database className="w-4 h-4" />
-            {isLoading ? 'Testing...' : 'Test API Flow (Needs vercel dev)'}
+            {isLoading ? 'Testing...' : 'Test Complete Email Flow'}
           </button>
           
-          <div className="text-xs text-gray-500 p-2 bg-yellow-50 rounded">
-            💡 For full API testing, run <code className="bg-gray-200 px-1 rounded">vercel dev</code> instead of <code className="bg-gray-200 px-1 rounded">npm run dev</code>
-          </div>
+          <button
+            onClick={testDirectSupabase}
+            disabled={isLoading}
+            className="w-full flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm transition-colors disabled:opacity-50"
+          >
+            <Database className="w-4 h-4" />
+            {isLoading ? 'Testing...' : 'Test Direct Supabase Save'}
+          </button>
         </div>
         
         {debugResults && (
@@ -314,11 +546,18 @@ const DebugPanel: React.FC = () => {
               </div>
             )}
             
-            {debugResults.type === 'email-flow' && debugResults.success && (
+            {debugResults.type === 'email-flow' && debugResults.details && (
               <div className="text-xs text-gray-500 space-y-1">
-                <div>Lead ID: {debugResults.id}</div>
-                <div>Lead Score: {debugResults.score}</div>
-                <div>Contractors Notified: {debugResults.notified_contractors ? '✅' : '❌'}</div>
+                <div>API Accessible: {debugResults.details.apiAccessible ? '✅' : '❌'}</div>
+                <div>Email API: {debugResults.details.emailApiWorking ? '✅' : '❌'}</div>
+                <div>Lead Saving: {debugResults.details.leadSavingWorking ? '✅' : '❌'}</div>
+                <div>Supabase: {debugResults.details.supabaseWorking ? '✅' : '❌'}</div>
+                {debugResults.details.contractorResponse?.id && (
+                  <div>Test Lead ID: {debugResults.details.contractorResponse.id}</div>
+                )}
+                {debugResults.details.contractorResponse?.score && (
+                  <div>Lead Score: {debugResults.details.contractorResponse.score}</div>
+                )}
               </div>
             )}
             

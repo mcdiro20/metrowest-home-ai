@@ -155,12 +155,12 @@ const InspirationFeed: React.FC = () => {
             <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
               {/* Before/After Images */}
               <div className="relative">
-                <div className="grid grid-cols-2 gap-px">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div className="relative">
                     <img 
                       src={item.beforeImage} 
                       alt="Before" 
-                      className="w-full h-48 object-cover"
+                      className="w-full h-48 object-cover rounded-lg"
                     />
                     <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
                       Before
@@ -170,7 +170,7 @@ const InspirationFeed: React.FC = () => {
                     <img 
                       src={item.afterImage} 
                       alt="After" 
-                      className="w-full h-48 object-cover"
+                      className="w-full h-48 object-cover rounded-lg"
                     />
                     <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs px-2 py-1 rounded">
                       After

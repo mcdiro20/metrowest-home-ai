@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Mail, Check } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface EmailModalProps {
   isOpen: boolean;
@@ -37,6 +38,68 @@ const EmailModal: React.FC<EmailModalProps> = ({
     
     try {
       console.log('📧 Attempting to send email to:', email);
+      
+      // Save lead data directly to Supabase (client-side)
+      if (supabase) {
+        try {
+          console.log('💾 Saving lead data to Supabase...');
+          
+          // Calculate lead score
+          let leadScore = 10; // Base score for completing AI render
+          if (email) leadScore += 15;
+          if (name) leadScore += 10;
+          if (phone) leadScore += 20;
+          if (subscribe) leadScore += 30;
+          
+          // MetroWest ZIP codes for bonus scoring
+          const metroWestZips = [
+            '01701', '01702', '01718', '01719', '01720', '01721', '01730', '01731',
+            '01740', '01741', '01742', '01746', '01747', '01748', '01749', '01752',
+            '01754', '01757', '01760', '01770', '01772', '01773', '01776', '01778',
+            '01784', '01801', '01803', '01890', '02030', '02032', '02052', '02054',
+            '02056', '02090', '02093', '02421', '02451', '02452', '02453', '02454',
+            '02458', '02459', '02460', '02461', '02462', '02464', '02465', '02466',
+            '02467', '02468', '02472', '02474', '02475', '02476', '02477', '02478',
+            '02479', '02481', '02482', '02492', '02493', '02494', '02495'
+          ];
+          
+          if (zipCode && metroWestZips.includes(zipCode)) {
+            leadScore += 25;
+          }
+          
+          const leadData = {
+            name: name || null,
+            email: email,
+            phone: phone || null,
+            zip: zipCode,
+            room_type: roomType,
+            style: selectedStyle,
+            image_url: beforeImage,
+            ai_url: uploadedImage,
+            render_count: 1,
+            wants_quote: subscribe,
+            social_engaged: false,
+            is_repeat_visitor: false,
+            lead_score: leadScore
+          };
+          
+          const { data: savedLead, error: leadError } = await supabase
+            .from('leads')
+            .insert(leadData)
+            .select()
+            .single();
+          
+          if (leadError) {
+            console.error('❌ Failed to save lead to Supabase:', leadError);
+          } else {
+            console.log('✅ Lead saved to Supabase:', savedLead.id);
+          }
+        } catch (dbError) {
+          console.error('❌ Database error:', dbError);
+        }
+      } else {
+        console.warn('⚠️ Supabase not configured - lead not saved');
+      }
       
       console.log('📧 Before image type:', typeof beforeImage);
       console.log('📧 Before image starts with data:', beforeImage?.startsWith?.('data:'));
@@ -78,35 +141,6 @@ const EmailModal: React.FC<EmailModalProps> = ({
       
       if (!result.success) {
         throw new Error(result.message || 'Failed to send email');
-      }
-      
-      // Notify contractors with lead data
-      try {
-        const contractorResponse = await fetch('/api/notify-contractor', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            name: name || undefined,
-            email: email,
-            phone: phone || undefined,
-            zip: zipCode,
-            room_type: roomType,
-            style: selectedStyle,
-            image_url: beforeImage,
-            ai_url: uploadedImage,
-            render_count: 1,
-            wants_quote: subscribe, // Using subscribe as proxy for interest
-            social_engaged: false,
-            is_repeat_visitor: false
-          })
-        });
-        
-        const contractorResult = await contractorResponse.json();
-        console.log('🎯 Contractor notification result:', contractorResult);
-      } catch (contractorError) {
-        console.error('❌ Contractor notification failed:', contractorError);
       }
       
       setIsSubmitting(false);
@@ -159,13 +193,13 @@ const EmailModal: React.FC<EmailModalProps> = ({
 
         {/* Blurred Preview */}
         <div className="relative mb-6">
-          <div className="grid grid-cols-2 gap-2 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             {beforeImage && (
               <div className="relative">
                 <img 
                   src={beforeImage} 
                   alt="Before" 
-                  className="w-full h-32 object-cover rounded-lg"
+                  className="w-full h-48 object-cover rounded-lg"
                 />
                 <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
                   Before
@@ -177,21 +211,11 @@ const EmailModal: React.FC<EmailModalProps> = ({
                 <img 
                   src={uploadedImage} 
                   alt="AI Generated Design" 
-                  className="w-full h-32 object-cover filter blur-sm rounded-lg"
+                  className="w-full h-48 object-cover filter blur-sm rounded-lg"
                 />
               )}
               <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs px-2 py-1 rounded">
                 After (AI)
-              </div>
-            </div>
-          </div>
-          <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-lg relative overflow-hidden">
-            <div className="absolute inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-white/80 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Mail className="w-6 h-6 text-gray-700" />
-                </div>
-                <p className="text-sm font-medium text-gray-700">Enter email to unlock high-res images</p>
               </div>
             </div>
           </div>
