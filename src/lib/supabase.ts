@@ -24,7 +24,7 @@ export const createServerSupabaseClient = () => {
   return createClient(supabaseUrl, supabaseServiceKey);
 };
 
-// Database types
+// Database types for leads table
 export interface Lead {
   id: string;
   name?: string;
