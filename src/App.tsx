@@ -11,6 +11,7 @@ import HowItWorksSection from './components/HowItWorksSection';
 import WhyChooseUsSection from './components/WhyChooseUsSection';
 import Footer from './components/Footer';
 import DebugPanel from './components/DebugPanel';
+import EnvDisplay from './components/EnvDisplay';
 import { CustomerService } from './services/customerService';
 
 function App() {
@@ -132,6 +133,9 @@ function App() {
       
       {/* Debug Panel - Remove in production */}
       <DebugPanel />
+      
+      {/* Environment Variables Display - Remove in production */}
+      <EnvDisplay />
       
       <ZipCodeModal 
         isOpen={showZipCodeModal}
