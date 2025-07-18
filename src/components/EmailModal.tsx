@@ -103,6 +103,7 @@ const EmailModal: React.FC<EmailModalProps> = ({
       
       console.log('📧 Before image type:', typeof beforeImage);
       console.log('📧 Before image starts with data:', beforeImage?.startsWith?.('data:'));
+      console.log('📧 Before image is valid:', !!(beforeImage && beforeImage.length > 10));
       console.log('📧 Before image length:', beforeImage?.length);
       console.log('📧 After image:', uploadedImage);
       

@@ -42,6 +42,8 @@ export default async function handler(req, res) {
     console.log('📧 Before image available:', !!beforeImage);
     console.log('📧 After image available:', !!afterImage);
     console.log('📧 Before image type:', beforeImage ? (beforeImage.startsWith('data:') ? 'base64' : 'url') : 'none');
+    console.log('📧 Before image length:', beforeImage ? beforeImage.length : 0);
+    console.log('📧 After image URL:', afterImage);
 
     // Basic validation
     if (!email) {
@@ -98,7 +100,7 @@ export default async function handler(req, res) {
       const resend = new Resend(resendApiKey);
 
       // Validate images
-      const hasBeforeImage = beforeImage && (beforeImage.startsWith('data:') || beforeImage.startsWith('http'));
+      const hasBeforeImage = beforeImage && beforeImage.length > 0 && (beforeImage.startsWith('data:') || beforeImage.startsWith('http'));
       const hasAfterImage = afterImage && (afterImage.startsWith('http') || afterImage.startsWith('data:'));
       
       console.log('📧 Final validation - Before:', hasBeforeImage, 'After:', hasAfterImage);
@@ -108,40 +110,40 @@ export default async function handler(req, res) {
         to: [email],
         subject: 'Your AI-Generated Design is Ready!',
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; padding: 8px;">
-            <h1 style="color: #2563eb; font-size: 18px; margin: 8px 0;">Your AI Design is Ready!</h1>
-            <p style="margin: 4px 0; font-size: 14px;">Your <strong>${roomType || 'space'}</strong> transformation is complete!</p>
+          <div style="font-family: Arial, sans-serif; max-width: 320px; margin: 0 auto; padding: 4px;">
+            <h1 style="color: #2563eb; font-size: 16px; margin: 4px 0;">Your AI Design is Ready!</h1>
+            <p style="margin: 2px 0; font-size: 12px;">Your <strong>${roomType || 'space'}</strong> transformation is complete!</p>
             
             ${hasBeforeImage && hasAfterImage ? `
-              <div style="margin: 10px 0;">
-                <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+              <div style="margin: 6px 0;">
+                <table style="width: 100%; border-collapse: collapse;">
                   <tr>
-                    <td style="width: 50%; padding: 2px; vertical-align: top; text-align: center;">
-                      <h3 style="margin: 3px 0 5px 0; color: #374151; font-size: 12px;">Before</h3>
-                      <img src="${beforeImage}" style="width: 100%; max-width: 180px; height: auto; border-radius: 4px; display: block; margin: 0 auto;" />
+                    <td style="width: 50%; padding: 1px; text-align: center;">
+                      <div style="margin: 2px 0 3px 0; color: #374151; font-size: 10px; font-weight: bold;">Before</div>
+                      <img src="${beforeImage}" style="width: 100%; max-width: 150px; height: auto; border-radius: 3px; display: block; margin: 0 auto;" />
                     </td>
-                    <td style="width: 50%; padding: 2px; vertical-align: top; text-align: center;">
-                      <h3 style="margin: 3px 0 5px 0; color: #059669; font-size: 12px;">After</h3>
-                      <img src="${afterImage}" style="width: 100%; max-width: 180px; height: auto; border-radius: 4px; display: block; margin: 0 auto;" />
+                    <td style="width: 50%; padding: 1px; text-align: center;">
+                      <div style="margin: 2px 0 3px 0; color: #059669; font-size: 10px; font-weight: bold;">After</div>
+                      <img src="${afterImage}" style="width: 100%; max-width: 150px; height: auto; border-radius: 3px; display: block; margin: 0 auto;" />
                     </td>
                   </tr>
                 </table>
               </div>
             ` : hasAfterImage ? `
-              <div style="text-align: center; margin: 10px 0;">
-                <h3 style="margin: 3px 0 5px 0; color: #059669; font-size: 14px;">Your AI Design</h3>
-                <img src="${afterImage}" style="width: 100%; max-width: 380px; height: auto; border-radius: 4px; display: block; margin: 0 auto;" />
+              <div style="text-align: center; margin: 6px 0;">
+                <div style="margin: 2px 0 3px 0; color: #059669; font-size: 12px; font-weight: bold;">Your AI Design</div>
+                <img src="${afterImage}" style="width: 100%; max-width: 300px; height: auto; border-radius: 3px; display: block; margin: 0 auto;" />
               </div>
             ` : hasBeforeImage ? `
-              <div style="text-align: center; margin: 10px 0;">
-                <h3 style="margin: 3px 0 5px 0; color: #374151; font-size: 14px;">Your Original Space</h3>
-                <img src="${beforeImage}" style="width: 100%; max-width: 380px; height: auto; border-radius: 4px; display: block; margin: 0 auto;" />
+              <div style="text-align: center; margin: 6px 0;">
+                <div style="margin: 2px 0 3px 0; color: #374151; font-size: 12px; font-weight: bold;">Your Original Space</div>
+                <img src="${beforeImage}" style="width: 100%; max-width: 300px; height: auto; border-radius: 3px; display: block; margin: 0 auto;" />
               </div>
             ` : ''}
             
-            <p style="margin: 8px 0; font-size: 12px; text-align: center;">Thanks for using MetroWest Home AI!</p>
-            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 8px 0;" />
-            <p style="color: #9ca3af; font-size: 10px; text-align: center; margin: 3px 0;">
+            <p style="margin: 4px 0; font-size: 10px; text-align: center;">Thanks for using MetroWest Home AI!</p>
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 4px 0;" />
+            <p style="color: #9ca3af; font-size: 8px; text-align: center; margin: 2px 0;">
               MetroWest Home AI<br>
               MetroWest Massachusetts
             </p>
