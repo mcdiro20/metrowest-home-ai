@@ -12,7 +12,6 @@ import WhyChooseUsSection from './components/WhyChooseUsSection';
 import Footer from './components/Footer';
 import DebugPanel from './components/DebugPanel';
 import EnvDisplay from './components/EnvDisplay';
-import { CustomerService } from './services/customerService';
 
 function App() {
   const [showZipCodeModal, setShowZipCodeModal] = useState(false);

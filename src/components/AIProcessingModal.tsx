@@ -55,12 +55,22 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         console.log('🎨 OpenAI API key available:', !!hasOpenAIKey);
         
         // Store the original image as base64 for email
-        const originalImageBase64 = await new Promise<string>((resolve) => {
+        const originalImageBase64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = () => resolve('');
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            console.log('📸 Original image base64 created, length:', result?.length);
+            console.log('📸 Base64 starts with:', result?.substring(0, 50));
+            resolve(result);
+          };
+          reader.onerror = (error) => {
+            console.error('❌ FileReader error:', error);
+            reject(error);
+          };
           reader.readAsDataURL(uploadedFile);
         });
+        
+        console.log('📸 Final originalImageBase64 length:', originalImageBase64?.length);
         
         if (hasOpenAIKey) {
           try {
@@ -118,6 +128,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         };
 
         console.log('🎨 Final result:', result);
+        console.log('🎨 Result originalImageBase64 length:', result.originalImageBase64?.length);
         setTimeout(() => {
           onComplete(result);
         }, 1000);

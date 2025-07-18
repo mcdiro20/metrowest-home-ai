@@ -1,12 +1,13 @@
 export interface EmailImageRequest {
   email: string;
+  name?: string;
+  phone?: string;
   beforeImage: string;
   afterImage: string;
   selectedStyle?: string;
   roomType?: string;
   subscribe?: boolean;
   zipCode?: string;
-  customerId?: string;
   designRequestId?: string;
 }
 
@@ -19,24 +20,6 @@ export interface EmailResponse {
 export class EmailService {
   static async sendDesignImages(request: EmailImageRequest): Promise<EmailResponse> {
     try {
-      // Save to database first
-      let customerId = request.customerId;
-      
-      if (!customerId && request.zipCode) {
-        try {
-          const customer = await CustomerService.createOrGetCustomer(request.email, request.zipCode);
-          customerId = customer.id;
-          
-          // Update newsletter subscription if requested
-          if (request.subscribe) {
-            await CustomerService.updateNewsletterSubscription(customer.id, true);
-          }
-        } catch (dbError) {
-          console.error('❌ Database save failed:', dbError);
-          // Continue with email sending even if DB fails
-        }
-      }
-      
       // Check if we're in development mode
       const isDevelopment = import.meta.env.DEV;
       
@@ -103,5 +86,4 @@ export class EmailService {
   static getSentEmails(): any[] {
     return JSON.parse(localStorage.getItem('sentEmails') || '[]');
   }
-import { CustomerService } from '../services/customerService';
 }

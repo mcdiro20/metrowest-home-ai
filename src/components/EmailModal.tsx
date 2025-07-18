@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Mail, Check } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { EmailService } from '../services/emailService';
 
 interface EmailModalProps {
   isOpen: boolean;
@@ -37,95 +37,20 @@ const EmailModal: React.FC<EmailModalProps> = ({
     setIsSubmitting(true);
     
     try {
-      console.log('📧 Attempting to send email to:', email);
+      const requestData = {
+        email: email,
+        name: name,
+        phone: phone,
+        beforeImage: beforeImage,
+        afterImage: uploadedImage,
+        selectedStyle: selectedStyle,
+        roomType: roomType,
+        subscribe: subscribe,
+        zipCode: zipCode,
+        designRequestId: designRequestId
+      };
       
-      // Save lead data directly to Supabase (client-side)
-      if (supabase) {
-        try {
-          console.log('💾 Saving lead data to Supabase...');
-          
-          // Calculate lead score
-          let leadScore = 10; // Base score for completing AI render
-          if (email) leadScore += 15;
-          if (name) leadScore += 10;
-          if (phone) leadScore += 20;
-          if (subscribe) leadScore += 30;
-          
-          // MetroWest ZIP codes for bonus scoring
-          const metroWestZips = [
-            '01701', '01702', '01718', '01719', '01720', '01721', '01730', '01731',
-            '01740', '01741', '01742', '01746', '01747', '01748', '01749', '01752',
-            '01754', '01757', '01760', '01770', '01772', '01773', '01776', '01778',
-            '01784', '01801', '01803', '01890', '02030', '02032', '02052', '02054',
-            '02056', '02090', '02093', '02421', '02451', '02452', '02453', '02454',
-            '02458', '02459', '02460', '02461', '02462', '02464', '02465', '02466',
-            '02467', '02468', '02472', '02474', '02475', '02476', '02477', '02478',
-            '02479', '02481', '02482', '02492', '02493', '02494', '02495'
-          ];
-          
-          if (zipCode && metroWestZips.includes(zipCode)) {
-            leadScore += 25;
-          }
-          
-          const leadData = {
-            name: name || null,
-            email: email,
-            phone: phone || null,
-            zip: zipCode,
-            room_type: roomType,
-            style: selectedStyle,
-            image_url: beforeImage,
-            ai_url: uploadedImage,
-            render_count: 1,
-            wants_quote: subscribe,
-            social_engaged: false,
-            is_repeat_visitor: false,
-            lead_score: leadScore
-          };
-          
-          const { data: savedLead, error: leadError } = await supabase
-            .from('leads')
-            .insert(leadData)
-            .select()
-            .single();
-          
-          if (leadError) {
-            console.error('❌ Failed to save lead to Supabase:', leadError);
-          } else {
-            console.log('✅ Lead saved to Supabase:', savedLead.id);
-          }
-        } catch (dbError) {
-          console.error('❌ Database error:', dbError);
-        }
-      } else {
-        console.warn('⚠️ Supabase not configured - lead not saved');
-      }
-      
-      console.log('📧 Before image type:', typeof beforeImage);
-      console.log('📧 Before image starts with data:', beforeImage?.startsWith('data:'));
-      console.log('📧 Before image length:', beforeImage?.length);
-      console.log('📧 Before image length:', beforeImage?.length);
-      console.log('📧 After image:', uploadedImage);
-      
-      // Call the actual API endpoint
-      const response = await fetch('/api/send-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: email,
-          beforeImage: beforeImage,
-          afterImage: uploadedImage,
-          selectedStyle: selectedStyle,
-          roomType: roomType,
-          subscribe: subscribe,
-          zipCode: zipCode
-        })
-      });
-      
-      const result = await response.json();
-      console.log('📧 API Response:', result);
+      const result = await EmailService.sendDesignImages(requestData);
       
       if (!result.success) {
         throw new Error(result.message || 'Failed to send email');
@@ -150,8 +75,13 @@ const EmailModal: React.FC<EmailModalProps> = ({
     } catch (error) {
       console.error('❌ Email submission error:', error);
       setIsSubmitting(false);
-      // Show error to user
-      alert(`Email failed: ${error.message}`);
+      
+      // Show user-friendly error message
+      let errorMessage = 'Failed to send email. Please try again.';
+      if (error.message.includes('JSON')) {
+        errorMessage = 'Server error occurred. Please try again in a moment.';
+      }
+      alert(`Email failed: ${errorMessage}`);
     }
   };
 
