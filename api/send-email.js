@@ -102,6 +102,8 @@ export default async function handler(req, res) {
       
       console.log('📧 Has valid before image:', hasBeforeImage);
       console.log('📧 Has valid after image:', hasAfterImage);
+      console.log('📧 Before image type:', beforeImage ? (beforeImage.startsWith('data:') ? 'base64' : 'url') : 'none');
+      console.log('📧 After image type:', afterImage ? (afterImage.startsWith('data:') ? 'base64' : 'url') : 'none');
 
       const emailResult = await resend.emails.send({
         from: 'MetroWest Home AI <onboarding@resend.dev>',
@@ -114,15 +116,37 @@ export default async function handler(req, res) {
             <p>Your AI-generated <strong>${roomType || 'space'}</strong> transformation in <strong>${selectedStyle || 'custom'}</strong> style is complete!</p>
             
             <div style="margin: 30px 0;">
-              ${hasBeforeImage ? `<div style="margin-bottom: 30px;">
-                <h3 style="margin-bottom: 10px; color: #374151;">Before:</h3>
-                <img src="${beforeImage}" style="width: 100%; max-width: 500px; border-radius: 8px; border: 3px solid #e5e7eb; display: block;" alt="Your Original ${roomType}" />
-              </div>` : ''}
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  ${hasBeforeImage ? `
+                    <td style="width: 50%; padding: 10px; vertical-align: top;">
+                      <h3 style="margin-bottom: 10px; color: #374151; text-align: center;">Before:</h3>
+                      <img src="${beforeImage}" style="width: 100%; max-width: 280px; border-radius: 8px; border: 3px solid #e5e7eb; display: block; margin: 0 auto;" alt="Your Original ${roomType || 'Space'}" />
+                    </td>
+                  ` : ''}
+                  ${hasAfterImage ? `
+                    <td style="width: 50%; padding: 10px; vertical-align: top;">
+                      <h3 style="margin-bottom: 10px; color: #059669; text-align: center;">After (AI Generated):</h3>
+                      <img src="${afterImage}" style="width: 100%; max-width: 280px; border-radius: 8px; border: 3px solid #10b981; display: block; margin: 0 auto;" alt="AI Generated ${selectedStyle || 'Renovation'}" />
+                    </td>
+                  ` : ''}
+                </tr>
+              </table>
               
-              ${hasAfterImage ? `<div style="margin-bottom: 30px;">
-                <h3 style="margin-bottom: 10px; color: #059669;">After (AI Generated):</h3>
-                <img src="${afterImage}" style="width: 100%; max-width: 500px; border-radius: 8px; border: 3px solid #10b981; display: block;" alt="AI Generated ${selectedStyle || 'Renovation'}" />
-              </div>` : ''}
+              <!-- Fallback for single image or mobile -->
+              ${!hasBeforeImage && hasAfterImage ? `
+                <div style="text-align: center; margin: 20px 0;">
+                  <h3 style="margin-bottom: 10px; color: #059669;">Your AI Generated Design:</h3>
+                  <img src="${afterImage}" style="width: 100%; max-width: 500px; border-radius: 8px; border: 3px solid #10b981; display: block; margin: 0 auto;" alt="AI Generated ${selectedStyle || 'Renovation'}" />
+                </div>
+              ` : ''}
+              
+              ${hasBeforeImage && !hasAfterImage ? `
+                <div style="text-align: center; margin: 20px 0;">
+                  <h3 style="margin-bottom: 10px; color: #374151;">Your Original Space:</h3>
+                  <img src="${beforeImage}" style="width: 100%; max-width: 500px; border-radius: 8px; border: 3px solid #e5e7eb; display: block; margin: 0 auto;" alt="Your Original ${roomType || 'Space'}" />
+                </div>
+              ` : ''}
             </div>
             
             <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #3b82f6;">
@@ -132,6 +156,7 @@ export default async function handler(req, res) {
                 <li><strong>Design Style:</strong> ${selectedStyle || 'Custom'}</li>
                 <li><strong>AI Technology:</strong> DALL-E 3 by OpenAI</li>
                 <li><strong>Generated:</strong> ${new Date().toLocaleDateString()}</li>
+                <li><strong>Images Included:</strong> ${hasBeforeImage && hasAfterImage ? 'Before & After' : hasBeforeImage ? 'Before Only' : hasAfterImage ? 'After Only' : 'None'}</li>
               </ul>
             </div>
             
