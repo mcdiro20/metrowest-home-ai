@@ -39,8 +39,9 @@ export default async function handler(req, res) {
     const { email, beforeImage, afterImage, selectedStyle, roomType, subscribe } = req.body;
 
     console.log('📧 Email request received for:', email);
-    console.log('📧 Selected style:', selectedStyle);
-    console.log('📧 Room type:', roomType);
+    console.log('📧 Before image available:', !!beforeImage);
+    console.log('📧 After image available:', !!afterImage);
+    console.log('📧 Before image type:', beforeImage ? (beforeImage.startsWith('data:') ? 'base64' : 'url') : 'none');
 
     // Basic validation
     if (!email) {
@@ -100,61 +101,49 @@ export default async function handler(req, res) {
       const hasBeforeImage = beforeImage && (beforeImage.startsWith('data:') || beforeImage.startsWith('http'));
       const hasAfterImage = afterImage && (afterImage.startsWith('http') || afterImage.startsWith('data:'));
       
-      console.log('📧 Has valid before image:', hasBeforeImage);
-      console.log('📧 Has valid after image:', hasAfterImage);
-      console.log('📧 Before image type:', beforeImage ? (beforeImage.startsWith('data:') ? 'base64' : 'url') : 'none');
-      console.log('📧 After image type:', afterImage ? (afterImage.startsWith('data:') ? 'base64' : 'url') : 'none');
+      console.log('📧 Final validation - Before:', hasBeforeImage, 'After:', hasAfterImage);
 
       const emailResult = await resend.emails.send({
         from: 'MetroWest Home AI <onboarding@resend.dev>',
         to: [email],
         subject: 'Your AI-Generated Design is Ready!',
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 10px;">
-            <h1 style="color: #2563eb; font-size: 20px; margin: 10px 0;">Your AI Design is Ready!</h1>
-            <p style="margin: 5px 0;">Your <strong>${roomType || 'space'}</strong> transformation in <strong>${selectedStyle || 'custom'}</strong> style is complete!</p>
+          <div style="font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; padding: 8px;">
+            <h1 style="color: #2563eb; font-size: 18px; margin: 8px 0;">Your AI Design is Ready!</h1>
+            <p style="margin: 4px 0; font-size: 14px;">Your <strong>${roomType || 'space'}</strong> transformation is complete!</p>
             
             ${hasBeforeImage && hasAfterImage ? `
-              <div style="margin: 15px 0;">
+              <div style="margin: 10px 0;">
                 <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
                   <tr>
-                    <td style="width: 50%; padding: 5px; vertical-align: top; text-align: center;">
-                      <h3 style="margin: 5px 0 10px 0; color: #374151; font-size: 14px;">Before</h3>
-                      <img src="${beforeImage}" style="width: 100%; max-width: 200px; height: auto; border-radius: 6px; border: 2px solid #e5e7eb; display: block; margin: 0 auto;" />
+                    <td style="width: 50%; padding: 2px; vertical-align: top; text-align: center;">
+                      <h3 style="margin: 3px 0 5px 0; color: #374151; font-size: 12px;">Before</h3>
+                      <img src="${beforeImage}" style="width: 100%; max-width: 180px; height: auto; border-radius: 4px; display: block; margin: 0 auto;" />
                     </td>
-                    <td style="width: 50%; padding: 5px; vertical-align: top; text-align: center;">
-                      <h3 style="margin: 5px 0 10px 0; color: #059669; font-size: 14px;">After</h3>
-                      <img src="${afterImage}" style="width: 100%; max-width: 200px; height: auto; border-radius: 6px; border: 2px solid #10b981; display: block; margin: 0 auto;" />
+                    <td style="width: 50%; padding: 2px; vertical-align: top; text-align: center;">
+                      <h3 style="margin: 3px 0 5px 0; color: #059669; font-size: 12px;">After</h3>
+                      <img src="${afterImage}" style="width: 100%; max-width: 180px; height: auto; border-radius: 4px; display: block; margin: 0 auto;" />
                     </td>
                   </tr>
                 </table>
               </div>
             ` : hasAfterImage ? `
-              <div style="text-align: center; margin: 15px 0;">
-                <h3 style="margin: 5px 0 10px 0; color: #059669; font-size: 16px;">After</h3>
-                <img src="${afterImage}" style="width: 100%; max-width: 400px; height: auto; border-radius: 6px; border: 2px solid #10b981; display: block; margin: 0 auto;" />
+              <div style="text-align: center; margin: 10px 0;">
+                <h3 style="margin: 3px 0 5px 0; color: #059669; font-size: 14px;">Your AI Design</h3>
+                <img src="${afterImage}" style="width: 100%; max-width: 380px; height: auto; border-radius: 4px; display: block; margin: 0 auto;" />
               </div>
             ` : hasBeforeImage ? `
-              <div style="text-align: center; margin: 15px 0;">
-                <h3 style="margin: 5px 0 10px 0; color: #374151; font-size: 16px;">Before</h3>
-                <img src="${beforeImage}" style="width: 100%; max-width: 400px; height: auto; border-radius: 6px; border: 2px solid #e5e7eb; display: block; margin: 0 auto;" />
+              <div style="text-align: center; margin: 10px 0;">
+                <h3 style="margin: 3px 0 5px 0; color: #374151; font-size: 14px;">Your Original Space</h3>
+                <img src="${beforeImage}" style="width: 100%; max-width: 380px; height: auto; border-radius: 4px; display: block; margin: 0 auto;" />
               </div>
             ` : ''}
             
-            <div style="background: #f8fafc; padding: 15px; border-radius: 6px; margin: 15px 0; border-left: 3px solid #3b82f6;">
-              <h4 style="color: #374151; margin: 5px 0 10px 0; font-size: 14px;">✨ Details:</h4>
-              <ul style="color: #6b7280; margin: 0; padding-left: 15px; font-size: 13px;">
-                <li><strong>Room Type:</strong> ${roomType || 'Kitchen'}</li>
-                <li><strong>Design Style:</strong> ${selectedStyle || 'Custom'}</li>
-                <li><strong>Generated:</strong> ${new Date().toLocaleDateString()}</li>
-              </ul>
-            </div>
-            
-            <p style="margin: 10px 0; font-size: 14px;">Thanks for using MetroWest Home AI!</p>
-            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 15px 0;" />
-            <p style="color: #9ca3af; font-size: 11px; text-align: center; margin: 5px 0;">
+            <p style="margin: 8px 0; font-size: 12px; text-align: center;">Thanks for using MetroWest Home AI!</p>
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 8px 0;" />
+            <p style="color: #9ca3af; font-size: 10px; text-align: center; margin: 3px 0;">
               MetroWest Home AI<br>
-              Exclusively serving MetroWest Massachusetts homeowners
+              MetroWest Massachusetts
             </p>
           </div>
         `,

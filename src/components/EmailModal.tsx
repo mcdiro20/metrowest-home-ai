@@ -105,19 +105,6 @@ const EmailModal: React.FC<EmailModalProps> = ({
       console.log('📧 Before image starts with data:', beforeImage?.startsWith?.('data:'));
       console.log('📧 Before image length:', beforeImage?.length);
       console.log('📧 After image:', uploadedImage);
-      console.log('📧 Selected style:', selectedStyle);
-      console.log('📧 Room type:', roomType);
-      
-      // Use the beforeImage directly (should already be base64)
-      let beforeImageBase64 = beforeImage || '';
-      
-      // Validate we have both images
-      if (!beforeImageBase64) {
-        console.warn('⚠️ No before image available or conversion failed');
-      }
-      if (!uploadedImage) {
-        console.warn('⚠️ No after image available');
-      }
       
       // Call the actual API endpoint
       const response = await fetch('/api/send-email', {
@@ -127,7 +114,7 @@ const EmailModal: React.FC<EmailModalProps> = ({
         },
         body: JSON.stringify({
           email: email,
-          beforeImage: beforeImageBase64,
+          beforeImage: beforeImage,
           afterImage: uploadedImage,
           selectedStyle: selectedStyle,
           roomType: roomType,
