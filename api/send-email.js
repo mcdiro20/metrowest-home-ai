@@ -110,52 +110,50 @@ export default async function handler(req, res) {
         to: [email],
         subject: 'Your AI-Generated Design is Ready!',
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #2563eb;">Your AI Design is Ready!</h1>
-            <p>Hello!</p>
-            <p>Your AI-generated <strong>${roomType || 'space'}</strong> transformation in <strong>${selectedStyle || 'custom'}</strong> style is complete!</p>
+          <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 10px;">
+            <h1 style="color: #2563eb; font-size: 20px; margin: 10px 0;">Your AI Design is Ready!</h1>
+            <p style="margin: 5px 0;">Your <strong>${roomType || 'space'}</strong> transformation in <strong>${selectedStyle || 'custom'}</strong> style is complete!</p>
             
             ${hasBeforeImage && hasAfterImage ? `
-              <div style="margin: 30px 0;">
-                <table style="width: 100%; border-collapse: collapse;">
+              <div style="margin: 15px 0;">
+                <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
                   <tr>
-                    <td style="width: 50%; padding: 10px; vertical-align: top;">
-                      <h3 style="margin-bottom: 10px; color: #374151; text-align: center;">Before</h3>
-                      <img src="${beforeImage}" style="width: 100%; max-width: 280px; border-radius: 8px; border: 3px solid #e5e7eb; display: block; margin: 0 auto;" alt="Before" />
+                    <td style="width: 50%; padding: 5px; vertical-align: top; text-align: center;">
+                      <h3 style="margin: 5px 0 10px 0; color: #374151; font-size: 14px;">Before</h3>
+                      <img src="${beforeImage}" style="width: 100%; max-width: 200px; height: auto; border-radius: 6px; border: 2px solid #e5e7eb; display: block; margin: 0 auto;" />
                     </td>
-                    <td style="width: 50%; padding: 10px; vertical-align: top;">
-                      <h3 style="margin-bottom: 10px; color: #059669; text-align: center;">After</h3>
-                      <img src="${afterImage}" style="width: 100%; max-width: 280px; border-radius: 8px; border: 3px solid #10b981; display: block; margin: 0 auto;" alt="After" />
+                    <td style="width: 50%; padding: 5px; vertical-align: top; text-align: center;">
+                      <h3 style="margin: 5px 0 10px 0; color: #059669; font-size: 14px;">After</h3>
+                      <img src="${afterImage}" style="width: 100%; max-width: 200px; height: auto; border-radius: 6px; border: 2px solid #10b981; display: block; margin: 0 auto;" />
                     </td>
                   </tr>
                 </table>
               </div>
             ` : hasAfterImage ? `
-              <div style="text-align: center; margin: 30px 0;">
-                <h3 style="margin-bottom: 10px; color: #059669; text-align: center;">Your AI Generated Design</h3>
-                <img src="${afterImage}" style="width: 100%; max-width: 500px; border-radius: 8px; border: 3px solid #10b981; display: block; margin: 0 auto;" alt="AI Generated Design" />
+              <div style="text-align: center; margin: 15px 0;">
+                <h3 style="margin: 5px 0 10px 0; color: #059669; font-size: 16px;">After</h3>
+                <img src="${afterImage}" style="width: 100%; max-width: 400px; height: auto; border-radius: 6px; border: 2px solid #10b981; display: block; margin: 0 auto;" />
               </div>
             ` : hasBeforeImage ? `
-              <div style="text-align: center; margin: 30px 0;">
-                <h3 style="margin-bottom: 10px; color: #374151; text-align: center;">Your Original Space</h3>
-                <img src="${beforeImage}" style="width: 100%; max-width: 500px; border-radius: 8px; border: 3px solid #e5e7eb; display: block; margin: 0 auto;" alt="Original Space" />
+              <div style="text-align: center; margin: 15px 0;">
+                <h3 style="margin: 5px 0 10px 0; color: #374151; font-size: 16px;">Before</h3>
+                <img src="${beforeImage}" style="width: 100%; max-width: 400px; height: auto; border-radius: 6px; border: 2px solid #e5e7eb; display: block; margin: 0 auto;" />
               </div>
             ` : ''}
             
-            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #3b82f6;">
-              <h4 style="color: #374151; margin-bottom: 10px;">✨ Your Transformation Details:</h4>
-              <ul style="color: #6b7280; margin: 0; padding-left: 20px;">
+            <div style="background: #f8fafc; padding: 15px; border-radius: 6px; margin: 15px 0; border-left: 3px solid #3b82f6;">
+              <h4 style="color: #374151; margin: 5px 0 10px 0; font-size: 14px;">✨ Details:</h4>
+              <ul style="color: #6b7280; margin: 0; padding-left: 15px; font-size: 13px;">
                 <li><strong>Room Type:</strong> ${roomType || 'Kitchen'}</li>
                 <li><strong>Design Style:</strong> ${selectedStyle || 'Custom'}</li>
-                <li><strong>AI Technology:</strong> DALL-E 3 by OpenAI</li>
                 <li><strong>Generated:</strong> ${new Date().toLocaleDateString()}</li>
               </ul>
             </div>
             
-            <p>Thanks for using MetroWest Home AI!</p>
-            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
-            <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-              This email was sent from MetroWest Home AI<br>
+            <p style="margin: 10px 0; font-size: 14px;">Thanks for using MetroWest Home AI!</p>
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 15px 0;" />
+            <p style="color: #9ca3af; font-size: 11px; text-align: center; margin: 5px 0;">
+              MetroWest Home AI<br>
               Exclusively serving MetroWest Massachusetts homeowners
             </p>
           </div>

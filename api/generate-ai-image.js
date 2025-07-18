@@ -40,38 +40,52 @@ export default async function handler(req, res) {
 
     console.log('🎨 Using OpenAI API for real image generation');
 
-    // Create ULTRA-SPECIFIC layout preservation prompt
-    const ultraSpecificPrompt = `CRITICAL INSTRUCTION: You must create a renovation of this EXACT kitchen keeping every structural element identical.
+    // Create ULTRA-SPECIFIC layout preservation prompt with enhanced parameters
+    const ultraSpecificPrompt = `CRITICAL INSTRUCTION: You must create a renovation of this EXACT ${roomType} keeping every structural element, camera angle, and spatial relationship identical.
 
 MANDATORY REQUIREMENTS - MUST BE PRESERVED EXACTLY:
-- Keep the IDENTICAL camera angle, viewpoint, and perspective as the original photo
-- Maintain the EXACT same kitchen layout: same peninsula/island placement, same cabinet configuration
-- Keep ALL structural elements in IDENTICAL positions: walls, windows, doors, ceiling
-- Preserve the EXACT same room proportions and spatial relationships
-- Keep the same floor plan and cabinet arrangement
-- Maintain identical lighting direction and room orientation
-- Keep the same countertop shape and size (only change material/color)
-- Preserve the exact same appliance locations (only change style/finish)
+- Keep the IDENTICAL camera angle, viewpoint, perspective, and framing as the original photo
+- Maintain the EXACT same ${roomType} layout: same furniture/fixture placement, same spatial configuration
+- Keep ALL structural elements in IDENTICAL positions: walls, windows, doors, ceiling, columns, beams
+- Preserve the EXACT same room proportions, dimensions, and spatial relationships
+- Keep the same floor plan and architectural layout
+- Maintain identical lighting direction, shadows, and room orientation
+- Keep the same vantage point - if photo is taken from a doorway, keep that exact viewpoint
+- Preserve the exact same fixture/furniture locations (only change style/finish/materials)
+- Keep the same ceiling height and any architectural details in identical positions
+- Maintain the exact same depth of field and photo composition
+- If there are people or objects in the photo, keep them in the same positions but update surroundings
 
-WHAT YOU CAN CHANGE (DESIGN ELEMENTS ONLY):
-Apply ${selectedStyle?.name || 'modern'} style by changing ONLY these elements:
-- Cabinet door styles, colors, and finishes (${selectedStyle?.prompt || 'modern design'})
-- Countertop materials and colors
-- Appliance styles and finishes (same locations)
-- Paint colors and wall treatments
-- Light fixture styles (same positions)
+WHAT YOU CAN CHANGE (SURFACE ELEMENTS ONLY):
+Apply ${selectedStyle?.name || 'modern'} style by changing ONLY these surface elements:
+- Cabinet/furniture door styles, colors, and finishes (${selectedStyle?.prompt || 'modern design'})
+- Countertop/surface materials and colors (same shapes and sizes)
+- Appliance/fixture styles and finishes (identical locations and sizes)
+- Paint colors and wall treatments (same wall positions)
+- Light fixture styles (identical positions and mounting points)
 - Hardware, handles, and accessories
-- Backsplash materials and patterns
-- Flooring materials (same layout)
+- Backsplash/wall covering materials and patterns
+- Flooring materials and patterns (same layout and transitions)
+- Window treatments and soft furnishings
+- Decorative elements and accessories
 
 RESULT REQUIREMENTS:
-- The transformed kitchen must be immediately recognizable as the SAME kitchen from the SAME angle
-- It should look like a professional renovation of this specific space, not a different kitchen
-- Every structural element must remain in its exact original position
-- The camera angle and perspective must be identical to the original
-- Apply ${selectedStyle?.name || 'modern'} style elements while preserving the exact layout
+- The transformed ${roomType} must be immediately recognizable as the SAME space from the SAME exact angle
+- It should look like a professional renovation of this specific space, not a different room
+- Every structural and architectural element must remain in its exact original position
+- The camera angle, perspective, and framing must be identical to the original
+- The lighting conditions and shadows should match the original photo
+- Apply ${selectedStyle?.name || 'modern'} style elements while preserving the exact layout and vantage point
+- The result should look like "before and after" photos taken from the identical position
 
-This is a RENOVATION of the existing kitchen shown in the image - keep the layout identical and only update the finishes and design elements with ${selectedStyle?.name || 'modern'} style.`;
+PHOTO COMPOSITION REQUIREMENTS:
+- Match the exact camera height and angle of the original photo
+- Preserve the same field of view and photo boundaries
+- Keep the same focal point and center of composition
+- Maintain identical perspective lines and vanishing points
+- If the original photo shows partial views of adjacent rooms, keep those identical
+
+This is a RENOVATION of the existing ${roomType} shown in the image - keep the layout, structure, and camera angle identical and only update the finishes and design elements with ${selectedStyle?.name || 'modern'} style.`;
 
     console.log('🎨 Using ultra-specific layout preservation prompt');
 
