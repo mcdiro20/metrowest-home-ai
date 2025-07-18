@@ -1,73 +1,103 @@
 export default async function handler(req, res) {
-  // Set CORS headers
+  // Set CORS headers FIRST
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Content-Type', 'application/json');
 
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
+  // Only allow POST requests
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ 
+      success: false, 
+      error: 'Method not allowed',
+      message: 'Only POST requests are allowed'
+    });
   }
 
   try {
+    console.log('📧 Email API endpoint called');
+    console.log('📧 Request method:', req.method);
+    console.log('📧 Request headers:', req.headers);
+
+    // Validate request body exists
+    if (!req.body) {
+      console.error('❌ No request body provided');
+      return res.status(400).json({
+        success: false,
+        error: 'Request body is missing',
+        message: 'Please provide email and image data'
+      });
+    }
+
+    console.log('📧 Request body keys:', Object.keys(req.body));
+
     const { email, beforeImage, afterImage, selectedStyle, roomType, subscribe } = req.body;
 
     console.log('📧 Email request received for:', email);
-    console.log('📧 Before image length:', beforeImage?.length || 'undefined');
-    console.log('📧 After image URL:', afterImage);
     console.log('📧 Selected style:', selectedStyle);
     console.log('📧 Room type:', roomType);
-    console.log('📧 Subscribe:', subscribe);
-    console.log('📧 Before image data type:', typeof beforeImage);
-    console.log('📧 Before image starts with data:', beforeImage?.startsWith?.('data:'));
-
-    // Debug environment variables extensively
-    console.log('🔍 ALL Environment Variables:');
-    console.log('🔍 process.env keys:', Object.keys(process.env));
-    console.log('🔍 NODE_ENV:', process.env.NODE_ENV);
-    console.log('🔍 VERCEL:', process.env.VERCEL);
-    console.log('🔍 VERCEL_ENV:', process.env.VERCEL_ENV);
-    
-    // Check for different possible env var names
-    console.log('🔍 RESEND_API_KEY:', process.env.RESEND_API_KEY ? 'EXISTS' : 'MISSING');
-    console.log('🔍 VITE_RESEND_API_KEY:', process.env.VITE_RESEND_API_KEY ? 'EXISTS' : 'MISSING');
-    console.log('🔍 NEXT_PUBLIC_RESEND_API_KEY:', process.env.NEXT_PUBLIC_RESEND_API_KEY ? 'EXISTS' : 'MISSING');
-    
-    console.log('🔍 VITE_OPENAI_API_KEY:', process.env.VITE_OPENAI_API_KEY ? 'EXISTS' : 'MISSING');
-    console.log('🔍 OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? 'EXISTS' : 'MISSING');
 
     // Basic validation
     if (!email) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Email is required' 
+        error: 'Email is required',
+        message: 'Please provide a valid email address'
       });
     }
 
-    // Check if we have Resend API key
-    if (!process.env.RESEND_API_KEY) {
-      console.log('⚠️ No Resend API key found in environment variables');
-      console.log('⚠️ Available env vars:', Object.keys(process.env).filter(key => key.includes('RESEND')));
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid email format',
+        message: 'Please provide a valid email address'
+      });
+    }
+
+    // Check environment variables
+    console.log('🔍 Checking environment variables...');
+    const resendApiKey = process.env.RESEND_API_KEY;
+    const openaiApiKey = process.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+    
+    console.log('🔍 RESEND_API_KEY exists:', !!resendApiKey);
+    console.log('🔍 OPENAI_API_KEY exists:', !!openaiApiKey);
+
+    // If no Resend API key, simulate email sending
+    if (!resendApiKey) {
+      console.log('⚠️ No Resend API key found - simulating email send');
+      
+      // Simulate processing delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       return res.status(200).json({
         success: true,
-        message: 'Email simulated (no API key configured)',
-        emailId: `sim_${Date.now()}`
+        message: 'Email simulated successfully (no API key configured)',
+        emailId: `sim_${Date.now()}`,
+        details: {
+          mode: 'development',
+          recipient: email,
+          style: selectedStyle,
+          roomType: roomType
+        }
       });
     }
 
-    // Try to send real email using dynamic import
+    // Try to send real email
+    console.log('📤 Attempting to send real email with Resend...');
+    
     try {
-      console.log('📤 Attempting to send real email with Resend...');
-      console.log('📤 API key starts with:', process.env.RESEND_API_KEY?.substring(0, 10) + '...');
-      
       const { Resend } = await import('resend');
-      const resend = new Resend(process.env.RESEND_API_KEY);
+      const resend = new Resend(resendApiKey);
 
-      // Validate images before sending
-      const hasBeforeImage = beforeImage && beforeImage.startsWith('data:');
+      // Validate images
+      const hasBeforeImage = beforeImage && (beforeImage.startsWith('data:') || beforeImage.startsWith('http'));
       const hasAfterImage = afterImage && (afterImage.startsWith('http') || afterImage.startsWith('data:'));
       
       console.log('📧 Has valid before image:', hasBeforeImage);
@@ -86,7 +116,7 @@ export default async function handler(req, res) {
             <div style="margin: 30px 0;">
               ${hasBeforeImage ? `<div style="margin-bottom: 30px;">
                 <h3 style="margin-bottom: 10px; color: #374151;">Before:</h3>
-                <img src="${beforeImage}" style="width: 100%; max-width: 500px; border-radius: 8px; border: 3px solid #e5e7eb; display: block;" alt="Your Original Kitchen" />
+                <img src="${beforeImage}" style="width: 100%; max-width: 500px; border-radius: 8px; border: 3px solid #e5e7eb; display: block;" alt="Your Original ${roomType}" />
               </div>` : ''}
               
               ${hasAfterImage ? `<div style="margin-bottom: 30px;">
@@ -94,9 +124,6 @@ export default async function handler(req, res) {
                 <img src="${afterImage}" style="width: 100%; max-width: 500px; border-radius: 8px; border: 3px solid #10b981; display: block;" alt="AI Generated ${selectedStyle || 'Renovation'}" />
               </div>` : ''}
             </div>
-            
-            ${!hasBeforeImage ? '<p style="color: #ef4444; font-style: italic;">⚠️ Original image could not be included</p>' : ''}
-            ${!hasAfterImage ? '<p style="color: #ef4444; font-style: italic;">⚠️ AI generated image could not be included</p>' : ''}
             
             <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #3b82f6;">
               <h4 style="color: #374151; margin-bottom: 10px;">✨ Your Transformation Details:</h4>
@@ -106,11 +133,6 @@ export default async function handler(req, res) {
                 <li><strong>AI Technology:</strong> DALL-E 3 by OpenAI</li>
                 <li><strong>Generated:</strong> ${new Date().toLocaleDateString()}</li>
               </ul>
-            </div>
-            
-            <div style="background: linear-gradient(135deg, #3b82f6, #10b981); color: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-              <h3 style="margin: 0 0 10px 0;">Ready to Make This Real?</h3>
-              <p style="margin: 0; opacity: 0.9;">Connect with trusted MetroWest contractors to bring your AI design to life!</p>
             </div>
             
             <p>Thanks for using MetroWest Home AI!</p>
@@ -128,29 +150,42 @@ export default async function handler(req, res) {
       return res.status(200).json({
         success: true,
         message: 'Email sent successfully!',
-        emailId: emailResult.data?.id || 'sent'
+        emailId: emailResult.data?.id || 'sent',
+        details: {
+          mode: 'production',
+          recipient: email
+        }
       });
 
     } catch (emailError) {
-      console.error('❌ Email sending failed:', emailError.message);
-      console.error('❌ Full error:', emailError);
+      console.error('❌ Email sending failed:', emailError);
       
-      // Fallback to simulation if email fails
-      return res.status(200).json({
-        success: true,
-        message: 'Email simulated (send failed)',
-        emailId: \`sim_${Date.now()}`,
-        error: emailError.message
+      // Return error but still as JSON
+      return res.status(500).json({
+        success: false,
+        error: 'Email sending failed',
+        message: emailError.message || 'Failed to send email',
+        details: {
+          mode: 'error',
+          originalError: emailError.message
+        }
       });
     }
 
   } catch (error) {
-    console.error('💥 Function error:', error.message);
-    console.error('💥 Full error:', error);
+    console.error('💥 Function error:', error);
+    console.error('💥 Error stack:', error.stack);
+    
+    // ALWAYS return JSON, even on unexpected errors
     return res.status(500).json({
       success: false,
-      message: 'Internal server error',
-      error: error.message
+      error: 'Internal server error',
+      message: 'An unexpected error occurred while processing your request',
+      details: {
+        error: error.message,
+        timestamp: new Date().toISOString(),
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      }
     });
   }
 }
