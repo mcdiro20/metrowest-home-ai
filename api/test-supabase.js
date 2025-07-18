@@ -17,56 +17,71 @@ export default async function handler(req, res) {
   try {
     console.log('🔍 Testing Supabase connection...');
     
+    // Log all possible environment variables for debugging
+    console.log('Environment Variables:');
+    console.log('SUPABASE_URL:', process.env.SUPABASE_URL);
+    console.log('VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL);
+    console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+    console.log('SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY);
+    console.log('VITE_SUPABASE_ANON_KEY:', process.env.VITE_SUPABASE_ANON_KEY);
+    console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
     // Check environment variables
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-    
-    console.log('🔍 Environment check:');
-    console.log('🔍 SUPABASE_URL:', supabaseUrl ? 'EXISTS' : 'MISSING');
-    console.log('🔍 SUPABASE_ANON_KEY:', supabaseAnonKey ? 'EXISTS' : 'MISSING');
-    
+    const supabaseUrl =
+      process.env.SUPABASE_URL ||
+      process.env.VITE_SUPABASE_URL ||
+      process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+    const supabaseAnonKey =
+      process.env.SUPABASE_ANON_KEY ||
+      process.env.VITE_SUPABASE_ANON_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    console.log('Selected SUPABASE_URL:', supabaseUrl);
+    console.log('Selected SUPABASE_ANON_KEY:', supabaseAnonKey);
+
     if (!supabaseUrl) {
       return res.status(500).json({
         success: false,
         error: 'SUPABASE_URL environment variable is missing',
         details: {
-          checkedVars: ['SUPABASE_URL', 'VITE_SUPABASE_URL'],
+          checkedVars: ['SUPABASE_URL', 'VITE_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL'],
           solution: 'Add SUPABASE_URL to your environment variables'
         }
       });
     }
-    
+
     if (!supabaseAnonKey) {
       return res.status(500).json({
         success: false,
         error: 'SUPABASE_ANON_KEY environment variable is missing',
         details: {
-          checkedVars: ['SUPABASE_ANON_KEY', 'VITE_SUPABASE_ANON_KEY'],
+          checkedVars: ['SUPABASE_ANON_KEY', 'VITE_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY'],
           solution: 'Add SUPABASE_ANON_KEY to your environment variables'
         }
       });
     }
-    
+
     // Import and create Supabase client
-    const supabase = createClient(supabaseUrl, supabaseAnonKey); // FIX: Create the Supabase client
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
     console.log('✅ Supabase client created successfully');
-    
+
     // Test connection by fetching one row from leads table
     console.log('🔍 Attempting to fetch one row from leads table...');
-    
+
     const { data: leadRow, error: fetchError } = await supabase
       .from('leads')
       .select('*')
       .limit(1)
       .single();
-    
+
     if (fetchError) {
       console.error('❌ Fetch error:', fetchError);
-      
+
       // Provide specific error handling
       let errorMessage = fetchError.message;
       let solution = 'Check your Supabase configuration';
-      
+
       if (fetchError.code === 'PGRST116') {
         errorMessage = 'The leads table does not exist';
         solution = 'Run the migration SQL in your Supabase dashboard to create the leads table';
@@ -77,7 +92,7 @@ export default async function handler(req, res) {
         errorMessage = 'Supabase project not found';
         solution = 'Check your SUPABASE_URL in environment variables';
       }
-      
+
       return res.status(500).json({
         success: false,
         error: errorMessage,
@@ -88,17 +103,17 @@ export default async function handler(req, res) {
         }
       });
     }
-    
+
     console.log('✅ Successfully fetched row from leads table');
-    
+
     // If no rows exist, try to get table info instead
     if (!leadRow) {
       console.log('ℹ️ No rows found in leads table, checking table structure...');
-      
+
       const { data: tableInfo, error: tableError } = await supabase
         .from('leads')
         .select('count', { count: 'exact', head: true });
-      
+
       if (tableError) {
         return res.status(500).json({
           success: false,
@@ -106,7 +121,7 @@ export default async function handler(req, res) {
           details: tableError
         });
       }
-      
+
       return res.status(200).json({
         success: true,
         message: 'Supabase connection successful - leads table is empty',
@@ -117,7 +132,7 @@ export default async function handler(req, res) {
         }
       });
     }
-    
+
     // Success - return the row data
     return res.status(200).json({
       success: true,
@@ -128,7 +143,7 @@ export default async function handler(req, res) {
         sampleRowId: leadRow.id
       }
     });
-    
+
   } catch (error) {
     console.error('💥 Unexpected error:', error);
     return res.status(500).json({
