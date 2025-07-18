@@ -40,6 +40,9 @@ export default async function handler(req, res) {
     }
     
     // Import Supabase and test connection
+    console.log('Supabase URL:', supabaseUrl);
+    console.log('Supabase Anon Key:', supabaseAnonKey);
+    
     const { createClient } = await import('@supabase/supabase-js');
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
