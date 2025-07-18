@@ -67,43 +67,79 @@ export default async function handler(req, res) {
     console.log('✅ Supabase client created successfully');
 
     // Test connection by fetching one row from leads table
-    console.log('🔍 Attempting to fetch one row from leads table...');
+console.log('🔍 Attempting to fetch one row from leads table...');
 
-    const { data: leadRow, error: fetchError } = await supabase
-      .from('leads')
-      .select('*')
-      .limit(1)
-      .single();
+const { data: leadRow, error: fetchError } = await supabase
+  .from('leads')
+  .select('*')
+  .limit(1);
 
-    if (fetchError) {
-      console.error('❌ Fetch error:', fetchError);
+if (fetchError) {
+  console.error('❌ Fetch error:', fetchError);
 
-      // Provide specific error handling
-      let errorMessage = fetchError.message;
-      let solution = 'Check your Supabase configuration';
+  // Provide specific error handling
+  let errorMessage = fetchError.message;
+  let solution = 'Check your Supabase configuration';
 
-      if (fetchError.code === 'PGRST116') {
-        errorMessage = 'The leads table does not exist';
-        solution = 'Run the migration SQL in your Supabase dashboard to create the leads table';
-      } else if (fetchError.message.includes('Invalid API key')) {
-        errorMessage = 'Invalid Supabase API key';
-        solution = 'Check your SUPABASE_ANON_KEY in environment variables';
-      } else if (fetchError.message.includes('Project not found')) {
-        errorMessage = 'Supabase project not found';
-        solution = 'Check your SUPABASE_URL in environment variables';
-      }
+  if (fetchError.code === 'PGRST116') {
+    errorMessage = 'The leads table does not contain any rows';
+    solution = 'Add some data to the leads table in your Supabase dashboard';
+  } else if (fetchError.message.includes('Invalid API key')) {
+    errorMessage = 'Invalid Supabase API key';
+    solution = 'Check your SUPABASE_ANON_KEY in environment variables';
+  } else if (fetchError.message.includes('Project not found')) {
+    errorMessage = 'Supabase project not found';
+    solution = 'Check your SUPABASE_URL in environment variables';
+  }
 
-      return res.status(500).json({
-        success: false,
-        error: errorMessage,
-        details: {
-          code: fetchError.code,
-          hint: fetchError.hint,
-          solution: solution
-        }
-      });
+  return res.status(500).json({
+    success: false,
+    error: errorMessage,
+    details: {
+      code: fetchError.code,
+      hint: fetchError.hint,
+      solution: solution
     }
+  });
+}
 
+// Handle the case where no rows are returned
+if (!leadRow || leadRow.length === 0) {
+  console.log('ℹ️ No rows found in leads table, checking table structure...');
+
+  const { data: tableInfo, error: tableError } = await supabase
+    .from('leads')
+    .select('count', { count: 'exact', head: true });
+
+  if (tableError) {
+    return res.status(500).json({
+      success: false,
+      error: 'Table exists but cannot query it',
+      details: tableError
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: 'Supabase connection successful - leads table is empty',
+    data: null,
+    tableInfo: {
+      rowCount: tableInfo || 0,
+      tableExists: true
+    }
+  });
+}
+
+// Success - return the row data
+return res.status(200).json({
+  success: true,
+  message: 'Supabase connection successful',
+  data: leadRow[0], // Since we're not using .single(), we need to access the first element
+  tableInfo: {
+    hasData: true,
+    sampleRowId: leadRow[0].id
+  }
+});
     console.log('✅ Successfully fetched row from leads table');
 
     // If no rows exist, try to get table info instead
