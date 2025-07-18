@@ -40,52 +40,24 @@ export default async function handler(req, res) {
 
     console.log('🎨 Using OpenAI API for real image generation');
 
-    // Create ULTRA-SPECIFIC layout preservation prompt with enhanced parameters
-    const ultraSpecificPrompt = `CRITICAL INSTRUCTION: You must create a renovation of this EXACT ${roomType} keeping every structural element, camera angle, and spatial relationship identical.
+    // Create ULTRA-SPECIFIC layout preservation prompt
+    const ultraSpecificPrompt = `SINGLE COMPLETE KITCHEN IMAGE ONLY - NO SPLIT SCREEN OR COMPARISON
 
-MANDATORY REQUIREMENTS - MUST BE PRESERVED EXACTLY:
-- Keep the IDENTICAL camera angle, viewpoint, perspective, and framing as the original photo
-- Maintain the EXACT same ${roomType} layout: same furniture/fixture placement, same spatial configuration
-- Keep ALL structural elements in IDENTICAL positions: walls, windows, doors, ceiling, columns, beams
-- Preserve the EXACT same room proportions, dimensions, and spatial relationships
-- Keep the same floor plan and architectural layout
-- Maintain identical lighting direction, shadows, and room orientation
-- Keep the same vantage point - if photo is taken from a doorway, keep that exact viewpoint
-- Preserve the exact same fixture/furniture locations (only change style/finish/materials)
-- Keep the same ceiling height and any architectural details in identical positions
-- Maintain the exact same depth of field and photo composition
-- If there are people or objects in the photo, keep them in the same positions but update surroundings
+Transform this L-shaped corner kitchen into a beautifully renovated space.
 
-WHAT YOU CAN CHANGE (SURFACE ELEMENTS ONLY):
-Apply ${selectedStyle?.name || 'modern'} style by changing ONLY these surface elements:
-- Cabinet/furniture door styles, colors, and finishes (${selectedStyle?.prompt || 'modern design'})
-- Countertop/surface materials and colors (same shapes and sizes)
-- Appliance/fixture styles and finishes (identical locations and sizes)
-- Paint colors and wall treatments (same wall positions)
-- Light fixture styles (identical positions and mounting points)
-- Hardware, handles, and accessories
-- Backsplash/wall covering materials and patterns
-- Flooring materials and patterns (same layout and transitions)
-- Window treatments and soft furnishings
-- Decorative elements and accessories
+CRITICAL REQUIREMENTS:
+- Show ONE complete renovated kitchen only
+- Keep the exact L-shaped corner layout with open shelving on left wall
+- Maintain the same rectangular window placement and size
+- Preserve the corner cabinet configuration
+- Keep the same room dimensions and camera angle
+- NO before/after split, NO comparison, NO dividing lines
+- NO text overlays or labels
+- Result must be a single cohesive renovated kitchen image
 
-RESULT REQUIREMENTS:
-- The transformed ${roomType} must be immediately recognizable as the SAME space from the SAME exact angle
-- It should look like a professional renovation of this specific space, not a different room
-- Every structural and architectural element must remain in its exact original position
-- The camera angle, perspective, and framing must be identical to the original
-- The lighting conditions and shadows should match the original photo
-- Apply ${selectedStyle?.name || 'modern'} style elements while preserving the exact layout and vantage point
-- The result should look like "before and after" photos taken from the identical position
+RENOVATION STYLE: ${selectedStyle?.name || 'modern'} with updated cabinets, countertops, and finishes.
 
-PHOTO COMPOSITION REQUIREMENTS:
-- Match the exact camera height and angle of the original photo
-- Preserve the same field of view and photo boundaries
-- Keep the same focal point and center of composition
-- Maintain identical perspective lines and vanishing points
-- If the original photo shows partial views of adjacent rooms, keep those identical
-
-This is a RENOVATION of the existing ${roomType} shown in the image - keep the layout, structure, and camera angle identical and only update the finishes and design elements with ${selectedStyle?.name || 'modern'} style.`;
+The final image should look like a single, complete, professionally renovated L-shaped corner kitchen.`;
 
     console.log('🎨 Using ultra-specific layout preservation prompt');
 
