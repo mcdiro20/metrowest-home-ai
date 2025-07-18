@@ -46,9 +46,6 @@ export default async function handler(req, res) {
     }
     
     // Import and create Supabase client
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    
     console.log('✅ Supabase client created successfully');
     
     // Test connection by fetching one row from leads table
