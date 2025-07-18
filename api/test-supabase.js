@@ -1,3 +1,5 @@
+import { createClient } from '@supabase/supabase-js'; // Import the Supabase client
+
 export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -46,6 +48,7 @@ export default async function handler(req, res) {
     }
     
     // Import and create Supabase client
+    const supabase = createClient(supabaseUrl, supabaseAnonKey); // FIX: Create the Supabase client
     console.log('✅ Supabase client created successfully');
     
     // Test connection by fetching one row from leads table
