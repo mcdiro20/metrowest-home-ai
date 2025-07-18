@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "engines": {
-    "node": "20.x" // Add this line
+    "node": "20.x"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.51.0",
