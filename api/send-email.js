@@ -39,11 +39,11 @@ export default async function handler(req, res) {
     const { email, beforeImage, afterImage, selectedStyle, roomType, subscribe } = req.body;
 
     console.log('📧 Email request received for:', email);
-    console.log('📧 Before image available:', !!beforeImage);
-    console.log('📧 After image available:', !!afterImage);
-    console.log('📧 Before image type:', beforeImage ? (beforeImage.startsWith('data:') ? 'base64' : 'url') : 'none');
-    console.log('📧 Before image length:', beforeImage ? beforeImage.length : 0);
-    console.log('📧 After image URL:', afterImage);
+    console.log('📧 Before image exists:', !!beforeImage);
+    console.log('📧 Before image type:', beforeImage ? (beforeImage.startsWith('data:') ? 'base64' : 'url') : 'missing');
+    console.log('📧 Before image length:', beforeImage?.length || 0);
+    console.log('📧 After image exists:', !!afterImage);
+    console.log('📧 After image type:', afterImage ? (afterImage.startsWith('data:') ? 'base64' : 'url') : 'missing');
 
     // Basic validation
     if (!email) {
@@ -100,10 +100,14 @@ export default async function handler(req, res) {
       const resend = new Resend(resendApiKey);
 
       // Validate images
-      const hasBeforeImage = beforeImage && beforeImage.length > 0 && (beforeImage.startsWith('data:') || beforeImage.startsWith('http'));
-      const hasAfterImage = afterImage && (afterImage.startsWith('http') || afterImage.startsWith('data:'));
+      const hasBeforeImage = beforeImage && beforeImage.length > 100 && beforeImage.startsWith('data:image/');
+      const hasAfterImage = afterImage && afterImage.length > 10 && (afterImage.startsWith('http') || afterImage.startsWith('data:'));
       
-      console.log('📧 Final validation - Before:', hasBeforeImage, 'After:', hasAfterImage);
+      console.log('📧 Image validation:');
+      console.log('📧 - Before image valid:', hasBeforeImage);
+      console.log('📧 - After image valid:', hasAfterImage);
+      console.log('📧 - Before starts with data:image:', beforeImage?.startsWith('data:image/'));
+      console.log('📧 - After starts with http:', afterImage?.startsWith('http'));
 
       const emailResult = await resend.emails.send({
         from: 'MetroWest Home AI <onboarding@resend.dev>',
@@ -114,32 +118,29 @@ export default async function handler(req, res) {
             <h1 style="color: #2563eb; font-size: 16px; margin: 4px 0;">Your AI Design is Ready!</h1>
             <p style="margin: 2px 0; font-size: 12px;">Your <strong>${roomType || 'space'}</strong> transformation is complete!</p>
             
-            ${hasBeforeImage && hasAfterImage ? `
+            <div style="margin: 6px 0;">
               <div style="margin: 6px 0;">
                 <table style="width: 100%; border-collapse: collapse;">
                   <tr>
-                    <td style="width: 50%; padding: 1px; text-align: center;">
-                      <div style="margin: 2px 0 3px 0; color: #374151; font-size: 10px; font-weight: bold;">Before</div>
-                      <img src="${beforeImage}" style="width: 100%; max-width: 150px; height: auto; border-radius: 3px; display: block; margin: 0 auto;" />
+                  <td style="width: 50%; padding: 2px; text-align: center; vertical-align: top;">
+                    <div style="margin: 2px 0 4px 0; color: #374151; font-size: 11px; font-weight: bold;">Before</div>
+                    ${hasBeforeImage ? `
+                      <img src="${beforeImage}" style="width: 100%; max-width: 140px; height: auto; border-radius: 4px; display: block; margin: 0 auto;" />
+                    ` : `
+                      <div style="width: 140px; height: 100px; background: #f3f4f6; border-radius: 4px; margin: 0 auto; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 10px;">Original Photo</div>
+                    `}
                     </td>
-                    <td style="width: 50%; padding: 1px; text-align: center;">
-                      <div style="margin: 2px 0 3px 0; color: #059669; font-size: 10px; font-weight: bold;">After</div>
-                      <img src="${afterImage}" style="width: 100%; max-width: 150px; height: auto; border-radius: 3px; display: block; margin: 0 auto;" />
+                  <td style="width: 50%; padding: 2px; text-align: center; vertical-align: top;">
+                    <div style="margin: 2px 0 4px 0; color: #059669; font-size: 11px; font-weight: bold;">After</div>
+                    ${hasAfterImage ? `
+                      <img src="${afterImage}" style="width: 100%; max-width: 140px; height: auto; border-radius: 4px; display: block; margin: 0 auto;" />
+                    ` : `
+                      <div style="width: 140px; height: 100px; background: #f3f4f6; border-radius: 4px; margin: 0 auto; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 10px;">AI Design</div>
+                    `}
                     </td>
                   </tr>
                 </table>
-              </div>
-            ` : hasAfterImage ? `
-              <div style="text-align: center; margin: 6px 0;">
-                <div style="margin: 2px 0 3px 0; color: #059669; font-size: 12px; font-weight: bold;">Your AI Design</div>
-                <img src="${afterImage}" style="width: 100%; max-width: 300px; height: auto; border-radius: 3px; display: block; margin: 0 auto;" />
-              </div>
-            ` : hasBeforeImage ? `
-              <div style="text-align: center; margin: 6px 0;">
-                <div style="margin: 2px 0 3px 0; color: #374151; font-size: 12px; font-weight: bold;">Your Original Space</div>
-                <img src="${beforeImage}" style="width: 100%; max-width: 300px; height: auto; border-radius: 3px; display: block; margin: 0 auto;" />
-              </div>
-            ` : ''}
+            </div>
             
             <p style="margin: 4px 0; font-size: 10px; text-align: center;">Thanks for using MetroWest Home AI!</p>
             <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 4px 0;" />
