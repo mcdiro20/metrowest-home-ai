@@ -115,39 +115,32 @@ export default async function handler(req, res) {
             <p>Hello!</p>
             <p>Your AI-generated <strong>${roomType || 'space'}</strong> transformation in <strong>${selectedStyle || 'custom'}</strong> style is complete!</p>
             
-            <div style="margin: 30px 0;">
-              <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                  ${hasBeforeImage ? `
+            ${hasBeforeImage && hasAfterImage ? `
+              <div style="margin: 30px 0;">
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
                     <td style="width: 50%; padding: 10px; vertical-align: top;">
-                      <h3 style="margin-bottom: 10px; color: #374151; text-align: center;">Before:</h3>
-                      <img src="${beforeImage}" style="width: 100%; max-width: 280px; border-radius: 8px; border: 3px solid #e5e7eb; display: block; margin: 0 auto;" alt="Your Original ${roomType || 'Space'}" />
+                      <h3 style="margin-bottom: 10px; color: #374151; text-align: center;">Before</h3>
+                      <img src="${beforeImage}" style="width: 100%; max-width: 280px; border-radius: 8px; border: 3px solid #e5e7eb; display: block; margin: 0 auto;" alt="Before" />
                     </td>
-                  ` : ''}
-                  ${hasAfterImage ? `
                     <td style="width: 50%; padding: 10px; vertical-align: top;">
-                      <h3 style="margin-bottom: 10px; color: #059669; text-align: center;">After (AI Generated):</h3>
-                      <img src="${afterImage}" style="width: 100%; max-width: 280px; border-radius: 8px; border: 3px solid #10b981; display: block; margin: 0 auto;" alt="AI Generated ${selectedStyle || 'Renovation'}" />
+                      <h3 style="margin-bottom: 10px; color: #059669; text-align: center;">After</h3>
+                      <img src="${afterImage}" style="width: 100%; max-width: 280px; border-radius: 8px; border: 3px solid #10b981; display: block; margin: 0 auto;" alt="After" />
                     </td>
-                  ` : ''}
-                </tr>
-              </table>
-              
-              <!-- Fallback for single image or mobile -->
-              ${!hasBeforeImage && hasAfterImage ? `
-                <div style="text-align: center; margin: 20px 0;">
-                  <h3 style="margin-bottom: 10px; color: #059669;">Your AI Generated Design:</h3>
-                  <img src="${afterImage}" style="width: 100%; max-width: 500px; border-radius: 8px; border: 3px solid #10b981; display: block; margin: 0 auto;" alt="AI Generated ${selectedStyle || 'Renovation'}" />
-                </div>
-              ` : ''}
-              
-              ${hasBeforeImage && !hasAfterImage ? `
-                <div style="text-align: center; margin: 20px 0;">
-                  <h3 style="margin-bottom: 10px; color: #374151;">Your Original Space:</h3>
-                  <img src="${beforeImage}" style="width: 100%; max-width: 500px; border-radius: 8px; border: 3px solid #e5e7eb; display: block; margin: 0 auto;" alt="Your Original ${roomType || 'Space'}" />
-                </div>
-              ` : ''}
-            </div>
+                  </tr>
+                </table>
+              </div>
+            ` : hasAfterImage ? `
+              <div style="text-align: center; margin: 30px 0;">
+                <h3 style="margin-bottom: 10px; color: #059669; text-align: center;">Your AI Generated Design</h3>
+                <img src="${afterImage}" style="width: 100%; max-width: 500px; border-radius: 8px; border: 3px solid #10b981; display: block; margin: 0 auto;" alt="AI Generated Design" />
+              </div>
+            ` : hasBeforeImage ? `
+              <div style="text-align: center; margin: 30px 0;">
+                <h3 style="margin-bottom: 10px; color: #374151; text-align: center;">Your Original Space</h3>
+                <img src="${beforeImage}" style="width: 100%; max-width: 500px; border-radius: 8px; border: 3px solid #e5e7eb; display: block; margin: 0 auto;" alt="Original Space" />
+              </div>
+            ` : ''}
             
             <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #3b82f6;">
               <h4 style="color: #374151; margin-bottom: 10px;">✨ Your Transformation Details:</h4>
@@ -156,7 +149,6 @@ export default async function handler(req, res) {
                 <li><strong>Design Style:</strong> ${selectedStyle || 'Custom'}</li>
                 <li><strong>AI Technology:</strong> DALL-E 3 by OpenAI</li>
                 <li><strong>Generated:</strong> ${new Date().toLocaleDateString()}</li>
-                <li><strong>Images Included:</strong> ${hasBeforeImage && hasAfterImage ? 'Before & After' : hasBeforeImage ? 'Before Only' : hasAfterImage ? 'After Only' : 'None'}</li>
               </ul>
             </div>
             
