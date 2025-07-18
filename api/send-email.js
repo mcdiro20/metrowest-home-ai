@@ -107,15 +107,68 @@ export default async function handler(req, res) {
     const { Resend } = await import('resend');
     const resend = new Resend(resendApiKey);
 
+    // Prepare attachments if images are provided
+    const attachments = [];
+    
+    if (beforeImage && beforeImage.startsWith('data:image/')) {
+      // Convert base64 to buffer for attachment
+      const base64Data = beforeImage.split(',')[1];
+      const buffer = Buffer.from(base64Data, 'base64');
+      
+      attachments.push({
+        filename: 'before.jpg',
+        content: buffer,
+        contentType: 'image/jpeg'
+      });
+    }
+    
+    // For after image, we need to fetch it if it's a URL
+    if (afterImage && afterImage.startsWith('http')) {
+      try {
+        const imageResponse = await fetch(afterImage);
+        const imageBuffer = await imageResponse.arrayBuffer();
+        
+        attachments.push({
+          filename: 'after.jpg',
+          content: Buffer.from(imageBuffer),
+          contentType: 'image/jpeg'
+        });
+      } catch (fetchError) {
+        console.log('Could not fetch after image for attachment');
+      }
+    }
     const emailResult = await resend.emails.send({
       from: 'MetroWest Home AI <onboarding@resend.dev>',
       to: [email],
       subject: 'Your AI Design is Ready!',
+      attachments: attachments.length > 0 ? attachments : undefined,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h1 style="color: #2563eb;">Your AI Design is Ready!</h1>
-          <p>Your ${roomType || 'space'} transformation with ${selectedStyle || 'custom'} style is complete!</p>
-          <p>Thanks for using MetroWest Home AI!</p>
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin-bottom: 10px;">Your AI Design is Ready! 🎉</h1>
+            <p style="color: #666; font-size: 18px;">Your ${roomType || 'space'} transformation with ${selectedStyle || 'custom'} style is complete!</p>
+          </div>
+          
+          ${attachments.length > 0 ? `
+          <div style="margin: 30px 0;">
+            <h2 style="color: #333; text-align: center;">Your Before & After Images</h2>
+            <p style="color: #666; text-align: center;">See the attached high-resolution images of your transformation!</p>
+          </div>
+          ` : ''}
+          
+          <div style="background: #f8fafc; padding: 20px; border-radius: 10px; margin: 20px 0;">
+            <h3 style="color: #333; margin-top: 0;">What's Next?</h3>
+            <ul style="color: #666; line-height: 1.6;">
+              <li>Review your attached before/after images</li>
+              <li>Share your transformation with friends and family</li>
+              <li>Ready to make it real? Connect with local MetroWest contractors</li>
+            </ul>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px;">
+            <p style="color: #666;">Thanks for using MetroWest Home AI!</p>
+            <p style="color: #999; font-size: 14px;">Exclusively serving MetroWest Massachusetts homeowners</p>
+          </div>
         </div>
       `
     });
