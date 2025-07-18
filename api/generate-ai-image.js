@@ -20,6 +20,22 @@ export default async function handler(req, res) {
     console.log('🎨 Selected style:', selectedStyle);
     console.log('🎨 Image data length:', imageData?.length);
 
+    // Detailed style prompts for better layout preservation
+    const stylePrompts = {
+      'modern-minimalist': "A high-resolution photo of a modern minimalist kitchen renovation in a traditional L-shaped layout with a peninsula, sink under a window, and upper/lower cabinets on both walls. Keep all core elements (window, peninsula, stove, hood, cabinets, appliances, layout) in the exact same position as a typical early 2000s American home kitchen. Style with clean flat-front cabinets, matte black hardware, hidden appliances, and minimalist decor in white, gray, and natural wood tones. Render with realistic lighting, clean lines, and photo-level detail as if taken for a home listing.",
+      'farmhouse-chic': "A high-resolution photo of a farmhouse chic kitchen renovation in a traditional L-shaped layout with a peninsula, sink under a window, and upper/lower cabinets on both walls. Keep all core elements (window, peninsula, stove, hood, cabinets, appliances, layout) in the exact same position as a typical early 2000s American home kitchen. Style with shaker cabinets, brass hardware, a farmhouse sink, white subway tile backsplash, rustic wooden accents, and soft neutral colors. Render with realistic lighting, clean lines, and photo-level detail as if taken for a home listing.",
+      'transitional': "A high-resolution photo of a transitional style kitchen renovation in a traditional L-shaped layout with a peninsula, sink under a window, and upper/lower cabinets on both walls. Keep all core elements (window, peninsula, stove, hood, cabinets, appliances, layout) in the exact same position as a typical early 2000s American home kitchen. Style with a mix of modern and traditional design: shaker cabinets, mixed metal finishes, neutral countertops, and subtle crown molding. Render with realistic lighting, clean lines, and photo-level detail as if taken for a home listing.",
+      'coastal-new-england': "A high-resolution photo of a coastal New England kitchen renovation in a traditional L-shaped layout with a peninsula, sink under a window, and upper/lower cabinets on both walls. Keep all core elements (window, peninsula, stove, hood, cabinets, appliances, layout) in the exact same position as a typical early 2000s American home kitchen. Style with light blue or white cabinetry, nautical decor, shiplap walls, brass or chrome accents, and a fresh, airy atmosphere. Render with realistic lighting, clean lines, and photo-level detail as if taken for a home listing.",
+      'contemporary-luxe': "A high-resolution photo of a contemporary luxe kitchen renovation in a traditional L-shaped layout with a peninsula, sink under a window, and upper/lower cabinets on both walls. Keep all core elements (window, peninsula, stove, hood, cabinets, appliances, layout) in the exact same position as a typical early 2000s American home kitchen. Style with high-end finishes like marble or quartz countertops, gold or brushed brass hardware, integrated appliances, dark cabinetry below and glossy white above, and statement lighting. Render with realistic lighting, clean lines, and photo-level detail as if taken for a home listing.",
+      'eclectic-bohemian': "A high-resolution photo of an eclectic bohemian kitchen renovation in a traditional L-shaped layout with a peninsula, sink under a window, and upper/lower cabinets on both walls. Keep all core elements (window, peninsula, stove, hood, cabinets, appliances, layout) in the exact same position as a typical early 2000s American home kitchen. Style with a mix of vintage and modern elements, colorful tile backsplash, open shelving, hanging plants, patterned rugs, and vibrant decor. Render with realistic lighting, clean lines, and photo-level detail as if taken for a home listing."
+    };
+
+    // Get the specific prompt for the selected style
+    const styleId = selectedStyle?.id || 'modern-minimalist';
+    const specificPrompt = stylePrompts[styleId] || stylePrompts['modern-minimalist'];
+
+    console.log('🎨 Using detailed style-specific prompt for:', styleId);
+
     // Check for OpenAI API key
     const openaiKey = process.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
     
@@ -39,27 +55,6 @@ export default async function handler(req, res) {
     });
 
     console.log('🎨 Using OpenAI API for real image generation');
-
-    // Create ULTRA-SPECIFIC layout preservation prompt
-    const ultraSpecificPrompt = `SINGLE COMPLETE KITCHEN IMAGE ONLY - NO SPLIT SCREEN OR COMPARISON
-
-Transform this L-shaped corner kitchen into a beautifully renovated space.
-
-CRITICAL REQUIREMENTS:
-- Show ONE complete renovated kitchen only
-- Keep the exact L-shaped corner layout with open shelving on left wall
-- Maintain the same rectangular window placement and size
-- Preserve the corner cabinet configuration
-- Keep the same room dimensions and camera angle
-- NO before/after split, NO comparison, NO dividing lines
-- NO text overlays or labels
-- Result must be a single cohesive renovated kitchen image
-
-RENOVATION STYLE: ${selectedStyle?.name || 'modern'} with updated cabinets, countertops, and finishes.
-
-The final image should look like a single, complete, professionally renovated L-shaped corner kitchen.`;
-
-    console.log('🎨 Using ultra-specific layout preservation prompt');
 
     try {
       // Try image variation first (best for layout preservation)
@@ -87,7 +82,7 @@ The final image should look like a single, complete, professionally renovated L-
     // Fallback to generation with ultra-specific prompt
     const generationResponse = await openai.images.generate({
       model: "dall-e-3",
-      prompt: ultraSpecificPrompt,
+      prompt: specificPrompt,
       n: 1,
       size: "1024x1024",
       quality: "hd",
