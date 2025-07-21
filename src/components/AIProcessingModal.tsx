@@ -8,6 +8,7 @@ interface AIProcessingModalProps {
   uploadedFile?: File;
   selectedStyle?: {id: string; name: string; prompt: string};
   roomType?: string;
+  customPrompt?: string;
 }
 
 const AIProcessingModal: React.FC<AIProcessingModalProps> = ({ 
@@ -16,7 +17,8 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
   onComplete, 
   uploadedFile,
   selectedStyle,
-  roomType = 'kitchen'
+  roomType = 'kitchen',
+  customPrompt
 }) => {
   const [stage, setStage] = useState<'analyzing' | 'generating' | 'complete'>('analyzing');
   const [progress, setProgress] = useState(0);
@@ -86,7 +88,8 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
           const renovationResult = await DalleRenovationService.processRenovationRequest({
             imageFile: uploadedFile,
             styleChoice: selectedStyle?.id || 'modern-minimalist',
-            roomType: roomType
+            roomType: roomType,
+            customPrompt: customPrompt
           });
           
           if (renovationResult.success && renovationResult.imageUrl) {

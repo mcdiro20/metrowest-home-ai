@@ -13,17 +13,28 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { imageData, prompt, roomType, selectedStyle } = req.body;
+    const { imageData, prompt, roomType, selectedStyle, customPrompt } = req.body;
 
     console.log('🎨 DALL-E Renovation Request:');
     console.log('🎨 Room type:', roomType);
     console.log('🎨 Selected style:', selectedStyle);
+    console.log('🎨 Custom prompt:', customPrompt);
     console.log('🎨 Image data length:', imageData?.length);
 
-    // Use the detailed renovation prompt
-    const renovationPrompt = prompt || `CRITICAL: Renovate the EXACT SAME ${roomType} shown in the uploaded image. Keep ALL cabinet positions, appliance locations, windows, and room layout IDENTICAL. Only change cabinet finishes, countertops, backsplash, and paint colors to ${selectedStyle?.name || 'modern'} style. This is a MAKEOVER, not a new room design.`;
+    // Use the provided prompt or create a simple one
+    let renovationPrompt = prompt;
     
-    console.log('🎨 Using detailed renovation prompt');
+    if (!renovationPrompt) {
+      renovationPrompt = `Create a beautiful ${roomType} renovation maintaining the exact same layout and architectural features. Only update finishes, colors, and fixtures to ${selectedStyle?.name || 'modern'} style.`;
+      
+      if (customPrompt) {
+        renovationPrompt += ` Additional requirements: ${customPrompt}`;
+      }
+      
+      renovationPrompt += ` Create a photorealistic image without any text or labels.`;
+    }
+    
+    console.log('🎨 Using renovation prompt');
 
     // Check for OpenAI API key
     const openaiKey = process.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY;

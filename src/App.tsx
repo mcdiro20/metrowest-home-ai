@@ -25,6 +25,7 @@ function App() {
   const [aiResult, setAiResult] = useState<{originalImage: string; originalImageBase64?: string; generatedImage: string; prompt: string} | undefined>();
   const [uploadedFile, setUploadedFile] = useState<File | undefined>();
   const [selectedStyle, setSelectedStyle] = useState<{id: string; name: string; prompt: string} | undefined>();
+  const [customPrompt, setCustomPrompt] = useState<string>('');
   const [userZipCode, setUserZipCode] = useState<string>('');
   const [roomType, setRoomType] = useState<string>('');
   const [emailSubmitted, setEmailSubmitted] = useState(false);
@@ -58,10 +59,31 @@ function App() {
 
   const handleStyleSelected = (style: {id: string; name: string; description: string; imageUrl: string; prompt: string}) => {
     setSelectedStyle(style);
+    setCustomPrompt('');
     setShowStyleSelectionModal(false);
     setShowAIProcessingModal(true);
   };
 
+  const handleCustomStyleSelected = (customPromptText: string, baseStyle?: string) => {
+    setCustomPrompt(customPromptText);
+    if (baseStyle) {
+      // Find the base style
+      const baseStyleObj = {
+        id: baseStyle,
+        name: 'Custom Style',
+        prompt: customPromptText
+      };
+      setSelectedStyle(baseStyleObj);
+    } else {
+      setSelectedStyle({
+        id: 'custom',
+        name: 'Custom Style',
+        prompt: customPromptText
+      });
+    }
+    setShowStyleSelectionModal(false);
+    setShowAIProcessingModal(true);
+  };
   const handleAIProcessingComplete = (result: {originalImage: string; generatedImage: string; prompt: string}) => {
     // Save design request to database
     const saveDesignRequest = async () => {
@@ -158,6 +180,7 @@ function App() {
         isOpen={showStyleSelectionModal}
         onClose={() => setShowStyleSelectionModal(false)}
         onStyleSelected={handleStyleSelected}
+        onCustomStyleSelected={handleCustomStyleSelected}
         roomType={roomType}
       />
       
@@ -168,6 +191,7 @@ function App() {
         uploadedFile={uploadedFile}
         selectedStyle={selectedStyle}
         roomType={roomType}
+        customPrompt={customPrompt}
       />
       
       <EmailModal 

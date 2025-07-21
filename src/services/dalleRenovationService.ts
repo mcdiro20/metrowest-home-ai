@@ -2,6 +2,7 @@ export interface RenovationRequest {
   imageFile: File;
   styleChoice: string;
   roomType: string;
+  customPrompt?: string;
 }
 
 export interface RenovationResponse {
@@ -15,25 +16,7 @@ export interface RenovationResponse {
 
 export class DalleRenovationService {
   static generateRenovationPrompt(styleChoice: string, roomType: string): string {
-    const basePrompt = `CRITICAL LAYOUT PRESERVATION INSTRUCTION: You MUST create a renovation of the EXACT SAME KITCHEN shown in the uploaded image. This is NOT a new kitchen design - it is a MAKEOVER of the existing space.
-
-MANDATORY REQUIREMENTS - DO NOT CHANGE:
-- Keep the EXACT SAME L-shaped counter configuration
-- Keep the corner sink in the EXACT SAME POSITION with window above it
-- Keep the stove/range on the EXACT SAME wall position
-- Keep ALL cabinet positions identical (upper and lower)
-- Keep the EXACT SAME room dimensions and proportions
-- Keep the EXACT SAME camera angle and perspective
-- Keep the EXACT SAME window size and position above sink
-- Keep the EXACT SAME skylight position
-- Keep the EXACT SAME floor area (no furniture additions)
-- This is a KITCHEN ONLY - do not add living room furniture
-
-RENOVATION APPROACH: Think of this as painting/refinishing the EXISTING kitchen, not building a new one. Only change the surface finishes, cabinet doors, countertop material, and paint colors.
-
-WHAT YOU CAN CHANGE: Cabinet door style and color, countertop material, backsplash, wall paint, flooring material, light fixtures, hardware, and small appliances.
-
-WHAT YOU CANNOT CHANGE: Room layout, cabinet positions, appliance locations, window positions, room size, or add any furniture.`;
+    const basePrompt = `Create a beautiful interior renovation that maintains the exact same room layout and architectural features as the original image. This is a makeover of the existing space - preserve all structural elements, room dimensions, window and door positions, and built-in features. Only update finishes, colors, fixtures, and furniture to match the new design style. Do not add text, labels, or annotations to the image.`;
 
     const roomSpecificFeatures = {
       kitchen: `- Existing cabinet layout and island/peninsula positions
@@ -149,11 +132,38 @@ WHAT YOU CANNOT CHANGE: Room layout, cabinet positions, appliance locations, win
 
     const selectedStylePrompt = stylePrompts[styleChoice as keyof typeof stylePrompts] || stylePrompts['modern-minimalist'];
 
-    return `${basePrompt}\n\n${selectedStylePrompt}\n\nFINAL CRITICAL REMINDER: You are renovating the EXISTING kitchen in the uploaded image. Keep the L-shaped layout, corner sink with window, stove position, and all cabinet locations IDENTICAL. Only update the finishes and materials in the ${styleChoice} style. Do not add furniture or change the room layout.`;
-
-    return `${basePrompt}\n\n${selectedStylePrompt}\n\nFINAL REMINDER: This renovation must maintain the exact same room layout, architectural features, and spatial relationships as the original uploaded image. Only the finishes, colors, fixtures, and furniture should reflect the new ${styleChoice} style.`;
+    return `${basePrompt}\n\n${selectedStylePrompt}\n\nCreate a photorealistic interior image without any text, labels, or annotations. Focus on beautiful finishes and design elements in the ${styleChoice} style while preserving the original room's structure.`;
   }
 
+  static generateCustomRenovationPrompt(styleChoice: string, roomType: string, customPrompt: string): string {
+    const basePrompt = `Create a beautiful interior renovation that maintains the exact same room layout and architectural features as the original image. This is a makeover of the existing space - preserve all structural elements, room dimensions, window and door positions, and built-in features. Only update finishes, colors, fixtures, and furniture. Do not add text, labels, or annotations to the image.`;
+    
+    let combinedPrompt = basePrompt;
+    
+    // If there's a preset style, include it
+    if (styleChoice && styleChoice !== 'custom') {
+      const stylePrompts = {
+        'modern-minimalist': 'Apply modern minimalist design with clean lines, neutral colors, and minimal ornamentation.',
+        'farmhouse-chic': 'Apply farmhouse chic design with rustic elements, warm colors, and vintage-inspired fixtures.',
+        'transitional': 'Apply transitional design blending traditional and contemporary elements with warm neutrals.',
+        'coastal-new-england': 'Apply coastal New England design with light colors, natural materials, and nautical touches.',
+        'contemporary-luxe': 'Apply contemporary luxe design with premium materials, rich colors, and sophisticated finishes.',
+        'eclectic-bohemian': 'Apply eclectic bohemian design with rich colors, mixed textures, and global-inspired elements.'
+      };
+      
+      const styleDescription = stylePrompts[styleChoice as keyof typeof stylePrompts];
+      if (styleDescription) {
+        combinedPrompt += `\n\n${styleDescription}`;
+      }
+    }
+    
+    // Add the custom prompt
+    combinedPrompt += `\n\nAdditional requirements: ${customPrompt}`;
+    
+    combinedPrompt += `\n\nCreate a photorealistic interior image without any text, labels, or annotations.`;
+    
+    return combinedPrompt;
+  }
   static async processRenovationRequest(request: RenovationRequest): Promise<RenovationResponse> {
     try {
       console.log('🎨 Starting DALL-E renovation process...');
@@ -161,7 +171,9 @@ WHAT YOU CANNOT CHANGE: Room layout, cabinet positions, appliance locations, win
       console.log('🎨 Style:', request.styleChoice);
 
       // Generate the comprehensive prompt
-      const renovationPrompt = this.generateRenovationPrompt(request.styleChoice, request.roomType);
+      const renovationPrompt = request.customPrompt 
+        ? this.generateCustomRenovationPrompt(request.styleChoice, request.roomType, request.customPrompt)
+        : this.generateRenovationPrompt(request.styleChoice, request.roomType);
       console.log('📝 Generated renovation prompt');
 
       // Check for OpenAI API key

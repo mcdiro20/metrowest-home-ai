@@ -13,6 +13,7 @@ interface StyleSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onStyleSelected: (style: StyleOption) => void;
+  onCustomStyleSelected: (customPrompt: string, baseStyle?: string) => void;
   roomType: string;
 }
 
@@ -20,9 +21,13 @@ const StyleSelectionModal: React.FC<StyleSelectionModalProps> = ({
   isOpen, 
   onClose, 
   onStyleSelected,
+  onCustomStyleSelected,
   roomType 
 }) => {
   const [selectedStyle, setSelectedStyle] = useState<StyleOption | null>(null);
+  const [showCustomPrompt, setShowCustomPrompt] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState('');
+  const [selectedBaseStyle, setSelectedBaseStyle] = useState<string>('');
 
   const kitchenStyles: StyleOption[] = [
     {
@@ -121,7 +126,9 @@ const StyleSelectionModal: React.FC<StyleSelectionModalProps> = ({
   };
 
   const handleContinue = () => {
-    if (selectedStyle) {
+    if (showCustomPrompt && customPrompt.trim()) {
+      onCustomStyleSelected(customPrompt, selectedBaseStyle);
+    } else if (selectedStyle) {
       onStyleSelected(selectedStyle);
     }
   };
@@ -148,54 +155,126 @@ const StyleSelectionModal: React.FC<StyleSelectionModalProps> = ({
         </div>
 
         {/* Style Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {styles.map((style) => (
-            <div
-              key={style.id}
-              onClick={() => handleStyleClick(style)}
-              className={`relative cursor-pointer group transition-all duration-300 ${
-                selectedStyle?.id === style.id
-                  ? 'ring-4 ring-blue-500 ring-offset-2'
-                  : 'hover:ring-2 hover:ring-blue-300 hover:ring-offset-1'
-              }`}
-            >
-              <div className="relative overflow-hidden rounded-xl bg-gray-100">
-                <img
-                  src={style.imageUrl}
-                  alt={style.name}
-                  className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent">
-                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                    <h4 className="text-lg font-semibold mb-1">{style.name}</h4>
-                    <p className="text-sm text-white/90">{style.description}</p>
+        {!showCustomPrompt ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {styles.map((style) => (
+              <div
+                key={style.id}
+                onClick={() => handleStyleClick(style)}
+                className={`relative cursor-pointer group transition-all duration-300 ${
+                  selectedStyle?.id === style.id
+                    ? 'ring-4 ring-blue-500 ring-offset-2'
+                    : 'hover:ring-2 hover:ring-blue-300 hover:ring-offset-1'
+                }`}
+              >
+                <div className="relative overflow-hidden rounded-xl bg-gray-100">
+                  <img
+                    src={style.imageUrl}
+                    alt={style.name}
+                    className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  
+                  {/* Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent">
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                      <h4 className="text-lg font-semibold mb-1">{style.name}</h4>
+                      <p className="text-sm text-white/90">{style.description}</p>
+                    </div>
                   </div>
+
+                  {/* Selection Indicator */}
+                  {selectedStyle?.id === style.id && (
+                    <div className="absolute top-3 right-3 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                      <Check className="w-5 h-5 text-white" />
+                    </div>
+                  )}
+
+                  {/* Hover Effect */}
+                  <div className="absolute inset-0 bg-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </div>
-
-                {/* Selection Indicator */}
-                {selectedStyle?.id === style.id && (
-                  <div className="absolute top-3 right-3 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                    <Check className="w-5 h-5 text-white" />
+              </div>
+            ))}
+            
+            {/* Custom Style Option */}
+            <div
+              onClick={() => setShowCustomPrompt(true)}
+              className="relative cursor-pointer group transition-all duration-300 hover:ring-2 hover:ring-purple-300 hover:ring-offset-1"
+            >
+              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 h-48 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl text-white">✨</span>
                   </div>
-                )}
-
-                {/* Hover Effect */}
-                <div className="absolute inset-0 bg-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <h4 className="text-lg font-semibold text-purple-800 mb-1">Custom Style</h4>
+                  <p className="text-sm text-purple-600">Describe your own vision</p>
+                </div>
+                <div className="absolute inset-0 bg-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="mb-8">
+            <div className="bg-gray-50 rounded-xl p-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Describe Your Custom Style</h4>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Base Style (Optional)
+                </label>
+                <select
+                  value={selectedBaseStyle}
+                  onChange={(e) => setSelectedBaseStyle(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+                >
+                  <option value="">No base style</option>
+                  {styles.map((style) => (
+                    <option key={style.id} value={style.id}>{style.name}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Choose a base style to combine with your custom requirements</p>
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Custom Requirements
+                </label>
+                <textarea
+                  value={customPrompt}
+                  onChange={(e) => setCustomPrompt(e.target.value)}
+                  placeholder="Describe your vision... (e.g., 'Add warm wood accents, brass fixtures, and emerald green cabinets with marble countertops')"
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none resize-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">Be specific about colors, materials, fixtures, and design elements you want</p>
+              </div>
+              
+              <button
+                onClick={() => {
+                  setShowCustomPrompt(false);
+                  setCustomPrompt('');
+                  setSelectedBaseStyle('');
+                }}
+                className="text-sm text-gray-600 hover:text-gray-800"
+              >
+                ← Back to preset styles
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Continue Button */}
         <div className="flex justify-center">
           <button
             onClick={handleContinue}
-            disabled={!selectedStyle}
+            disabled={!selectedStyle && (!showCustomPrompt || !customPrompt.trim())}
             className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {selectedStyle ? `Continue with ${selectedStyle.name}` : 'Select a Style to Continue'}
+            {showCustomPrompt && customPrompt.trim() 
+              ? 'Continue with Custom Style'
+              : selectedStyle 
+                ? `Continue with ${selectedStyle.name}` 
+                : 'Select a Style to Continue'
+            }
           </button>
         </div>
 
