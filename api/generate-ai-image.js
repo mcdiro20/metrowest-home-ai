@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     console.log('🎨 Image data length:', imageData?.length);
 
     // Use the detailed renovation prompt
-    const renovationPrompt = prompt || `Transform this ${roomType} into a ${selectedStyle?.name || 'modern'} style renovation while keeping the exact same layout, dimensions, and architectural features. Only change finishes, colors, fixtures, and furniture.`;
+    const renovationPrompt = prompt || `CRITICAL: Renovate the EXACT SAME ${roomType} shown in the uploaded image. Keep ALL cabinet positions, appliance locations, windows, and room layout IDENTICAL. Only change cabinet finishes, countertops, backsplash, and paint colors to ${selectedStyle?.name || 'modern'} style. This is a MAKEOVER, not a new room design.`;
     
     console.log('🎨 Using detailed renovation prompt');
 
@@ -59,14 +59,37 @@ export default async function handler(req, res) {
       // Use DALL-E 3 with detailed renovation prompt
       console.log('🎨 Generating with detailed renovation prompt...');
       
-      const generationResponse = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: renovationPrompt,
-        n: 1,
-        size: "1024x1024",
-        quality: "hd",
-        style: "natural"
-      });
+      // Try DALL-E 2 image editing first for better layout preservation
+      let generationResponse;
+      
+      try {
+        console.log('🎨 Attempting DALL-E 2 image editing for better layout preservation...');
+        
+        // Convert base64 to buffer for DALL-E 2 editing
+        const base64Data = imageData.split(',')[1];
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+        
+        generationResponse = await openai.images.edit({
+          image: imageBuffer,
+          prompt: `Renovate this kitchen with ${selectedStyle?.name || 'modern'} style finishes. Keep the exact same layout, cabinet positions, and appliance locations. Only change cabinet doors, countertops, backsplash, and colors.`,
+          n: 1,
+          size: "1024x1024"
+        });
+        
+        console.log('✅ DALL-E 2 editing successful');
+        
+      } catch (editError) {
+        console.log('❌ DALL-E 2 editing failed, trying DALL-E 3 generation:', editError.message);
+        
+        generationResponse = await openai.images.generate({
+          model: "dall-e-3",
+          prompt: renovationPrompt,
+          n: 1,
+          size: "1024x1024",
+          quality: "hd",
+          style: "natural"
+        });
+      }
 
       const generatedImageUrl = generationResponse.data[0]?.url;
       

@@ -15,7 +15,26 @@ export interface RenovationResponse {
 
 export class DalleRenovationService {
   static generateRenovationPrompt(styleChoice: string, roomType: string): string {
-    // Room-specific preservation requirements
+    const basePrompt = `CRITICAL LAYOUT PRESERVATION INSTRUCTION: You MUST create a renovation of the EXACT SAME KITCHEN shown in the uploaded image. This is NOT a new kitchen design - it is a MAKEOVER of the existing space.
+
+MANDATORY REQUIREMENTS - DO NOT CHANGE:
+- Keep the EXACT SAME L-shaped counter configuration
+- Keep the corner sink in the EXACT SAME POSITION with window above it
+- Keep the stove/range on the EXACT SAME wall position
+- Keep ALL cabinet positions identical (upper and lower)
+- Keep the EXACT SAME room dimensions and proportions
+- Keep the EXACT SAME camera angle and perspective
+- Keep the EXACT SAME window size and position above sink
+- Keep the EXACT SAME skylight position
+- Keep the EXACT SAME floor area (no furniture additions)
+- This is a KITCHEN ONLY - do not add living room furniture
+
+RENOVATION APPROACH: Think of this as painting/refinishing the EXISTING kitchen, not building a new one. Only change the surface finishes, cabinet doors, countertop material, and paint colors.
+
+WHAT YOU CAN CHANGE: Cabinet door style and color, countertop material, backsplash, wall paint, flooring material, light fixtures, hardware, and small appliances.
+
+WHAT YOU CANNOT CHANGE: Room layout, cabinet positions, appliance locations, window positions, room size, or add any furniture.`;
+
     const roomSpecificFeatures = {
       kitchen: `- Existing cabinet layout and island/peninsula positions
 - Appliance locations and sizes (refrigerator, stove, dishwasher areas)
@@ -59,20 +78,6 @@ export class DalleRenovationService {
 - Natural light sources and fixture locations
 - Any unique structural elements`
     };
-
-    const basePrompt = `RENOVATION INSTRUCTION: Transform the uploaded interior image into a ${styleChoice} style renovation while preserving the EXACT SAME spatial layout.
-
-CRITICAL PRESERVATION REQUIREMENTS:
-- Maintain identical room dimensions and proportions
-- Keep all windows and doors in exact same positions and sizes
-- Preserve existing architectural elements (beams, columns, built-ins, moldings)
-- Maintain the same camera angle and perspective
-- Keep the same lighting direction and natural light sources
-${roomSpecificFeatures[roomType as keyof typeof roomSpecificFeatures] || roomSpecificFeatures['other']}
-
-RENOVATION APPROACH: This is a MAKEOVER of the existing space, not a new room. Think "same bones, new finishes." Only change: wall colors, finishes, fixtures, furniture, and decorative elements.
-
-IMPORTANT: The renovated image must look like the same room photographed after a renovation, maintaining all structural elements while updating the aesthetic to ${styleChoice} style.`;
 
     const stylePrompts = {
       'modern-minimalist': `MODERN MINIMALIST STYLE APPLICATION:
@@ -143,6 +148,8 @@ IMPORTANT: The renovated image must look like the same room photographed after a
     };
 
     const selectedStylePrompt = stylePrompts[styleChoice as keyof typeof stylePrompts] || stylePrompts['modern-minimalist'];
+
+    return `${basePrompt}\n\n${selectedStylePrompt}\n\nFINAL CRITICAL REMINDER: You are renovating the EXISTING kitchen in the uploaded image. Keep the L-shaped layout, corner sink with window, stove position, and all cabinet locations IDENTICAL. Only update the finishes and materials in the ${styleChoice} style. Do not add furniture or change the room layout.`;
 
     return `${basePrompt}\n\n${selectedStylePrompt}\n\nFINAL REMINDER: This renovation must maintain the exact same room layout, architectural features, and spatial relationships as the original uploaded image. Only the finishes, colors, fixtures, and furniture should reflect the new ${styleChoice} style.`;
   }
