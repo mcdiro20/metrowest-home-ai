@@ -82,7 +82,7 @@ export default async function handler(req, res) {
         
         generationResponse = await openai.images.edit({
           image: imageBuffer,
-          prompt: `Renovate this kitchen with ${selectedStyle?.name || 'modern'} style finishes. Keep the exact same layout, cabinet positions, and appliance locations. Only change cabinet doors, countertops, backsplash, and colors.`,
+          prompt: `Update this ${roomType} with ${selectedStyle?.name || 'modern'} style finishes. Keep everything in the same position - only change colors, materials, and surface finishes. No text or labels.`,
           n: 1,
           size: "1024x1024"
         });

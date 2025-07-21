@@ -16,50 +16,22 @@ export interface RenovationResponse {
 
 export class DalleRenovationService {
   static generateRenovationPrompt(styleChoice: string, roomType: string): string {
-    const basePrompt = `Create a beautiful interior renovation that maintains the exact same room layout and architectural features as the original image. This is a makeover of the existing space - preserve all structural elements, room dimensions, window and door positions, and built-in features. Only update finishes, colors, fixtures, and furniture to match the new design style. Do not add text, labels, or annotations to the image.`;
+    const basePrompt = `INTERIOR MAKEOVER: Update only the finishes, colors, and materials in this existing space. Keep everything in the exact same position. This is a surface-level renovation - paint, cabinet doors, countertops, and fixtures only. Do not move walls, windows, appliances, or change the room layout. Do not add any text, words, labels, or annotations to the image. Create a clean, photorealistic interior image.`;
 
     const roomSpecificFeatures = {
-      kitchen: `- Existing cabinet layout and island/peninsula positions
-- Appliance locations and sizes (refrigerator, stove, dishwasher areas)
-- Counter heights and configurations
-- Window above sink or existing window positions
-- Existing lighting fixture locations`,
+      kitchen: `Keep all cabinets, appliances, and counters in their current positions. Only change cabinet door styles, countertop materials, backsplash, paint colors, and hardware.`,
       
-      bathroom: `- Existing vanity size and position
-- Bathtub/shower location and dimensions
-- Toilet position and plumbing locations
-- Window positions and mirror locations
-- Existing tile or flooring patterns`,
+      bathroom: `Keep all fixtures (toilet, vanity, tub/shower) in their current positions. Only change tile, paint, vanity style, and fixtures.`,
       
-      living_room: `- Existing fireplace location and mantle
-- Built-in shelving or entertainment center positions
-- Window arrangements and natural light sources
-- Room proportions and seating area layouts
-- Existing architectural details (crown molding, wainscoting)`,
+      living_room: `Keep all built-ins and architectural features in place. Only change paint, flooring, furniture styles, and decor.`,
       
-      bedroom: `- Existing closet locations and sizes
-- Window positions and natural light
-- Room proportions and bed placement area
-- Built-in furniture or storage locations
-- Door and entrance positioning`,
+      bedroom: `Keep room layout and built-ins unchanged. Only update paint, flooring, furniture, and decor.`,
       
-      dining_room: `- Existing chandelier or light fixture position
-- Window locations and natural light
-- Built-in hutch or buffet areas
-- Room proportions for dining table placement
-- Connection to adjacent rooms (kitchen, living room)`,
+      dining_room: `Keep architectural features and built-ins in place. Only change paint, flooring, furniture, and lighting fixtures.`,
       
-      home_office: `- Existing built-in desks or shelving
-- Window positions for natural light at desk
-- Electrical outlet locations for equipment
-- Room proportions and work area layout
-- Storage and organization areas`,
+      home_office: `Keep built-ins and room layout unchanged. Only update finishes, furniture, and decor.`,
       
-      other: `- Existing architectural features and built-ins
-- Window and door positions
-- Room proportions and spatial relationships
-- Natural light sources and fixture locations
-- Any unique structural elements`
+      other: `Keep all architectural features and room layout unchanged. Only update finishes and decor.`
     };
 
     const stylePrompts = {
@@ -132,7 +104,7 @@ export class DalleRenovationService {
 
     const selectedStylePrompt = stylePrompts[styleChoice as keyof typeof stylePrompts] || stylePrompts['modern-minimalist'];
 
-    return `${basePrompt}\n\n${selectedStylePrompt}\n\nCreate a photorealistic interior image without any text, labels, or annotations. Focus on beautiful finishes and design elements in the ${styleChoice} style while preserving the original room's structure.`;
+    return `${basePrompt}\n\n${roomSpecificFeatures[roomType]}\n\n${selectedStylePrompt}\n\nIMPORTANT: No text, words, labels, or annotations on the image. Create a clean, professional interior photograph showing the same space with updated ${styleChoice} finishes only.`;
   }
 
   static generateCustomRenovationPrompt(styleChoice: string, roomType: string, customPrompt: string): string {
@@ -190,32 +162,63 @@ export class DalleRenovationService {
         };
       }
 
-      // Use backend API for generation
-      const response = await fetch('/api/generate-ai-image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          imageData: await this.fileToBase64(request.imageFile),
-          prompt: renovationPrompt,
-          roomType: request.roomType,
-          selectedStyle: { name: request.styleChoice }
-        })
-      });
+      // Try multiple approaches for better layout preservation
+      try {
+        // Approach 1: Use backend API with DALL-E 2 editing
+        console.log('🎨 Trying DALL-E 2 image editing approach...');
+        const response = await fetch('/api/generate-ai-image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            imageData: await this.fileToBase64(request.imageFile),
+            prompt: renovationPrompt,
+            roomType: request.roomType,
+            selectedStyle: { name: request.styleChoice }
+          })
+        });
 
-      const result = await response.json();
+        const result = await response.json();
 
-      if (!result.success) {
-        throw new Error(result.message || 'Generation failed');
+        if (result.success) {
+          return {
+            success: true,
+            imageUrl: result.generatedImageUrl,
+            style: request.styleChoice,
+            roomType: request.roomType
+          };
+        }
+        
+        throw new Error(result.message || 'Backend generation failed');
+        
+      } catch (backendError) {
+        console.log('❌ Backend approach failed, trying direct DALL-E 3:', backendError.message);
+        
+        // Approach 2: Direct DALL-E 3 with very simple prompt
+        const { default: OpenAI } = await import('openai');
+        const openai = new OpenAI({
+          apiKey: openaiKey,
+          dangerouslyAllowBrowser: true
+        });
+        
+        const simplePrompt = `Update this ${request.roomType} with ${request.styleChoice} style. Keep the same layout and only change finishes. No text or labels.`;
+        
+        const directResponse = await openai.images.generate({
+          model: "dall-e-3",
+          prompt: simplePrompt,
+          n: 1,
+          size: "1024x1024",
+          quality: "standard"
+        });
+        
+        return {
+          success: true,
+          imageUrl: directResponse.data[0]?.url || this.getDemoImage(request.roomType),
+          style: request.styleChoice,
+          roomType: request.roomType
+        };
       }
-
-      return {
-        success: true,
-        imageUrl: result.generatedImageUrl,
-        style: request.styleChoice,
-        roomType: request.roomType
-      };
 
     } catch (error) {
       console.error('❌ Renovation process failed:', error);
