@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Zap, Clock, CheckCircle } from 'lucide-react';
+import { X, Zap, Clock, CheckCircle, Eye, Cpu } from 'lucide-react';
 
 interface AIProcessingModalProps {
   isOpen: boolean;
@@ -21,6 +21,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
   const [stage, setStage] = useState<'analyzing' | 'generating' | 'complete'>('analyzing');
   const [progress, setProgress] = useState(0);
   const [timeElapsed, setTimeElapsed] = useState(0);
+  const [currentStep, setCurrentStep] = useState<'analysis' | 'prompt' | 'generation' | 'complete'>('analysis');
 
   useEffect(() => {
     if (!isOpen || !uploadedFile) return;
@@ -31,22 +32,31 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
 
     const processImage = async () => {
       try {
-        // Stage 1: Analyzing (0-30%)
+        // Stage 1: Image Analysis (0-20%)
         setStage('analyzing');
-        for (let i = 0; i <= 30; i += 2) {
+        setCurrentStep('analysis');
+        for (let i = 0; i <= 20; i += 2) {
+          setProgress(i);
+          await new Promise(resolve => setTimeout(resolve, 150));
+        }
+
+        // Stage 2: Prompt Generation (20-30%)
+        setCurrentStep('prompt');
+        for (let i = 20; i <= 30; i += 2) {
           setProgress(i);
           await new Promise(resolve => setTimeout(resolve, 100));
         }
 
-        // Stage 2: Generating (30-90%)
+        // Stage 3: AI Generation (30-90%)
         setStage('generating');
+        setCurrentStep('generation');
         
-        console.log('🎨 Starting AI image generation...');
+        console.log('🎨 Starting enhanced AI image generation...');
         console.log('🎨 Uploaded file:', uploadedFile?.name);
         console.log('🎨 Selected style:', selectedStyle);
         console.log('🎨 Room type:', roomType);
         
-        // Try to use actual AI service
+        // Use enhanced AI service with image analysis
         let generatedImageUrl;
         const originalImageUrl = URL.createObjectURL(uploadedFile);
         
@@ -74,9 +84,9 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         
         if (hasOpenAIKey) {
           try {
-            // Import and use AI service
-            const { AIImageService } = await import('../services/aiImageService');
-            const aiResult = await AIImageService.generateDesign({
+            // Import and use enhanced AI service
+            const { EnhancedAIImageService } = await import('../services/enhancedAIImageService');
+            const aiResult = await EnhancedAIImageService.generateDesign({
               imageFile: uploadedFile,
               roomType: roomType as any,
               selectedStyle: selectedStyle
@@ -113,8 +123,9 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
           await new Promise(resolve => setTimeout(resolve, 50));
         }
 
-        // Stage 3: Complete (90-100%)
+        // Stage 4: Complete (90-100%)
         setStage('complete');
+        setCurrentStep('complete');
         for (let i = 90; i <= 100; i += 2) {
           setProgress(i);
           await new Promise(resolve => setTimeout(resolve, 100));
@@ -156,9 +167,11 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
     switch (stage) {
       case 'analyzing':
         return {
-          title: 'Analyzing Your Space',
-          description: 'Our AI is examining your photo to understand the layout, lighting, and current design elements.',
-          icon: <Zap className="w-6 h-6" />
+          title: currentStep === 'analysis' ? 'Analyzing Your Space' : 'Generating Renovation Plan',
+          description: currentStep === 'analysis' 
+            ? 'Our AI is examining your photo to understand the layout, architectural features, and structural elements.'
+            : 'Creating a detailed renovation plan that preserves your existing layout while applying the selected style.',
+          icon: currentStep === 'analysis' ? <Eye className="w-6 h-6" /> : <Cpu className="w-6 h-6" />
         };
       case 'generating':
         return {
@@ -222,11 +235,15 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         {/* Processing Steps */}
         <div className="mt-6 space-y-2">
           <div className={`flex items-center gap-3 text-sm ${stage === 'analyzing' ? 'text-blue-600' : progress > 30 ? 'text-emerald-600' : 'text-gray-400'}`}>
-            <div className={`w-2 h-2 rounded-full ${stage === 'analyzing' ? 'bg-blue-600 animate-pulse' : progress > 30 ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
-            <span>Analyzing room layout and features</span>
+            <div className={`w-2 h-2 rounded-full ${stage === 'analyzing' && currentStep === 'analysis' ? 'bg-blue-600 animate-pulse' : progress > 20 ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
+            <span>Analyzing architectural features and layout</span>
           </div>
-          <div className={`flex items-center gap-3 text-sm ${stage === 'generating' ? 'text-blue-600' : progress > 90 ? 'text-emerald-600' : 'text-gray-400'}`}>
-            <div className={`w-2 h-2 rounded-full ${stage === 'generating' ? 'bg-blue-600 animate-pulse' : progress > 90 ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
+          <div className={`flex items-center gap-3 text-sm ${currentStep === 'prompt' ? 'text-blue-600' : progress > 30 ? 'text-emerald-600' : 'text-gray-400'}`}>
+            <div className={`w-2 h-2 rounded-full ${currentStep === 'prompt' ? 'bg-blue-600 animate-pulse' : progress > 30 ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
+            <span>Creating layout-preserving renovation plan</span>
+          </div>
+          <div className={`flex items-center gap-3 text-sm ${currentStep === 'generation' ? 'text-blue-600' : progress > 90 ? 'text-emerald-600' : 'text-gray-400'}`}>
+            <div className={`w-2 h-2 rounded-full ${currentStep === 'generation' ? 'bg-blue-600 animate-pulse' : progress > 90 ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
             <span>Generating design transformation</span>
           </div>
           <div className={`flex items-center gap-3 text-sm ${stage === 'complete' ? 'text-emerald-600' : 'text-gray-400'}`}>
