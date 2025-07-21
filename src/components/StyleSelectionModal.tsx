@@ -13,7 +13,7 @@ interface StyleSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onStyleSelected: (style: StyleOption) => void;
-  roomType: 'kitchen' | 'backyard' | 'bathroom' | 'living-room';
+  roomType: string;
 }
 
 const StyleSelectionModal: React.FC<StyleSelectionModalProps> = ({ 

@@ -57,12 +57,8 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         console.log('🎨 Room type:', roomType);
         
         // Use enhanced AI service with image analysis
-        let generatedImageUrl;
+        let generatedImageUrl: string;
         const originalImageUrl = URL.createObjectURL(uploadedFile);
-        
-        // Check if we have OpenAI API key
-        const hasOpenAIKey = import.meta.env.VITE_OPENAI_API_KEY;
-        console.log('🎨 OpenAI API key available:', !!hasOpenAIKey);
         
         // Store the original image as base64 for email
         const originalImageBase64 = await new Promise<string>((resolve, reject) => {
@@ -82,39 +78,39 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         
         console.log('📸 Final originalImageBase64 length:', originalImageBase64?.length);
         
-        if (hasOpenAIKey) {
-          try {
-            // Import and use enhanced AI service
-            const { EnhancedAIImageService } = await import('../services/enhancedAIImageService');
-            const aiResult = await EnhancedAIImageService.generateDesign({
-              imageFile: uploadedFile,
-              roomType: roomType as any,
-              selectedStyle: selectedStyle
-            });
-            generatedImageUrl = aiResult.generatedImage;
-            console.log('✅ AI generation successful');
-          } catch (aiError) {
-            console.error('❌ AI generation failed:', aiError);
-            // Fallback to demo image
-            generatedImageUrl = 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=1024';
-          }
-        } else {
-          console.log('⚠️ No OpenAI key - using demo image');
-          // Demo images for different styles
-          const demoImages = {
-            kitchen: [
-              'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=1024',
-              'https://images.pexels.com/photos/2089698/pexels-photo-2089698.jpeg?auto=compress&cs=tinysrgb&w=1024',
-              'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1024'
-            ],
-            backyard: [
-              'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1024',
-              'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=1024'
-            ]
-          };
+        try {
+          // Use the new DALL-E only renovation service
+          console.log('🎨 Using DALL-E renovation service...');
+          const { DalleRenovationService } = await import('../services/dalleRenovationService');
           
-          const imagePool = demoImages[roomType as keyof typeof demoImages] || demoImages.kitchen;
-          generatedImageUrl = imagePool[Math.floor(Math.random() * imagePool.length)];
+          const renovationResult = await DalleRenovationService.processRenovationRequest({
+            imageFile: uploadedFile,
+            styleChoice: selectedStyle?.id || 'modern-minimalist',
+            roomType: roomType
+          });
+          
+          if (renovationResult.success && renovationResult.imageUrl) {
+            generatedImageUrl = renovationResult.imageUrl;
+            console.log('✅ DALL-E renovation successful');
+            if (renovationResult.fallback) {
+              console.log('⚠️ Used fallback generation');
+            }
+          } else {
+            throw new Error(renovationResult.error || 'Generation failed');
+          }
+        } catch (aiError) {
+          console.error('❌ AI generation failed:', aiError);
+          // Final fallback to demo image
+          const demoImages = {
+            kitchen: 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=1024',
+            bathroom: 'https://images.pexels.com/photos/2062426/pexels-photo-2062426.jpeg?auto=compress&cs=tinysrgb&w=1024',
+            living_room: 'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1024',
+            bedroom: 'https://images.pexels.com/photos/2089698/pexels-photo-2089698.jpeg?auto=compress&cs=tinysrgb&w=1024',
+            dining_room: 'https://images.pexels.com/photos/2724749/pexels-photo-2724749.jpeg?auto=compress&cs=tinysrgb&w=1024',
+            home_office: 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1024',
+            other: 'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=1024'
+          };
+          generatedImageUrl = demoImages[roomType as keyof typeof demoImages] || demoImages.kitchen;
         }
 
         // Update progress during generation

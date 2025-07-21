@@ -27,11 +27,13 @@ export class EnhancedAIImageService {
       // Step 1: Analyze the uploaded image
       console.log('🔍 Analyzing uploaded image...');
       const imageAnalysis = await ImageAnalysisService.analyzeUploadedImage(request.imageFile);
+      console.log('🔍 Vision API analysis result:', imageAnalysis);
       
       // Step 2: Generate comprehensive renovation prompt
       console.log('📝 Generating renovation prompt...');
       const styleChoice = request.selectedStyle?.id || 'modern-minimalist';
       const renovationPrompt = RenovationPromptService.generateRenovationPrompt(styleChoice, imageAnalysis);
+      console.log('📝 Enhanced prompt generated with Vision API insights');
       
       // Step 3: Create original image URL
       const originalImageUrl = URL.createObjectURL(request.imageFile);

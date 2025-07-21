@@ -7,62 +7,41 @@ export interface ImageAnalysis {
 
 export class ImageAnalysisService {
   static async analyzeUploadedImage(imageFile: File): Promise<string> {
-    const analysisPrompt = `Analyze this interior space image and identify:
-    1. Room type (kitchen, bathroom, living room, etc.)
-    2. Key architectural features (windows, doors, built-ins, columns, beams)
-    3. Layout and spatial arrangement
-    4. Major furniture/fixture placement
-    5. Lighting sources and direction
-    6. Flooring type and pattern
-    7. Wall configurations
-    8. Any unique structural elements
-    
-    Provide a brief structural description focusing on elements that MUST be preserved during renovation.`;
-
     try {
-      // Check if OpenAI API key is available
-      const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      console.log('🔍 Starting image analysis...');
       
-      if (!openaiKey) {
-        console.log('⚠️ No OpenAI API key - using fallback analysis');
-        return this.getFallbackAnalysis(imageFile);
-      }
-
       // Convert file to base64
       const base64Image = await this.fileToBase64(imageFile);
+      console.log('📸 Image converted to base64, length:', base64Image.length);
       
-      // Use OpenAI Vision API for analysis
-      const { default: OpenAI } = await import('openai');
-      const openai = new OpenAI({
-        apiKey: openaiKey,
-        dangerouslyAllowBrowser: true
+      // Call backend API for Vision analysis
+      const response = await fetch('/api/analyze-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          imageData: base64Image
+        })
       });
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4-vision-preview",
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: analysisPrompt },
-              {
-                type: "image_url",
-                image_url: {
-                  url: base64Image
-                }
-              }
-            ]
-          }
-        ],
-        max_tokens: 300
-      });
+      if (!response.ok) {
+        throw new Error(`API response not ok: ${response.status}`);
+      }
 
-      const analysis = response.choices[0]?.message?.content || this.getFallbackAnalysis(imageFile);
-      console.log('✅ Image analysis completed:', analysis);
-      return analysis;
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Analysis failed');
+      }
+
+      console.log('✅ Image analysis completed via', result.method);
+      console.log('🔍 Analysis preview:', result.analysis.substring(0, 200) + '...');
+      
+      return result.analysis;
 
     } catch (error) {
-      console.error('❌ Image analysis failed:', error);
+      console.error('❌ Image analysis API failed:', error);
       return this.getFallbackAnalysis(imageFile);
     }
   }

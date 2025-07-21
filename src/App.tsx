@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import HeroSection from './components/HeroSection';
 import UploadSection from './components/UploadSection';
+import RoomTypeModal from './components/RoomTypeModal';
 import StyleSelectionModal from './components/StyleSelectionModal';
 import AIProcessingModal from './components/AIProcessingModal';
 import EmailModal from './components/EmailModal';
@@ -15,6 +16,7 @@ import EnvDisplay from './components/EnvDisplay';
 
 function App() {
   const [showZipCodeModal, setShowZipCodeModal] = useState(false);
+  const [showRoomTypeModal, setShowRoomTypeModal] = useState(false);
   const [showStyleSelectionModal, setShowStyleSelectionModal] = useState(false);
   const [showAIProcessingModal, setShowAIProcessingModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -24,7 +26,7 @@ function App() {
   const [uploadedFile, setUploadedFile] = useState<File | undefined>();
   const [selectedStyle, setSelectedStyle] = useState<{id: string; name: string; prompt: string} | undefined>();
   const [userZipCode, setUserZipCode] = useState<string>('');
-  const [roomType, setRoomType] = useState<string>('kitchen');
+  const [roomType, setRoomType] = useState<string>('');
   const [emailSubmitted, setEmailSubmitted] = useState(false);
   const [currentCustomerId, setCurrentCustomerId] = useState<string | undefined>();
   const [currentDesignRequestId, setCurrentDesignRequestId] = useState<string | undefined>();
@@ -45,8 +47,12 @@ function App() {
 
   const handleFileUpload = (file: File) => {
     setUploadedFile(file);
-    // Detect room type from file name or let user specify
-    // For now, we'll default to kitchen but this could be enhanced
+    setShowRoomTypeModal(true);
+  };
+
+  const handleRoomTypeSelected = (selectedRoomType: string) => {
+    setRoomType(selectedRoomType);
+    setShowRoomTypeModal(false);
     setShowStyleSelectionModal(true);
   };
 
@@ -142,11 +148,17 @@ function App() {
         onZipCodeApproved={handleZipCodeApproved}
       />
       
+      <RoomTypeModal
+        isOpen={showRoomTypeModal}
+        onClose={() => setShowRoomTypeModal(false)}
+        onRoomTypeSelected={handleRoomTypeSelected}
+      />
+      
       <StyleSelectionModal
         isOpen={showStyleSelectionModal}
         onClose={() => setShowStyleSelectionModal(false)}
         onStyleSelected={handleStyleSelected}
-        roomType="kitchen"
+        roomType={roomType}
       />
       
       <AIProcessingModal
@@ -155,7 +167,7 @@ function App() {
         onComplete={handleAIProcessingComplete}
         uploadedFile={uploadedFile}
         selectedStyle={selectedStyle}
-        roomType="kitchen"
+        roomType={roomType}
       />
       
       <EmailModal 
