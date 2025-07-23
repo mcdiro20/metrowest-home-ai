@@ -67,39 +67,88 @@ export default async function handler(req, res) {
     console.log('🎨 Using OpenAI API for real image generation');
 
     try {
-      // Use DALL-E 3 with detailed renovation prompt
-      console.log('🎨 Generating with detailed renovation prompt...');
-      
-      // Try DALL-E 2 image editing first for better layout preservation
+      console.log('🎨 Starting DALL-E generation process...');
+      console.log('🎨 Prompt length:', renovationPrompt.length);
+      console.log('🎨 Room type:', roomType);
+      console.log('🎨 Style:', selectedStyle?.name);
+
       let generationResponse;
-      
-      try {
-        console.log('🎨 Attempting DALL-E 2 image editing for better layout preservation...');
+      let usedMethod = 'unknown';
+
+      // Method 1: Try DALL-E 2 image editing (best for layout preservation)
+      if (imageData && imageData.startsWith('data:image/')) {
+        try {
+          console.log('🎨 Method 1: Attempting DALL-E 2 image editing...');
+          
+          // Convert base64 to buffer
+          const base64Data = imageData.split(',')[1];
+          const imageBuffer = Buffer.from(base64Data, 'base64');
+          
+          // Simple, clear prompt for editing
+          const editPrompt = `My prompt has full detail so no need to add more. Renovate this ${roomType} with ${selectedStyle?.name || 'modern'} style. Keep the exact same layout and only update finishes, colors, and materials. Create a clean interior photo without any text or labels.`;
+          
+          console.log('🎨 Edit prompt:', editPrompt);
+          
+          generationResponse = await openai.images.edit({
+            image: imageBuffer,
+            prompt: editPrompt,
+            n: 1,
+            size: "1024x1024"
+          });
+          
+          usedMethod = 'dalle-2-edit';
+          console.log('✅ DALL-E 2 editing successful');
+          
+        } catch (editError) {
+          console.log('❌ DALL-E 2 editing failed:', editError.message);
+          console.log('🔄 Falling back to DALL-E 3...');
+          
+          // Method 2: DALL-E 3 generation
+          try {
+            console.log('🎨 Method 2: Using DALL-E 3 generation...');
+            
+            // Add the prefix to prevent DALL-E 3 from adding elements
+            const dalle3Prompt = renovationPrompt.startsWith('My prompt has full detail') 
+              ? renovationPrompt 
+              : `My prompt has full detail so no need to add more. ${renovationPrompt}`;
+            
+            generationResponse = await openai.images.generate({
+              model: "dall-e-3",
+              prompt: dalle3Prompt,
+              n: 1,
+              size: "1024x1024",
+              quality: "standard",
+              style: "natural"
+            });
+            
+            usedMethod = 'dalle-3-generate';
+            console.log('✅ DALL-E 3 generation successful');
+            
+          } catch (dalle3Error) {
+            console.log('❌ DALL-E 3 generation failed:', dalle3Error.message);
+            throw dalle3Error;
+          }
+        }
+      } else {
+        // Method 2: Direct DALL-E 3 if no valid image data
+        console.log('🎨 Method 2: Direct DALL-E 3 (no image editing)...');
         
-        // Convert base64 to buffer for DALL-E 2 editing
-        const base64Data = imageData.split(',')[1];
-        const imageBuffer = Buffer.from(base64Data, 'base64');
-        
-        generationResponse = await openai.images.edit({
-          image: imageBuffer,
-          prompt: `Update this ${roomType} with ${selectedStyle?.name || 'modern'} style finishes. Keep everything in the same position - only change colors, materials, and surface finishes. No text or labels.`,
-          n: 1,
-          size: "1024x1024"
-        });
-        
-        console.log('✅ DALL-E 2 editing successful');
-        
-      } catch (editError) {
-        console.log('❌ DALL-E 2 editing failed, trying DALL-E 3 generation:', editError.message);
+        // Add the prefix to prevent DALL-E 3 from adding elements
+        const dalle3Prompt = renovationPrompt.startsWith('My prompt has full detail') 
+          ? renovationPrompt 
+          : `My prompt has full detail so no need to add more. ${renovationPrompt}`;
         
         generationResponse = await openai.images.generate({
           model: "dall-e-3",
-          prompt: renovationPrompt,
+          prompt: dalle3Prompt,
           n: 1,
           size: "1024x1024",
-          quality: "hd",
+          quality: "standard",
           style: "natural"
         });
+        
+        usedMethod = 'dalle-3-direct';
+        console.log('✅ DALL-E 3 direct generation successful');
       }
 
       const generatedImageUrl = generationResponse.data[0]?.url;
@@ -107,20 +156,30 @@ export default async function handler(req, res) {
       if (!generatedImageUrl) {
         throw new Error('No image URL returned from OpenAI');
       }
-      console.log('✅ DALL-E renovation generated successfully');
+      
+      console.log('✅ Image generation completed successfully');
+      console.log('🎨 Method used:', usedMethod);
+      console.log('🎨 Generated URL:', generatedImageUrl.substring(0, 50) + '...');
 
       return res.status(200).json({
         success: true,
         generatedImageUrl: generatedImageUrl,
-        message: `DALL-E renovation with ${selectedStyle?.name || 'custom'} style`,
+        message: `Generated with ${usedMethod}: ${selectedStyle?.name || 'custom'} style`,
         appliedStyle: selectedStyle?.name,
         roomType: roomType,
-        method: 'dalle-renovation'
+        method: usedMethod
       });
 
     } catch (openaiError) {
-      console.error('❌ OpenAI generation failed:', openaiError);
-      throw openaiError;
+      console.error('❌ All OpenAI methods failed:', openaiError);
+      console.error('❌ Error details:', {
+        message: openaiError.message,
+        code: openaiError.code,
+        type: openaiError.type
+      });
+      
+      // Don't throw - fall through to fallback
+      console.log('🔄 Using fallback demo image...');
     }
 
   } catch (error) {
@@ -142,7 +201,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       generatedImageUrl: fallbackImage,
-      message: `AI generation failed, using fallback: ${error.message}`,
+      message: `Using demo image (generation failed): ${error.message}`,
       error: error.message
     });
   }

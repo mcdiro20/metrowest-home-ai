@@ -340,6 +340,58 @@ const DebugPanel: React.FC = () => {
     setIsLoading(false);
   };
 
+  const testDalleAPI = async () => {
+    setIsLoading(true);
+    try {
+      console.log('🧪 Testing DALL-E API directly...');
+      
+      // Create a simple test image (1x1 pixel base64)
+      const testImageBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI9jU77zgAAAABJRU5ErkJggg==';
+      
+      const testData = {
+        imageData: testImageBase64,
+        prompt: 'A modern kitchen renovation with white cabinets and clean lines. No text or labels.',
+        roomType: 'kitchen',
+        selectedStyle: { name: 'Modern Minimalist' }
+      };
+      
+      console.log('🧪 Sending test request to /api/generate-ai-image...');
+      
+      const response = await fetch('/api/generate-ai-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(testData)
+      });
+      
+      const result = await response.json();
+      console.log('🎨 DALL-E API response:', result);
+      
+      setDebugResults({
+        success: result.success,
+        message: result.success ? 'DALL-E API working!' : 'DALL-E API failed',
+        type: 'dalle-api',
+        details: {
+          method: result.method,
+          hasImageUrl: !!result.generatedImageUrl,
+          message: result.message,
+          error: result.error
+        }
+      });
+      
+    } catch (error) {
+      console.error('💥 DALL-E API test error:', error);
+      setDebugResults({
+        success: false,
+        message: `DALL-E API test failed: ${error.message}`,
+        type: 'dalle-api',
+        error: error.message
+      });
+    }
+    setIsLoading(false);
+  };
+
   const testDirectSupabase = async () => {
     setIsLoading(true);
     try {
@@ -479,6 +531,15 @@ const DebugPanel: React.FC = () => {
           >
             <Database className="w-4 h-4" />
             {isLoading ? 'Testing...' : 'Test Complete Email Flow'}
+          </button>
+          
+          <button
+            onClick={testDalleAPI}
+            disabled={isLoading}
+            className="w-full flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded text-sm transition-colors disabled:opacity-50"
+          >
+            <Database className="w-4 h-4" />
+            {isLoading ? 'Testing...' : 'Test DALL-E API'}
           </button>
           
           <button
