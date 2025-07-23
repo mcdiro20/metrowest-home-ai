@@ -15,11 +15,10 @@ export default async function handler(req, res) {
   try {
     const { imageData, prompt, roomType, selectedStyle, customPrompt } = req.body;
 
-    console.log('🎨 DALL-E API Request received:');
-    console.log('🎨 Room type:', roomType);
+    console.log('🏗️ Professional Architectural Rendering Request:');
+    console.log('🏠 Room type:', roomType);
     console.log('🎨 Selected style:', selectedStyle?.name);
-    console.log('🎨 Has image data:', !!imageData);
-    console.log('🎨 Image data length:', imageData?.length);
+    console.log('📸 Has image data:', !!imageData);
 
     // Validate required data
     if (!imageData) {
@@ -76,7 +75,7 @@ export default async function handler(req, res) {
 
     console.log('✅ OpenAI client created');
 
-    // Convert base64 to buffer
+    // Convert base64 to buffer for DALL-E 2 editing
     let imageBuffer;
     try {
       const base64Data = imageData.split(',')[1];
@@ -94,112 +93,85 @@ export default async function handler(req, res) {
       });
     }
 
-    // Create ultra-simple prompt for DALL-E 2 editing
-    let editPrompt = '';
-    
-    if (customPrompt) {
-      // Custom prompt
-      editPrompt = `My prompt has full detail so no need to add more. Update only the finishes in this ${roomType}: ${customPrompt}. Keep identical camera angle and room layout. No text or labels.`;
-    } else {
-      // Style-based prompt
-      const styleMap = {
-        'modern-minimalist': 'white cabinets, quartz countertops, minimal hardware',
-        'farmhouse-chic': 'white shaker cabinets, wood accents, vintage fixtures',
-        'transitional': 'neutral painted cabinets, classic hardware',
-        'coastal-new-england': 'light blue and white finishes, nautical touches',
-        'contemporary-luxe': 'dark cabinets, premium materials, gold accents',
-        'eclectic-bohemian': 'colorful finishes, mixed textures'
-      };
-      
-      const styleDescription = styleMap[selectedStyle?.id] || 'updated modern finishes';
-      editPrompt = `My prompt has full detail so no need to add more. Update only the cabinet doors, countertops, and paint in this ${roomType} with ${styleDescription}. Keep identical camera angle and room layout. No text or labels.`;
-    }
-    
-    console.log('🎨 Using DALL-E 2 image editing');
-    console.log('🎨 Edit prompt:', editPrompt);
+    // Create professional architectural rendering prompt
+    const professionalPrompt = createProfessionalRenderingPrompt(selectedStyle, roomType, customPrompt);
+    console.log('🏗️ Professional rendering prompt:', professionalPrompt);
 
-    // Try DALL-E 2 image editing
+    // Try DALL-E 2 image editing with professional prompt
     try {
-      console.log('🎨 Calling DALL-E 2 image edit API...');
+      console.log('🏗️ Calling DALL-E 2 for professional architectural rendering...');
       
       const editResponse = await openai.images.edit({
         image: imageBuffer,
-        prompt: editPrompt,
+        prompt: professionalPrompt,
         n: 1,
         size: "1024x1024"
       });
       
-      console.log('✅ DALL-E 2 edit API call completed');
-      console.log('🎨 Response data length:', editResponse.data?.length);
+      console.log('✅ DALL-E 2 professional rendering completed');
       
       const generatedImageUrl = editResponse.data[0]?.url;
       
       if (!generatedImageUrl) {
-        throw new Error('No image URL returned from DALL-E 2 editing');
+        throw new Error('No image URL returned from DALL-E 2 professional rendering');
       }
       
-      console.log('✅ DALL-E 2 editing successful');
-      console.log('🎨 Generated image URL:', generatedImageUrl.substring(0, 50) + '...');
+      console.log('✅ Professional architectural rendering successful');
+      console.log('🏗️ Generated image URL:', generatedImageUrl.substring(0, 50) + '...');
       
       return res.status(200).json({
         success: true,
         generatedImageUrl: generatedImageUrl,
-        message: `Layout-preserving renovation with ${selectedStyle?.name || 'custom'} style`,
+        message: `Professional architectural rendering with ${selectedStyle?.name || 'custom'} style`,
         appliedStyle: selectedStyle?.name,
         roomType: roomType,
-        method: 'dalle-2-edit',
-        prompt: editPrompt
+        method: 'dalle-2-professional-rendering',
+        prompt: professionalPrompt
       });
       
     } catch (editError) {
-      console.error('❌ DALL-E 2 editing failed:', editError);
-      console.error('❌ Error details:', {
-        message: editError.message,
-        code: editError.code,
-        type: editError.type,
-        status: editError.status
-      });
+      console.error('❌ DALL-E 2 professional rendering failed:', editError);
       
-      // Try DALL-E 3 as fallback
-      console.log('🎨 Trying DALL-E 3 as fallback...');
-      
+      // Try DALL-E 3 with ultra-professional prompt as fallback
       try {
-        const generatePrompt = `My prompt has full detail so no need to add more. Create a ${roomType} renovation with ${selectedStyle?.name || 'modern'} style. ${customPrompt || ''}. No text, labels, or annotations.`;
+        console.log('🏗️ Trying DALL-E 3 professional rendering as fallback...');
         
-        console.log('🎨 DALL-E 3 prompt:', generatePrompt);
+        const dalle3ProfessionalPrompt = createDALLE3ProfessionalPrompt(selectedStyle, roomType, customPrompt);
+        console.log('🏗️ DALL-E 3 professional prompt:', dalle3ProfessionalPrompt);
         
         const generateResponse = await openai.images.generate({
           model: "dall-e-3",
-          prompt: generatePrompt,
+          prompt: dalle3ProfessionalPrompt,
           n: 1,
           size: "1024x1024",
-          quality: "standard"
+          quality: "hd",
+          style: "natural"
         });
         
         const generatedImageUrl = generateResponse.data[0]?.url;
         
         if (!generatedImageUrl) {
-          throw new Error('No image URL returned from DALL-E 3');
+          throw new Error('No image URL returned from DALL-E 3 professional rendering');
         }
         
-        console.log('✅ DALL-E 3 generation successful (fallback)');
+        console.log('✅ DALL-E 3 professional rendering successful (fallback)');
         
         return res.status(200).json({
           success: true,
           generatedImageUrl: generatedImageUrl,
-          message: `Generated with DALL-E 3 (layout may differ)`,
+          message: `Professional rendering with DALL-E 3 (camera angle may vary)`,
           appliedStyle: selectedStyle?.name,
           roomType: roomType,
-          method: 'dalle-3-fallback',
-          prompt: generatePrompt
+          method: 'dalle-3-professional-fallback',
+          prompt: dalle3ProfessionalPrompt
         });
         
       } catch (generateError) {
-        console.error('❌ DALL-E 3 generation also failed:', generateError);
+        console.error('❌ DALL-E 3 professional rendering also failed:', generateError);
         
-        return res.status(200).json({
+        return res.status(500).json({
           success: false,
-          message: `Both DALL-E 2 and DALL-E 3 failed: ${editError.message}`,
+          message: `Professional rendering failed: ${editError.message}`,
           error: editError.message,
           fallbackError: generateError.message,
           method: 'failed'
@@ -208,7 +180,7 @@ export default async function handler(req, res) {
     }
 
   } catch (error) {
-    console.error('❌ Unexpected error in AI Image Generation:', error);
+    console.error('❌ Unexpected error in Professional Rendering:', error);
     
     return res.status(500).json({
       success: false,
@@ -217,4 +189,137 @@ export default async function handler(req, res) {
       method: 'error'
     });
   }
+}
+
+// Create professional architectural rendering prompt for DALL-E 2 editing
+function createProfessionalRenderingPrompt(selectedStyle, roomType, customPrompt) {
+  const basePrompt = `My prompt has full detail so no need to add more. PROFESSIONAL ARCHITECTURAL INTERIOR RENDERING: Transform this ${roomType} into a high-end, photorealistic architectural visualization that maintains the EXACT same camera angle, perspective, lighting direction, and spatial layout. This is a $3000 professional rendering quality transformation.
+
+CRITICAL REQUIREMENTS:
+- Keep identical camera viewpoint and angle
+- Preserve exact room dimensions and proportions  
+- Maintain all window and door positions
+- Keep same lighting direction and quality
+- Preserve all architectural features and built-ins
+- Only update surface finishes, materials, and fixtures
+
+PROFESSIONAL RENDERING QUALITY:
+- Photorealistic materials with proper reflections and textures
+- Professional architectural photography lighting
+- High-end interior design finishes
+- Crisp, clean, magazine-quality appearance
+- No sketchy or drawn appearance
+- Sharp focus throughout
+- Proper depth of field
+- Professional color grading`;
+
+  // Style-specific professional specifications
+  const professionalStyleSpecs = {
+    'modern-minimalist': `MODERN MINIMALIST PROFESSIONAL SPECIFICATION:
+- Sleek handleless cabinetry in matte white or warm gray lacquer
+- Premium quartz countertops with waterfall edges
+- Integrated LED strip lighting under cabinets
+- Stainless steel or integrated appliances
+- Large format porcelain tile flooring
+- Minimal hardware in brushed stainless or matte black
+- Clean geometric lines throughout
+- Professional architectural lighting design`,
+
+    'farmhouse-chic': `FARMHOUSE CHIC PROFESSIONAL SPECIFICATION:
+- Custom painted Shaker-style cabinetry in Benjamin Moore Cloud White
+- Honed Carrara marble or butcher block countertops
+- Subway tile backsplash with dark grout
+- Farmhouse sink with bridge faucet
+- Wide plank hardwood flooring
+- Oil-rubbed bronze or matte black hardware
+- Pendant lighting with clear glass shades
+- Professional rustic-luxe finish quality`,
+
+    'transitional': `TRANSITIONAL PROFESSIONAL SPECIFICATION:
+- Raised panel cabinetry in warm neutral paint
+- Natural stone countertops with eased edges
+- Classic subway or natural stone backsplash
+- Brushed nickel or champagne bronze hardware
+- Hardwood flooring in medium tones
+- Traditional pendant or chandelier lighting
+- Professional blend of classic and contemporary elements
+- High-end traditional craftsmanship`,
+
+    'coastal-new-england': `COASTAL NEW ENGLAND PROFESSIONAL SPECIFICATION:
+- White painted Shaker cabinetry with beadboard details
+- White marble countertops with subtle veining
+- Glass subway tile backsplash in soft blue or white
+- Polished chrome or brushed nickel hardware
+- Light oak or whitewashed hardwood flooring
+- Nautical-inspired pendant lighting
+- Professional coastal luxury finish quality
+- Fresh, airy, high-end beach house aesthetic`,
+
+    'contemporary-luxe': `CONTEMPORARY LUXE PROFESSIONAL SPECIFICATION:
+- High-gloss lacquer or exotic wood veneer cabinetry
+- Premium granite, marble, or engineered quartz countertops
+- Large format natural stone or glass tile backsplash
+- Brushed gold, matte black, or stainless steel hardware
+- Large format porcelain or natural stone flooring
+- Designer pendant or chandelier lighting
+- Professional luxury finish quality throughout
+- High-end contemporary sophistication`,
+
+    'eclectic-bohemian': `ECLECTIC BOHEMIAN PROFESSIONAL SPECIFICATION:
+- Mixed wood and painted cabinetry in rich, warm tones
+- Natural stone countertops with character and veining
+- Patterned ceramic or natural stone backsplash
+- Mixed metal hardware in brass, copper, and bronze
+- Hardwood flooring with rich stains
+- Artisanal pendant lighting with natural materials
+- Professional eclectic luxury finish quality
+- Curated, sophisticated bohemian aesthetic`
+  };
+
+  const styleSpec = professionalStyleSpecs[selectedStyle?.id] || professionalStyleSpecs['modern-minimalist'];
+  
+  let finalPrompt = `${basePrompt}\n\n${styleSpec}`;
+  
+  if (customPrompt) {
+    finalPrompt += `\n\nADDITIONAL CUSTOM REQUIREMENTS: ${customPrompt}`;
+  }
+  
+  finalPrompt += `\n\nFINAL REQUIREMENTS: Create a photorealistic, professional architectural interior rendering with magazine-quality finishes. No text, labels, sketchy appearance, or drawn elements. This must look like a $3000 professional architectural visualization.`;
+  
+  return finalPrompt;
+}
+
+// Create DALL-E 3 professional prompt (fallback)
+function createDALLE3ProfessionalPrompt(selectedStyle, roomType, customPrompt) {
+  const basePrompt = `My prompt has full detail so no need to add more. Create a professional architectural interior rendering of a ${roomType} renovation. This must be photorealistic, magazine-quality, professional interior design photography.
+
+PROFESSIONAL RENDERING REQUIREMENTS:
+- Photorealistic materials and textures
+- Professional architectural photography lighting
+- High-end interior design finishes
+- Sharp, clean, professional appearance
+- Proper depth of field and focus
+- Professional color grading
+- No text, labels, or sketchy elements`;
+
+  const styleDescriptions = {
+    'modern-minimalist': 'Modern minimalist design with sleek white cabinetry, quartz countertops, and clean lines',
+    'farmhouse-chic': 'Farmhouse chic design with white Shaker cabinets, marble countertops, and rustic elements',
+    'transitional': 'Transitional design blending classic and contemporary elements with neutral tones',
+    'coastal-new-england': 'Coastal New England design with white cabinetry, light colors, and nautical touches',
+    'contemporary-luxe': 'Contemporary luxury design with high-end materials and sophisticated finishes',
+    'eclectic-bohemian': 'Eclectic bohemian design with rich colors, mixed textures, and global influences'
+  };
+
+  const styleDesc = styleDescriptions[selectedStyle?.id] || 'modern design with high-end finishes';
+  
+  let finalPrompt = `${basePrompt}\n\nSTYLE: ${styleDesc}`;
+  
+  if (customPrompt) {
+    finalPrompt += `\n\nCUSTOM REQUIREMENTS: ${customPrompt}`;
+  }
+  
+  finalPrompt += `\n\nCreate a professional, photorealistic interior rendering that looks like a $3000 architectural visualization. No text, labels, or drawn elements.`;
+  
+  return finalPrompt;
 }

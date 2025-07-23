@@ -39,26 +39,26 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         setCurrentStep('analysis');
         for (let i = 0; i <= 20; i += 2) {
           setProgress(i);
-          await new Promise(resolve => setTimeout(resolve, 150));
-        }
-
-        // Stage 2: Prompt Generation (20-30%)
-        setCurrentStep('prompt');
-        for (let i = 20; i <= 30; i += 2) {
-          setProgress(i);
           await new Promise(resolve => setTimeout(resolve, 100));
         }
 
-        // Stage 3: AI Generation (30-90%)
+        // Stage 2: Professional Rendering Setup (20-40%)
+        setCurrentStep('prompt');
+        for (let i = 20; i <= 40; i += 2) {
+          setProgress(i);
+          await new Promise(resolve => setTimeout(resolve, 80));
+        }
+
+        // Stage 3: Professional AI Rendering (40-90%)
         setStage('generating');
         setCurrentStep('generation');
         
-        console.log('🎨 Starting enhanced AI image generation...');
+        console.log('🏗️ Starting professional architectural rendering...');
         console.log('🎨 Uploaded file:', uploadedFile?.name);
         console.log('🎨 Selected style:', selectedStyle);
         console.log('🎨 Room type:', roomType);
         
-        // Use enhanced AI service with image analysis
+        // Use professional rendering service
         let generatedImageUrl: string;
         const originalImageUrl = URL.createObjectURL(uploadedFile);
         
@@ -82,7 +82,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         
         try {
           // Use the DALL-E renovation service
-          console.log('🎨 Using DALL-E renovation service...');
+          console.log('🏗️ Using professional DALL-E rendering service...');
           const { DalleRenovationService } = await import('../services/dalleRenovationService');
           
           const renovationResult = await DalleRenovationService.processRenovationRequest({
@@ -96,9 +96,9 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
           
           if (renovationResult.success) {
             generatedImageUrl = renovationResult.imageUrl!;
-            console.log('✅ DALL-E renovation successful');
+            console.log('✅ Professional architectural rendering successful');
           } else {
-            console.error('❌ DALL-E renovation failed:', renovationResult.error);
+            console.error('❌ Professional rendering failed:', renovationResult.error);
             throw new Error(renovationResult.error || 'AI generation failed');
           }
         } catch (aiError) {
@@ -118,7 +118,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         }
 
         // Update progress during generation
-        for (let i = 30; i <= 90; i += 3) {
+        for (let i = 40; i <= 90; i += 2) {
           setProgress(i);
           await new Promise(resolve => setTimeout(resolve, 50));
         }
@@ -166,23 +166,29 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
   const getStageInfo = () => {
     switch (stage) {
       case 'analyzing':
-        return {
-          title: currentStep === 'analysis' ? 'Analyzing Your Space' : 'Generating Renovation Plan',
-          description: currentStep === 'analysis' 
-            ? 'Our AI is examining your photo to understand the layout, architectural features, and structural elements.'
-            : 'Creating a detailed renovation plan that preserves your existing layout while applying the selected style.',
-          icon: currentStep === 'analysis' ? <Eye className="w-6 h-6" /> : <Cpu className="w-6 h-6" />
-        };
+        if (currentStep === 'analysis') {
+          return {
+            title: 'Analyzing Architectural Features',
+            description: 'Professional analysis of your space including camera angle, lighting, materials, and structural elements for precise rendering.',
+            icon: <Eye className="w-6 h-6" />
+          };
+        } else {
+          return {
+            title: 'Preparing Professional Rendering',
+            description: 'Setting up $3000-quality architectural visualization parameters with photorealistic materials and lighting.',
+            icon: <Cpu className="w-6 h-6" />
+          };
+        }
       case 'generating':
         return {
-          title: 'Generating Your Design',
-          description: 'Creating a beautiful transformation with modern design elements and improved aesthetics.',
+          title: 'Creating Professional Rendering',
+          description: 'Generating photorealistic architectural visualization with magazine-quality finishes and professional lighting.',
           icon: <Zap className="w-6 h-6 animate-pulse" />
         };
       case 'complete':
         return {
-          title: 'Design Complete!',
-          description: 'Your AI-generated transformation is ready. Preparing your before/after comparison.',
+          title: 'Professional Rendering Complete!',
+          description: 'Your $3000-quality architectural visualization is ready. Preparing your professional before/after comparison.',
           icon: <CheckCircle className="w-6 h-6" />
         };
     }
@@ -236,19 +242,19 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         <div className="mt-6 space-y-2">
           <div className={`flex items-center gap-3 text-sm ${stage === 'analyzing' ? 'text-blue-600' : progress > 30 ? 'text-emerald-600' : 'text-gray-400'}`}>
             <div className={`w-2 h-2 rounded-full ${stage === 'analyzing' && currentStep === 'analysis' ? 'bg-blue-600 animate-pulse' : progress > 20 ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
-            <span>Analyzing architectural features and layout</span>
+            <span>Professional architectural analysis</span>
           </div>
-          <div className={`flex items-center gap-3 text-sm ${currentStep === 'prompt' ? 'text-blue-600' : progress > 30 ? 'text-emerald-600' : 'text-gray-400'}`}>
-            <div className={`w-2 h-2 rounded-full ${currentStep === 'prompt' ? 'bg-blue-600 animate-pulse' : progress > 30 ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
-            <span>Creating layout-preserving renovation plan</span>
+          <div className={`flex items-center gap-3 text-sm ${currentStep === 'prompt' ? 'text-blue-600' : progress > 40 ? 'text-emerald-600' : 'text-gray-400'}`}>
+            <div className={`w-2 h-2 rounded-full ${currentStep === 'prompt' ? 'bg-blue-600 animate-pulse' : progress > 40 ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
+            <span>Setting up professional rendering parameters</span>
           </div>
           <div className={`flex items-center gap-3 text-sm ${currentStep === 'generation' ? 'text-blue-600' : progress > 90 ? 'text-emerald-600' : 'text-gray-400'}`}>
             <div className={`w-2 h-2 rounded-full ${currentStep === 'generation' ? 'bg-blue-600 animate-pulse' : progress > 90 ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
-            <span>Generating design transformation</span>
+            <span>Creating photorealistic architectural rendering</span>
           </div>
           <div className={`flex items-center gap-3 text-sm ${stage === 'complete' ? 'text-emerald-600' : 'text-gray-400'}`}>
             <div className={`w-2 h-2 rounded-full ${stage === 'complete' ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
-            <span>Finalizing your design</span>
+            <span>Finalizing professional visualization</span>
           </div>
         </div>
       </div>

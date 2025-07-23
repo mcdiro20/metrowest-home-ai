@@ -16,7 +16,24 @@ export interface RenovationResponse {
 
 export class DalleRenovationService {
   static generateRenovationPrompt(styleChoice: string, roomType: string): string {
-    const basePrompt = `My prompt has full detail so no need to add more. INTERIOR MAKEOVER: Update only the finishes, colors, and materials in this existing space. Keep everything in the exact same position. This is a surface-level renovation - paint, cabinet doors, countertops, and fixtures only. Do not move walls, windows, appliances, or change the room layout. Do not add any text, words, labels, or annotations to the image. Create a clean, photorealistic interior image.`;
+    const basePrompt = `My prompt has full detail so no need to add more. PROFESSIONAL ARCHITECTURAL INTERIOR RENDERING: Create a $3000-quality photorealistic architectural visualization that transforms this ${roomType} while maintaining the EXACT same camera angle, perspective, and spatial layout.
+
+CRITICAL PROFESSIONAL REQUIREMENTS:
+- Photorealistic materials with proper reflections, textures, and lighting
+- Professional architectural photography quality
+- Magazine-worthy interior design finishes
+- Sharp focus throughout with proper depth of field
+- Professional color grading and lighting
+- High-end luxury finishes and materials
+- No sketchy, drawn, or artistic interpretation
+- Crisp, clean, professional appearance
+
+LAYOUT PRESERVATION:
+- Keep identical camera viewpoint and angle
+- Preserve exact room dimensions and proportions
+- Maintain all architectural features and built-ins
+- Keep same lighting direction and quality
+- Only update surface finishes, materials, and fixtures`;
 
     const roomSpecificFeatures = {
       kitchen: `Keep all cabinets, appliances, and counters in their current positions. Only change cabinet door styles, countertop materials, backsplash, paint colors, and hardware.`,
@@ -35,76 +52,70 @@ export class DalleRenovationService {
     };
 
     const stylePrompts = {
-      'modern-minimalist': `MODERN MINIMALIST STYLE APPLICATION:
-- Wall colors: Crisp whites, soft grays, or warm off-whites
-- Cabinetry: Sleek, handleless doors or minimal bar pulls in white, gray, or natural wood
-- Countertops: White quartz, marble, or concrete with clean edges
-- Hardware: Brushed stainless steel, matte black, or hidden/integrated
-- Lighting: LED strip lights, geometric pendants, or recessed lighting
-- Furniture: Clean lines, neutral fabrics, minimal ornamentation
-- Decor: Very limited - perhaps one statement piece or plant
-- Flooring: Light wood, polished concrete, or large format tiles
-- Window treatments: Simple roller blinds or no treatments to maximize light`,
+      'modern-minimalist': `MODERN MINIMALIST PROFESSIONAL SPECIFICATION:
+- Premium matte white or warm gray lacquer cabinetry with handleless design
+- Waterfall edge quartz countertops in Calacatta or pure white
+- Integrated LED strip lighting with professional dimming
+- Stainless steel or fully integrated appliances
+- Large format porcelain tile flooring (24"x48") in light gray
+- Minimal hardware in brushed stainless or matte black
+- Professional architectural lighting design
+- Clean geometric lines with luxury finishes throughout`,
 
-      'farmhouse-chic': `FARMHOUSE CHIC STYLE APPLICATION:
-- Wall colors: Warm whites, cream, soft sage, or light gray
-- Cabinetry: White or cream painted with traditional hardware (cup pulls, knobs)
-- Countertops: Butcher block, marble, or white quartz with subtle veining
-- Hardware: Oil-rubbed bronze, brushed nickel, or matte black traditional styles
-- Lighting: Lantern-style pendants, mason jar fixtures, or wrought iron chandeliers
-- Furniture: Distressed wood, comfortable upholstered pieces, vintage-inspired
-- Decor: Fresh flowers, woven baskets, vintage signs, galvanized metal accents
-- Flooring: Wide plank wood, brick, or farmhouse tile patterns
-- Window treatments: Cafe curtains, roman shades, or natural linen panels`,
+      'farmhouse-chic': `FARMHOUSE CHIC PROFESSIONAL SPECIFICATION:
+- Custom painted Shaker-style cabinetry in Benjamin Moore Cloud White
+- Honed Carrara marble or premium butcher block countertops
+- White subway tile backsplash with charcoal grout
+- Professional farmhouse sink with bridge faucet in brushed nickel
+- Wide plank white oak hardwood flooring with natural finish
+- Oil-rubbed bronze cup pulls and knobs
+- Clear glass pendant lighting with black metal frames
+- Professional rustic-luxury finish quality throughout`,
 
-      'transitional': `TRANSITIONAL STYLE APPLICATION:
-- Wall colors: Warm neutrals (greige, mushroom, soft taupe, cream)
-- Cabinetry: Shaker-style or raised panel in painted or stained wood
-- Countertops: Natural stone, marble, or engineered quartz in neutral tones
-- Hardware: Brushed nickel, oil-rubbed bronze, or antique brass
-- Lighting: Classic shapes with modern updates, brushed metal finishes
-- Furniture: Mix of traditional and contemporary pieces, comfortable scale
-- Decor: Classic patterns, rich textures, timeless accessories
-- Flooring: Hardwood, natural stone, or traditional tile patterns
-- Window treatments: Tailored panels, roman shades, or classic drapery`,
+      'transitional': `TRANSITIONAL PROFESSIONAL SPECIFICATION:
+- Raised panel cabinetry in Sherwin Williams Accessible Beige
+- Natural granite countertops with eased edges in warm neutral tones
+- Natural stone backsplash in travertine or limestone
+- Brushed nickel or champagne bronze hardware
+- Red oak hardwood flooring in medium honey stain
+- Traditional pendant lighting with fabric shades
+- Professional blend of classic and contemporary elements
+- High-end traditional craftsmanship throughout`,
 
-      'coastal-new-england': `COASTAL NEW ENGLAND STYLE APPLICATION:
-- Wall colors: Crisp whites, soft blues, seafoam green, or weathered gray
-- Cabinetry: White or light blue painted, possibly with weathered finish
-- Countertops: White marble, butcher block, or light quartz with subtle veining
-- Hardware: Brushed nickel, polished chrome, or rope/nautical details
-- Lighting: Lantern-style, rope details, or clean coastal-inspired fixtures
-- Furniture: Natural materials, white/blue upholstery, weathered wood
-- Decor: Sea glass, coastal artwork, rope accents, fresh flowers, minimal nautical touches
-- Flooring: Light wood, whitewashed planks, or natural stone
-- Window treatments: White linen, natural fiber shades, or light filtering panels`,
+      'coastal-new-england': `COASTAL NEW ENGLAND PROFESSIONAL SPECIFICATION:
+- White painted Shaker cabinetry with beadboard panel details
+- White Carrara marble countertops with subtle gray veining
+- Glass subway tile backsplash in soft seafoam or crisp white
+- Polished chrome or brushed nickel hardware with rope details
+- Light oak hardwood flooring with whitewash finish
+- Nautical-inspired pendant lighting in polished chrome
+- Professional coastal luxury finish quality
+- Fresh, airy, high-end New England beach house aesthetic`,
 
-      'contemporary-luxe': `CONTEMPORARY LUXE STYLE APPLICATION:
-- Wall colors: Rich grays, deep charcoal, navy, or dramatic black accents
-- Cabinetry: High-gloss lacquer, rich wood veneers, or matte luxury finishes
-- Countertops: Premium materials - exotic granite, marble, or engineered quartz
-- Hardware: Brushed gold, matte black, or sleek stainless steel
-- Lighting: Statement chandeliers, designer pendants, or architectural fixtures
-- Furniture: Luxury materials (leather, velvet, silk), bold shapes, rich colors
-- Decor: Curated art pieces, sculptural objects, rich textiles, metallic accents
-- Flooring: Dark hardwood, large format stone, or luxury vinyl planks
-- Window treatments: Motorized blinds, rich drapery, or sleek panels`,
+      'contemporary-luxe': `CONTEMPORARY LUXE PROFESSIONAL SPECIFICATION:
+- High-gloss charcoal lacquer or exotic walnut veneer cabinetry
+- Premium Calacatta Gold marble countertops with dramatic veining
+- Large format natural stone backsplash in book-matched marble
+- Brushed gold or matte black luxury hardware
+- Large format porcelain tile flooring in dark gray (36"x36")
+- Designer crystal or geometric pendant lighting
+- Professional luxury finish quality throughout
+- Sophisticated contemporary elegance with premium materials`,
 
-      'eclectic-bohemian': `ECLECTIC BOHEMIAN STYLE APPLICATION:
-- Wall colors: Warm earth tones, jewel colors (emerald, sapphire, burnt orange)
-- Cabinetry: Natural wood stains, painted in rich colors, or mixed finishes
-- Countertops: Natural materials with character - wood, stone with veining, or colorful tiles
-- Hardware: Antique brass, copper, carved wood, or mixed vintage styles
-- Lighting: Moroccan-inspired, beaded chandeliers, or artisanal fixtures
-- Furniture: Mix of eras and styles, rich fabrics, carved wood, vintage pieces
-- Decor: Abundant plants, tapestries, global textiles, vintage art, layered rugs
-- Flooring: Rich wood, patterned tiles, or layered vintage rugs
-- Window treatments: Beaded curtains, rich fabrics, or woven natural materials`
+      'eclectic-bohemian': `ECLECTIC BOHEMIAN PROFESSIONAL SPECIFICATION:
+- Mixed wood and painted cabinetry in rich emerald and warm walnut tones
+- Natural stone countertops with dramatic veining and character
+- Handcrafted ceramic tile backsplash in Moroccan patterns
+- Mixed metal hardware in antique brass, copper, and bronze
+- Rich hardwood flooring in dark walnut with hand-scraped finish
+- Artisanal pendant lighting with natural materials and brass accents
+- Professional eclectic luxury finish quality
+- Curated, sophisticated bohemian aesthetic with high-end materials`
     };
 
     const selectedStylePrompt = stylePrompts[styleChoice as keyof typeof stylePrompts] || stylePrompts['modern-minimalist'];
 
-    return `${basePrompt}\n\n${roomSpecificFeatures[roomType]}\n\n${selectedStylePrompt}\n\nIMPORTANT: No text, words, labels, or annotations on the image. Create a clean, professional interior photograph showing the same space with updated ${styleChoice} finishes only.`;
+    return `${basePrompt}\n\n${roomSpecificFeatures[roomType]}\n\n${selectedStylePrompt}\n\nFINAL REQUIREMENTS: Create a photorealistic, professional architectural interior rendering with magazine-quality finishes. No text, labels, sketchy appearance, or drawn elements. This must look like a $3000 professional architectural visualization with the exact same camera angle and perspective.`;
   }
 
   static generateCustomRenovationPrompt(styleChoice: string, roomType: string, customPrompt: string): string {
