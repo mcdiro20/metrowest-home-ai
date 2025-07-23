@@ -81,7 +81,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         console.log('📸 Final originalImageBase64 length:', originalImageBase64?.length);
         
         try {
-          // Use the new DALL-E only renovation service
+          // Use the DALL-E renovation service
           console.log('🎨 Using DALL-E renovation service...');
           const { DalleRenovationService } = await import('../services/dalleRenovationService');
           
@@ -92,12 +92,14 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
             customPrompt: customPrompt
           });
           
+          console.log('🎨 Renovation result:', renovationResult);
+          
           if (renovationResult.success) {
-            generatedImageUrl = renovationResult.imageUrl;
+            generatedImageUrl = renovationResult.imageUrl!;
             console.log('✅ DALL-E renovation successful');
           } else {
-            console.log('⚠️ Layout preservation failed, using demo image');
-            generatedImageUrl = renovationResult.imageUrl; // Demo image
+            console.error('❌ DALL-E renovation failed:', renovationResult.error);
+            throw new Error(renovationResult.error || 'AI generation failed');
           }
         } catch (aiError) {
           console.error('❌ AI generation failed:', aiError);
@@ -112,6 +114,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
             other: 'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=1024'
           };
           generatedImageUrl = demoImages[roomType as keyof typeof demoImages] || demoImages.kitchen;
+          console.log('🔄 Using demo image as final fallback');
         }
 
         // Update progress during generation

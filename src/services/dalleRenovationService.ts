@@ -141,16 +141,21 @@ export class DalleRenovationService {
       console.log('🎨 Starting DALL-E renovation process...');
       console.log('🏠 Room type:', request.roomType);
       console.log('🎨 Style:', request.styleChoice);
+      console.log('🎨 Custom prompt:', request.customPrompt);
 
-      // Use backend API with DALL-E 2 editing for perfect layout preservation
-      console.log('🎨 Using DALL-E 2 image editing for layout preservation...');
+      // Convert file to base64 first
+      const imageBase64 = await this.fileToBase64(request.imageFile);
+      console.log('📸 Image converted to base64, length:', imageBase64.length);
+      
+      // Call backend API
+      console.log('🎨 Calling backend API for image generation...');
       const response = await fetch('/api/generate-ai-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          imageData: await this.fileToBase64(request.imageFile),
+          imageData: imageBase64,
           roomType: request.roomType,
           selectedStyle: { 
             id: request.styleChoice,
@@ -160,9 +165,17 @@ export class DalleRenovationService {
         })
       });
 
+      console.log('🎨 API response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
       const result = await response.json();
+      console.log('🎨 API result:', result);
 
       if (result.success) {
+        console.log('✅ Image generation successful via', result.method);
         return {
           success: true,
           imageUrl: result.generatedImageUrl,
@@ -171,26 +184,21 @@ export class DalleRenovationService {
         };
       }
       
-      // If layout preservation fails, return error instead of fallback
+      console.log('⚠️ API returned success: false');
       return {
         success: false,
         error: result.message || 'Layout preservation failed',
-        imageUrl: this.getDemoImage(request.roomType),
         style: request.styleChoice,
         roomType: request.roomType,
-        fallback: true
       };
 
     } catch (error) {
       console.error('❌ Renovation process failed:', error);
       
-      // Fallback to demo image
       return {
         success: false,
-        imageUrl: this.getDemoImage(request.roomType),
         style: request.styleChoice,
         roomType: request.roomType,
-        fallback: true,
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
