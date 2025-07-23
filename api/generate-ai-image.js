@@ -15,26 +15,10 @@ export default async function handler(req, res) {
   try {
     const { imageData, prompt, roomType, selectedStyle, customPrompt } = req.body;
 
-    console.log('🎨 DALL-E Renovation Request:');
+    console.log('🎨 DALL-E Layout-Preserving Renovation Request:');
     console.log('🎨 Room type:', roomType);
     console.log('🎨 Selected style:', selectedStyle);
-    console.log('🎨 Custom prompt:', customPrompt);
-    console.log('🎨 Image data length:', imageData?.length);
-
-    // Use the provided prompt or create a simple one
-    let renovationPrompt = prompt;
-    
-    if (!renovationPrompt) {
-      renovationPrompt = `Create a beautiful ${roomType} renovation maintaining the exact same layout and architectural features. Only update finishes, colors, and fixtures to ${selectedStyle?.name || 'modern'} style.`;
-      
-      if (customPrompt) {
-        renovationPrompt += ` Additional requirements: ${customPrompt}`;
-      }
-      
-      renovationPrompt += ` Create a photorealistic image without any text or labels.`;
-    }
-    
-    console.log('🎨 Using renovation prompt');
+    console.log('🎨 Has image data:', !!imageData);
 
     // Check for OpenAI API key
     const openaiKey = process.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
@@ -54,7 +38,8 @@ export default async function handler(req, res) {
       return res.status(200).json({
         success: true,
         generatedImageUrl: demoImages[roomType] || demoImages.kitchen,
-        message: 'Using demo image (no OpenAI key)'
+        message: 'Using demo image (no OpenAI key)',
+        method: 'demo'
       });
     }
 
@@ -64,144 +49,89 @@ export default async function handler(req, res) {
       apiKey: openaiKey
     });
 
-    console.log('🎨 Using OpenAI API for real image generation');
+    console.log('🎨 Using OpenAI API for layout-preserving renovation');
+
+    // ONLY use DALL-E 2 image editing for layout preservation
+    if (!imageData || !imageData.startsWith('data:image/')) {
+      throw new Error('Valid image data required for layout preservation');
+    }
 
     try {
-      console.log('🎨 Starting DALL-E generation process...');
-      console.log('🎨 Prompt length:', renovationPrompt.length);
-      console.log('🎨 Room type:', roomType);
-      console.log('🎨 Style:', selectedStyle?.name);
-
-      let generationResponse;
-      let usedMethod = 'unknown';
-
-      // Method 1: Try DALL-E 2 image editing (best for layout preservation)
-      if (imageData && imageData.startsWith('data:image/')) {
-        try {
-          console.log('🎨 Method 1: Attempting DALL-E 2 image editing...');
-          
-          // Convert base64 to buffer
-          const base64Data = imageData.split(',')[1];
-          const imageBuffer = Buffer.from(base64Data, 'base64');
-          
-          // Simple, clear prompt for editing
-          const editPrompt = `My prompt has full detail so no need to add more. Renovate this ${roomType} with ${selectedStyle?.name || 'modern'} style. Keep the exact same layout and only update finishes, colors, and materials. Create a clean interior photo without any text or labels.`;
-          
-          console.log('🎨 Edit prompt:', editPrompt);
-          
-          generationResponse = await openai.images.edit({
-            image: imageBuffer,
-            prompt: editPrompt,
-            n: 1,
-            size: "1024x1024"
-          });
-          
-          usedMethod = 'dalle-2-edit';
-          console.log('✅ DALL-E 2 editing successful');
-          
-        } catch (editError) {
-          console.log('❌ DALL-E 2 editing failed:', editError.message);
-          console.log('🔄 Falling back to DALL-E 3...');
-          
-          // Method 2: DALL-E 3 generation
-          try {
-            console.log('🎨 Method 2: Using DALL-E 3 generation...');
-            
-            // Add the prefix to prevent DALL-E 3 from adding elements
-            const dalle3Prompt = renovationPrompt.startsWith('My prompt has full detail') 
-              ? renovationPrompt 
-              : `My prompt has full detail so no need to add more. ${renovationPrompt}`;
-            
-            generationResponse = await openai.images.generate({
-              model: "dall-e-3",
-              prompt: dalle3Prompt,
-              n: 1,
-              size: "1024x1024",
-              quality: "standard",
-              style: "natural"
-            });
-            
-            usedMethod = 'dalle-3-generate';
-            console.log('✅ DALL-E 3 generation successful');
-            
-          } catch (dalle3Error) {
-            console.log('❌ DALL-E 3 generation failed:', dalle3Error.message);
-            throw dalle3Error;
-          }
+      console.log('🎨 Using DALL-E 2 image editing for perfect layout preservation...');
+      
+      // Convert base64 to buffer
+      const base64Data = imageData.split(',')[1];
+      const imageBuffer = Buffer.from(base64Data, 'base64');
+      
+      // Create ultra-simple prompt focused only on surface changes
+      let editPrompt = '';
+      
+      if (customPrompt) {
+        // Custom prompt with style base
+        if (selectedStyle?.name && selectedStyle.name !== 'Custom Style') {
+          editPrompt = `My prompt has full detail so no need to add more. Update only the surface finishes in this ${roomType} to ${selectedStyle.name.toLowerCase()} style. ${customPrompt}. Keep identical camera angle, room layout, and all structural elements. No text, labels, or words.`;
+        } else {
+          editPrompt = `My prompt has full detail so no need to add more. Update only the surface finishes in this ${roomType}. ${customPrompt}. Keep identical camera angle, room layout, and all structural elements. No text, labels, or words.`;
         }
       } else {
-        // Method 2: Direct DALL-E 3 if no valid image data
-        console.log('🎨 Method 2: Direct DALL-E 3 (no image editing)...');
+        // Standard style prompt
+        const styleMap = {
+          'modern-minimalist': 'clean white cabinets, quartz countertops, minimal hardware',
+          'farmhouse-chic': 'white shaker cabinets, wood accents, vintage fixtures',
+          'transitional': 'neutral painted cabinets, classic hardware, timeless finishes',
+          'coastal-new-england': 'light blue and white finishes, nautical touches',
+          'contemporary-luxe': 'dark cabinets, premium materials, gold accents',
+          'eclectic-bohemian': 'colorful finishes, mixed textures, artistic elements'
+        };
         
-        // Add the prefix to prevent DALL-E 3 from adding elements
-        const dalle3Prompt = renovationPrompt.startsWith('My prompt has full detail') 
-          ? renovationPrompt 
-          : `My prompt has full detail so no need to add more. ${renovationPrompt}`;
-        
-        generationResponse = await openai.images.generate({
-          model: "dall-e-3",
-          prompt: dalle3Prompt,
-          n: 1,
-          size: "1024x1024",
-          quality: "standard",
-          style: "natural"
-        });
-        
-        usedMethod = 'dalle-3-direct';
-        console.log('✅ DALL-E 3 direct generation successful');
+        const styleDescription = styleMap[selectedStyle?.id] || 'updated modern finishes';
+        editPrompt = `My prompt has full detail so no need to add more. Update only the cabinet doors, countertops, and paint colors in this ${roomType} with ${styleDescription}. Keep identical camera angle, room layout, and all structural elements. No text, labels, or words.`;
       }
-
-      const generatedImageUrl = generationResponse.data[0]?.url;
+      
+      console.log('🎨 Edit prompt:', editPrompt);
+      
+      const editResponse = await openai.images.edit({
+        image: imageBuffer,
+        prompt: editPrompt,
+        n: 1,
+        size: "1024x1024"
+      });
+      
+      const generatedImageUrl = editResponse.data[0]?.url;
       
       if (!generatedImageUrl) {
-        throw new Error('No image URL returned from OpenAI');
+        throw new Error('No image URL returned from DALL-E 2 editing');
       }
       
-      console.log('✅ Image generation completed successfully');
-      console.log('🎨 Method used:', usedMethod);
-      console.log('🎨 Generated URL:', generatedImageUrl.substring(0, 50) + '...');
-
+      console.log('✅ DALL-E 2 editing successful - layout preserved');
+      
       return res.status(200).json({
         success: true,
         generatedImageUrl: generatedImageUrl,
-        message: `Generated with ${usedMethod}: ${selectedStyle?.name || 'custom'} style`,
+        message: `Layout-preserving renovation with ${selectedStyle?.name || 'custom'} style`,
         appliedStyle: selectedStyle?.name,
         roomType: roomType,
-        method: usedMethod
-      });
-
-    } catch (openaiError) {
-      console.error('❌ All OpenAI methods failed:', openaiError);
-      console.error('❌ Error details:', {
-        message: openaiError.message,
-        code: openaiError.code,
-        type: openaiError.type
+        method: 'dalle-2-edit'
       });
       
-      // Don't throw - fall through to fallback
-      console.log('🔄 Using fallback demo image...');
+    } catch (editError) {
+      console.error('❌ DALL-E 2 editing failed:', editError);
+      
+      // If editing fails, return error instead of fallback
+      return res.status(200).json({
+        success: false,
+        message: `Layout preservation failed: ${editError.message}`,
+        error: editError.message,
+        method: 'failed'
+      });
     }
 
   } catch (error) {
     console.error('❌ AI Image Generation Error:', error);
     
-    // Final fallback to demo image
-    const fallbackImages = {
-      kitchen: 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=1024',
-      bathroom: 'https://images.pexels.com/photos/2062426/pexels-photo-2062426.jpeg?auto=compress&cs=tinysrgb&w=1024',
-      living_room: 'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1024',
-      bedroom: 'https://images.pexels.com/photos/2089698/pexels-photo-2089698.jpeg?auto=compress&cs=tinysrgb&w=1024',
-      dining_room: 'https://images.pexels.com/photos/2724749/pexels-photo-2724749.jpeg?auto=compress&cs=tinysrgb&w=1024',
-      home_office: 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1024',
-      other: 'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=1024'
-    };
-    
-    const fallbackImage = fallbackImages[roomType] || fallbackImages.kitchen;
-    
-    return res.status(200).json({
-      success: true,
-      generatedImageUrl: fallbackImage,
-      message: `Using demo image (generation failed): ${error.message}`,
+    return res.status(500).json({
+      success: false,
+      message: `Generation failed: ${error.message}`,
       error: error.message
     });
   }

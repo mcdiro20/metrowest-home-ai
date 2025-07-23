@@ -142,90 +142,51 @@ export class DalleRenovationService {
       console.log('🏠 Room type:', request.roomType);
       console.log('🎨 Style:', request.styleChoice);
 
-      // Generate the comprehensive prompt
-      const renovationPrompt = request.customPrompt 
-        ? this.generateCustomRenovationPrompt(request.styleChoice, request.roomType, request.customPrompt)
-        : this.generateRenovationPrompt(request.styleChoice, request.roomType);
-      console.log('📝 Generated renovation prompt');
-
-      // Check for OpenAI API key
-      const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
-      
-      if (!openaiKey) {
-        console.log('⚠️ No OpenAI API key - using demo image');
-        return {
-          success: true,
-          imageUrl: this.getDemoImage(request.roomType),
-          style: request.styleChoice,
+      // Use backend API with DALL-E 2 editing for perfect layout preservation
+      console.log('🎨 Using DALL-E 2 image editing for layout preservation...');
+      const response = await fetch('/api/generate-ai-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          imageData: await this.fileToBase64(request.imageFile),
           roomType: request.roomType,
-          fallback: true
-        };
-      }
-
-      // Try multiple approaches for better layout preservation
-      try {
-        // Approach 1: Use backend API with DALL-E 2 editing
-        console.log('🎨 Trying DALL-E 2 image editing approach...');
-        const response = await fetch('/api/generate-ai-image', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
+          selectedStyle: { 
+            id: request.styleChoice,
+            name: this.getStyleName(request.styleChoice)
           },
-          body: JSON.stringify({
-            imageData: await this.fileToBase64(request.imageFile),
-            prompt: renovationPrompt,
-            roomType: request.roomType,
-            selectedStyle: { name: request.styleChoice }
-          })
-        });
+          customPrompt: request.customPrompt
+        })
+      });
 
-        const result = await response.json();
+      const result = await response.json();
 
-        if (result.success) {
-          return {
-            success: true,
-            imageUrl: result.generatedImageUrl,
-            style: request.styleChoice,
-            roomType: request.roomType
-          };
-        }
-        
-        throw new Error(result.message || 'Backend generation failed');
-        
-      } catch (backendError) {
-        console.log('❌ Backend approach failed, trying direct DALL-E 3:', backendError.message);
-        
-        // Approach 2: Direct DALL-E 3 with very simple prompt
-        const { default: OpenAI } = await import('openai');
-        const openai = new OpenAI({
-          apiKey: openaiKey,
-          dangerouslyAllowBrowser: true
-        });
-        
-        const simplePrompt = `Update this ${request.roomType} with ${request.styleChoice} style. Keep the same layout and only change finishes. No text or labels.`;
-        
-        const directResponse = await openai.images.generate({
-          model: "dall-e-3",
-          prompt: simplePrompt,
-          n: 1,
-          size: "1024x1024",
-          quality: "standard"
-        });
-        
+      if (result.success) {
         return {
           success: true,
-          imageUrl: directResponse.data[0]?.url || this.getDemoImage(request.roomType),
+          imageUrl: result.generatedImageUrl,
           style: request.styleChoice,
           roomType: request.roomType
         };
       }
+      
+      // If layout preservation fails, return error instead of fallback
+      return {
+        success: false,
+        error: result.message || 'Layout preservation failed',
+        imageUrl: this.getDemoImage(request.roomType),
+        style: request.styleChoice,
+        roomType: request.roomType,
+        fallback: true
+      };
 
     } catch (error) {
       console.error('❌ Renovation process failed:', error);
       
       // Fallback to demo image
       return {
-        success: true,
+        success: false,
         imageUrl: this.getDemoImage(request.roomType),
         style: request.styleChoice,
         roomType: request.roomType,
@@ -233,6 +194,18 @@ export class DalleRenovationService {
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
+  }
+
+  private static getStyleName(styleId: string): string {
+    const styleNames = {
+      'modern-minimalist': 'Modern Minimalist',
+      'farmhouse-chic': 'Farmhouse Chic',
+      'transitional': 'Transitional',
+      'coastal-new-england': 'Coastal New England',
+      'contemporary-luxe': 'Contemporary Luxe',
+      'eclectic-bohemian': 'Eclectic Bohemian'
+    };
+    return styleNames[styleId as keyof typeof styleNames] || 'Custom Style';
   }
 
   private static async fileToBase64(file: File): Promise<string> {
