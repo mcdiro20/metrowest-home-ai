@@ -1,122 +1,86 @@
-export default class PromptBuilder {
-  static generateRenovationPrompt(styleChoice: string, roomType: string): string {
-    const basePrompt = `HIGH-END ARCHITECTURAL INTERIOR RENDERING:
+export class RenovationPromptService {
+  static generateRenovationPrompt(styleChoice: string, imageAnalysis: string): string {
+    const basePrompt = `Transform this interior space into a renovated version while maintaining EXACTLY the same:
+- Room layout and dimensions  
+- Window and door positions and sizes
+- Architectural elements (beams, columns, built-ins)
+- Overall perspective and camera angle
+- Lighting direction and quality
+- Floor plan and spatial relationships
+- ${imageAnalysis}
 
-You are rendering a luxury renovation of a real interior space. **Do not alter** the original room layout, structure, window or door positions, or physical proportions in any way.
+CRITICAL: This must look like the SAME ROOM after renovation, not a different space. Keep the bones of the room identical - only update finishes, fixtures, furniture, and decor in the ${styleChoice} style.
 
-Focus only on visual upgrades such as finishes, materials, lighting, surfaces, furniture, and decorative details — while keeping the spatial layout 100% intact.`;
+RENOVATION APPROACH: Think of this as a makeover of the existing space, not building a new room. Preserve all structural elements while updating surfaces, colors, fixtures, and furniture.`;
 
-    const roomGuidelines = {
-      kitchen: `KITCHEN RENOVATION RULES:
-• Maintain all cabinet, appliance, sink, window, and door positions exactly
-• Do NOT remove or reposition any structural feature
-• Cabinet footprint must stay exactly the same — update door style and finish only
-• Replace countertops with premium materials (butcher block, marble, or white quartz)
-• Update backsplash design (herringbone tile, white subway, etc.)
-• Upgrade sink fixture to a style-appropriate luxury faucet (keep sink location)
-• Add dramatic focal lighting (iron pendant, farmhouse chandelier, etc.)
-• Add subtle decorative accents (fruit bowl, herbs, cutting board)
-• Update flooring to wide-plank hardwood or weathered farmhouse tile
-• Add one hero feature: exposed wood vent hood or vintage-inspired lighting fixture`,
+    const stylePrompts = {
+      'modern-minimalist': `Style: Modern Minimalist
+- Clean lines with neutral color palette (whites, light grays, warm blacks)
+- Sleek cabinetry with handleless doors or minimal hardware
+- Quartz, marble, or concrete countertops
+- Stainless steel, matte black, or integrated appliances
+- Minimal decorative elements and clutter-free surfaces
+- LED strip lighting, geometric pendant lights
+- Natural materials like light oak or concrete accents
+- Simple, functional furniture with clean silhouettes`,
 
-      bathroom: `BATHROOM RENOVATION RULES:
-• Keep all plumbing and fixtures (sink, toilet, shower) in the exact same location
-• Upgrade surfaces: modern tile, new vanity top, high-end mirror
-• Add luxury lighting and high-end wall finishes (wainscoting, paneling, etc.)
-• Use hotel-style or spa-style decor: rolled towels, plants, soaps
-• No structural layout changes`,
+      'farmhouse-chic': `Style: Farmhouse Chic  
+- White or cream painted cabinetry with traditional hardware (cup pulls, knobs)
+- Butcher block, marble, or white quartz countertops
+- White subway tile or natural stone backsplashes
+- Shiplap walls, beadboard, or wainscoting accents
+- Vintage-inspired fixtures (lanterns, mason jar lights)
+- Reclaimed wood elements and rustic textures
+- Farmhouse sink, vintage-style faucets
+- Cozy textiles, fresh flowers, and country accessories`,
 
-      livingroom: `LIVING ROOM RENOVATION RULES:
-• Maintain all window and door placements
-• Keep fireplace and major architectural elements untouched
-• Upgrade finishes, furniture, lighting, and decor in chosen style
-• Add ambient and feature lighting (lamps, sconces, chandelier)
-• Style with pillows, rugs, plants, and curated shelves`,
+      'transitional': `Style: Transitional
+- Perfect blend of traditional and contemporary elements
+- Warm neutral colors (warm beiges, soft grays, creamy whites)
+- Shaker-style or raised panel cabinetry
+- Natural stone, marble, or engineered quartz countertops  
+- Classic subway tile or natural stone backsplashes
+- Brushed nickel, oil-rubbed bronze, or brass fixtures
+- Mix of traditional and modern furniture styles
+- Timeless patterns and comfortable, livable design`,
 
-      bedroom: `BEDROOM RENOVATION RULES:
-• Keep bed location, windows, and architectural layout fixed
-• Upgrade finishes, bedding, lighting, and decor
-• Add accent wall or ceiling detail to add richness
-• Maintain current spatial layout — enhance only`,
+      'coastal-new-england': `Style: Coastal New England
+- Light, airy color palette (crisp whites, soft blues, seafoam greens)
+- White or light blue painted cabinetry (possibly weathered finish)
+- Natural materials like driftwood, stone, and rope details
+- Glass tile, subway tile, or natural stone backsplashes
+- Nautical-inspired hardware (rope details, anchor motifs)
+- Natural fiber rugs, coastal artwork, and sea glass accents
+- Fresh, beachy vibe without overly kitschy nautical themes
+- Wicker furniture and natural textures`,
 
-      diningroom: `DINING ROOM RENOVATION RULES:
-• Do not move doors, windows, or dining table location
-• Upgrade lighting (chandeliers, sconces)
-• Add texture with rugs, curtains, and wall treatments
-• Style with centerpiece, plants, and art`
+      'contemporary-luxe': `Style: Contemporary Luxe
+- Sophisticated color palette (charcoal grays, deep blacks, rich jewel tones)
+- High-gloss lacquered or matte luxury cabinetry
+- Premium materials (marble, granite, quartzite, exotic woods)
+- Designer fixtures and statement lighting (chandeliers, artistic pendants)
+- High-end appliances with seamless integration
+- Bold architectural details and custom millwork
+- Luxury furniture with rich textures (velvet, leather, silk)
+- Curated art pieces and sophisticated accessories`,
+
+      'eclectic-bohemian': `Style: Eclectic Bohemian
+- Warm, rich color palette with jewel tones (deep blues, emerald greens, burnt oranges)
+- Mix of natural wood cabinetry or painted in warm, earthy hues
+- Unique patterned tiles for backsplashes (Moroccan, geometric, hand-painted)
+- Vintage brass, copper, or artisanal fixtures and hardware
+- Global-inspired accessories (tapestries, carved wood, ceramics)
+- Abundant plants and natural elements
+- Layered textiles, vintage rugs, and eclectic artwork
+- Mix of furniture styles and eras with personality`
     };
 
-    const styleDescriptions = {
-      'farmhouse-chic': `STYLE: FARMHOUSE CHIC LUXURY
-• Cabinetry: Cream, sage, or navy painted Shaker-style doors with cup pulls
-• Countertops: Butcher block, marble, or white quartz with light veining
-• Hardware: Aged brass, oil-rubbed bronze, or matte black
-• Fixtures: Bridge faucet, apron sink, vintage-inspired lighting
-• Lighting: Iron chandeliers, mason jar pendants, or barn-style sconces
-• Flooring: Reclaimed wood or brick-look tile in warm tones
-• Decor: Mason jars, herbs, rustic wood boards, linen curtains`,
+    const selectedStylePrompt = stylePrompts[styleChoice as keyof typeof stylePrompts] || stylePrompts['modern-minimalist'];
 
-      'modern': `STYLE: MODERN LUXURY
-• Sleek lines, minimalist layout
-• Flat panel cabinetry in matte or gloss finishes
-• Quartz or concrete countertops
-• Hidden or integrated appliances
-• Neutral palette with bold accents
-• Recessed lighting, sculptural pendants
-• Minimal decor, emphasis on space and light`,
-
-      'traditional': `STYLE: TRADITIONAL ELEGANCE
-• Raised panel cabinetry, crown molding
-• Marble or granite surfaces
-• Brass or polished nickel fixtures
-• Ornate lighting (crystal chandeliers, sconces)
-• Classic furnishings, rugs, and framed art`,
-
-      'coastal': `STYLE: COASTAL CALM
-• Light woods, white or blue cabinetry
-• Woven textures, soft natural fabrics
-• Open and airy feel with ocean-inspired palette
-• Nautical or beachy accessories
-• Lots of natural light and plants`,
-
-      'industrial': `STYLE: INDUSTRIAL MODERN
-• Exposed brick or concrete
-• Matte black hardware
-• Mixed materials: metal, wood, stone
-• Edison bulbs, pipe shelving
-• Neutral tones with raw finishes`
-    };
-
-    const renderingStandards = `
-RENDERING STANDARDS:
-• Render with photorealistic lighting, natural shadows, and rich material depth
-• Show premium textures (wood grain, veining, reflections, aged metal)
-• Use professional-grade interior composition and perspective
-• No unrealistic lighting, floating objects, or layout deviations
-• Do not add or remove structural elements
-• Final output must visually match top-tier architecture firm renderings
-• Absolutely no text, annotations, or labeling`;
-
-    const finalPrompt = [
-      basePrompt,
-      roomGuidelines[roomType as keyof typeof roomGuidelines] || '',
-      styleDescriptions[styleChoice as keyof typeof styleDescriptions] || '',
-      renderingStandards
-    ].join('\n\n');
-
-    return finalPrompt;
+    return `${basePrompt}\n\n${selectedStylePrompt}\n\nRemember: This is a renovation of the EXISTING space shown in the image. Maintain the exact same room layout, architectural features, and spatial relationships while applying the style transformation.`;
   }
 
-  static generateCustomPrompt(userText: string): string {
-    return `AI INTERIOR DESIGN TASK:
-Use the uploaded image as a fixed layout reference. Keep the structure, layout, and proportions exactly as they are. Apply only the upgrades or changes requested below:
-
-"${userText}"
-
-RENDERING INSTRUCTIONS:
-• Ultra-photorealistic rendering
-• No text or labels
-• No structural changes unless explicitly mentioned
-• Consistent with interior architecture visualization standards`;
+  static createFallbackPrompt(styleChoice: string): string {
+    return `Create a ${styleChoice} style interior renovation that maintains the original room's layout, dimensions, and architectural features. Focus on updating finishes, fixtures, and furniture while preserving the spatial arrangement and structural elements of the existing space.`;
   }
 }

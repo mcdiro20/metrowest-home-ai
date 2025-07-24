@@ -81,11 +81,11 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         console.log('📸 Final originalImageBase64 length:', originalImageBase64?.length);
         
         try {
-          // Use the DALL-E renovation service
-          console.log('🏗️ Using professional DALL-E rendering service...');
-          const { DalleRenovationService } = await import('../services/dalleRenovationService');
+          // Use the Stable Diffusion XL + ControlNet service
+          console.log('🏗️ Using professional Stable Diffusion XL + ControlNet service...');
+          const { StableDiffusionService } = await import('../services/stableDiffusionService');
           
-          const renovationResult = await DalleRenovationService.processRenovationRequest({
+          const renovationResult = await StableDiffusionService.processRenovationRequest({
             imageFile: uploadedFile,
             styleChoice: selectedStyle?.id || 'modern-minimalist',
             roomType: roomType,
@@ -96,13 +96,13 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
           
           if (renovationResult.success) {
             generatedImageUrl = renovationResult.imageUrl!;
-            console.log('✅ Professional architectural rendering successful');
+            console.log('✅ Professional SDXL + ControlNet rendering successful');
           } else {
-            console.error('❌ Professional rendering failed:', renovationResult.error);
+            console.error('❌ Professional SDXL rendering failed:', renovationResult.error);
             throw new Error(renovationResult.error || 'AI generation failed');
           }
         } catch (aiError) {
-          console.error('❌ AI generation failed:', aiError);
+          console.error('❌ Stable Diffusion generation failed:', aiError);
           // Final fallback to demo image
           const demoImages = {
             kitchen: 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=1024',
@@ -114,7 +114,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
             other: 'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=1024'
           };
           generatedImageUrl = demoImages[roomType as keyof typeof demoImages] || demoImages.kitchen;
-          console.log('🔄 Using demo image as final fallback');
+          console.log('🔄 Using demo image as final fallback from SDXL failure');
         }
 
         // Update progress during generation
@@ -168,27 +168,27 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
       case 'analyzing':
         if (currentStep === 'analysis') {
           return {
-            title: 'Analyzing Architectural Features',
-            description: 'Professional analysis of your space including camera angle, lighting, materials, and structural elements for precise rendering.',
+            title: 'Analyzing Layout with ControlNet',
+            description: 'Advanced computer vision analysis of your space structure, camera angle, and architectural elements for precise layout preservation.',
             icon: <Eye className="w-6 h-6" />
           };
         } else {
           return {
-            title: 'Preparing Professional Rendering',
-            description: 'Setting up $3000-quality architectural visualization parameters with photorealistic materials and lighting.',
+            title: 'Preparing SDXL + ControlNet',
+            description: 'Configuring Stable Diffusion XL with ControlNet for professional architectural rendering with perfect layout preservation.',
             icon: <Cpu className="w-6 h-6" />
           };
         }
       case 'generating':
         return {
-          title: 'Creating Professional Rendering',
-          description: 'Generating photorealistic architectural visualization with magazine-quality finishes and professional lighting.',
+          title: 'SDXL + ControlNet Rendering',
+          description: 'Stable Diffusion XL with ControlNet is creating a photorealistic architectural rendering while preserving your exact layout.',
           icon: <Zap className="w-6 h-6 animate-pulse" />
         };
       case 'complete':
         return {
-          title: 'Professional Rendering Complete!',
-          description: 'Your $3000-quality architectural visualization is ready. Preparing your professional before/after comparison.',
+          title: 'SDXL Rendering Complete!',
+          description: 'Your professional architectural visualization with perfect layout preservation is ready!',
           icon: <CheckCircle className="w-6 h-6" />
         };
     }
@@ -242,19 +242,19 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         <div className="mt-6 space-y-2">
           <div className={`flex items-center gap-3 text-sm ${stage === 'analyzing' ? 'text-blue-600' : progress > 30 ? 'text-emerald-600' : 'text-gray-400'}`}>
             <div className={`w-2 h-2 rounded-full ${stage === 'analyzing' && currentStep === 'analysis' ? 'bg-blue-600 animate-pulse' : progress > 20 ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
-            <span>Professional architectural analysis</span>
+            <span>ControlNet layout analysis</span>
           </div>
           <div className={`flex items-center gap-3 text-sm ${currentStep === 'prompt' ? 'text-blue-600' : progress > 40 ? 'text-emerald-600' : 'text-gray-400'}`}>
             <div className={`w-2 h-2 rounded-full ${currentStep === 'prompt' ? 'bg-blue-600 animate-pulse' : progress > 40 ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
-            <span>Setting up professional rendering parameters</span>
+            <span>Configuring SDXL + ControlNet parameters</span>
           </div>
           <div className={`flex items-center gap-3 text-sm ${currentStep === 'generation' ? 'text-blue-600' : progress > 90 ? 'text-emerald-600' : 'text-gray-400'}`}>
             <div className={`w-2 h-2 rounded-full ${currentStep === 'generation' ? 'bg-blue-600 animate-pulse' : progress > 90 ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
-            <span>Creating photorealistic architectural rendering</span>
+            <span>Stable Diffusion XL professional rendering</span>
           </div>
           <div className={`flex items-center gap-3 text-sm ${stage === 'complete' ? 'text-emerald-600' : 'text-gray-400'}`}>
             <div className={`w-2 h-2 rounded-full ${stage === 'complete' ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
-            <span>Finalizing professional visualization</span>
+            <span>Finalizing SDXL visualization</span>
           </div>
         </div>
       </div>
