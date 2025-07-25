@@ -147,7 +147,7 @@ export default async function handler(req, res) {
       }
       
       console.log('✅ Professional architectural rendering successful');
-      console.log('🏗️ Generated image URL:', generatedImageUrl.substring(0, 50) + '...');
+      console.log('🏗️ Generated image URL:', typeof generatedImageUrl === 'string' ? generatedImageUrl.substring(0, 50) + '...' : generatedImageUrl);
       
       return res.status(200).json({
         success: true,
