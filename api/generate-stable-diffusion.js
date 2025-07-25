@@ -127,11 +127,26 @@ export default async function handler(req, res) {
       // Now use the enhanced image for style transformation with SDXL img2img
       const enhancedImage = Array.isArray(output) ? output[0] : output;
       
+      // Convert the enhanced image to a URL string if it's a file object
+      let enhancedImageUrl;
+      if (typeof enhancedImage === 'string') {
+        enhancedImageUrl = enhancedImage;
+      } else if (enhancedImage && typeof enhancedImage.url === 'function') {
+        enhancedImageUrl = enhancedImage.url();
+      } else if (enhancedImage && enhancedImage.url) {
+        enhancedImageUrl = enhancedImage.url;
+      } else {
+        console.error('❌ Could not extract URL from enhanced image:', typeof enhancedImage, enhancedImage);
+        throw new Error('Could not extract URL from enhanced image');
+      }
+      
+      console.log('🔗 Enhanced image URL:', enhancedImageUrl);
+      
       const styleOutput = await replicate.run(
         "stability-ai/stable-diffusion-img2img:15a3689ee13b0d2616e98820eca31d4c3abcd36672df6afce5cb6feb1d66087d",
         {
           input: {
-            image: enhancedImage,
+            image: enhancedImageUrl,
             prompt: professionalPrompt,
             negative_prompt: negativePrompt,
             num_inference_steps: 20,
