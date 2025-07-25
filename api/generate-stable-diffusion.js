@@ -188,30 +188,30 @@ export default async function handler(req, res) {
 
 // Create professional SDXL prompt for architectural rendering
 function createProfessionalSDXLPrompt(selectedStyle, roomType) {
-  const basePrompt = `professional interior design photography, photorealistic ${roomType}, natural lighting, real materials and textures, architectural photography, magazine quality, sharp focus, realistic shadows and reflections, interior design showcase`;
+  const basePrompt = `award-winning interior design photography, luxury ${roomType} renovation, professional real estate photography, magazine cover quality, perfect natural lighting, seamless composition, high-end materials, flawless execution, architectural digest style, sharp focus throughout, professional color grading`;
 
   const stylePrompts = {
-    'modern-minimalist': `modern minimalist kitchen renovation, crisp white flat-panel cabinets with hidden handles, white quartz countertops with subtle veining, integrated stainless steel appliances, under-cabinet LED lighting, large format gray porcelain floor tiles, brushed stainless steel fixtures, clean geometric lines, natural window light`,
+    'modern-minimalist': `stunning modern minimalist kitchen with flawless white slab-door cabinets, seamless handleless design, pristine white quartz waterfall countertops, fully integrated premium appliances, perfect under-cabinet LED lighting, large format light gray porcelain tiles, brushed stainless steel accents, clean architectural lines, abundant natural light, magazine-worthy styling`,
     
-    'farmhouse-chic': `farmhouse style kitchen renovation, white painted shaker cabinets with raised panels, honed Carrara marble countertops, white subway tile backsplash with dark grout, white porcelain farmhouse sink, oil-rubbed bronze hardware, wide plank hardwood floors, pendant lighting with clear glass shades, natural wood accents`,
+    'farmhouse-chic': `breathtaking farmhouse kitchen with custom white shaker cabinets, beautiful raised panel doors, gorgeous honed Carrara marble countertops, classic white subway tile with charcoal grout, stunning white farmhouse apron sink, elegant oil-rubbed bronze cup pulls and knobs, rich wide-plank hardwood flooring, beautiful pendant lights with clear glass shades, warm natural wood beam accents`,
     
-    'transitional': `transitional kitchen renovation, warm gray raised panel cabinets, natural granite countertops with earth tones, neutral subway tile backsplash, brushed nickel hardware, hardwood floors in medium brown, classic pendant lighting, blend of traditional and contemporary elements, warm ambient lighting`,
+    'transitional': `elegant transitional kitchen featuring warm gray raised panel cabinetry, beautiful natural granite countertops in warm earth tones, sophisticated neutral stone backsplash, polished brushed nickel hardware, rich medium-tone hardwood flooring, classic pendant lighting fixtures, perfect blend of traditional craftsmanship and contemporary style, warm inviting atmosphere`,
     
-    'coastal-new-england': `coastal New England kitchen renovation, white painted shaker cabinets with beadboard details, white marble countertops, sea glass blue subway tile backsplash, polished chrome hardware, light oak hardwood floors, nautical-inspired pendant lighting, bright natural lighting, fresh coastal atmosphere`,
+    'coastal-new-england': `gorgeous coastal New England kitchen with crisp white shaker cabinets featuring beadboard panel inserts, pristine white Carrara marble countertops, beautiful sea glass blue subway tile backsplash, polished chrome cup pulls and knobs, light natural oak hardwood floors, charming nautical-inspired pendant lights, bright airy atmosphere with abundant natural light, fresh coastal elegance`,
     
-    'contemporary-luxe': `contemporary luxury kitchen renovation, high-gloss charcoal gray cabinets, dramatic Calacatta Gold marble countertops with bold veining, large format natural stone backsplash, brushed gold hardware, dark hardwood floors, designer crystal pendant lighting, premium materials throughout, sophisticated modern elegance`,
+    'contemporary-luxe': `spectacular contemporary luxury kitchen with high-gloss charcoal lacquer cabinets, dramatic Calacatta Gold marble countertops with stunning veining, large format book-matched marble backsplash, elegant brushed gold hardware, rich dark hardwood flooring, stunning crystal pendant lighting, premium materials throughout, sophisticated modern luxury, impeccable craftsmanship`,
     
-    'eclectic-bohemian': `eclectic bohemian kitchen renovation, mixed wood and painted cabinets in rich emerald green and natural walnut, natural stone countertops with character, handcrafted Moroccan patterned tile backsplash, mixed metal hardware in brass and copper, rich hardwood floors, artisanal pendant lighting with natural materials, global-inspired elements, layered textures and warm colors`
+    'eclectic-bohemian': `stunning eclectic bohemian kitchen with beautiful mixed cabinetry in rich emerald green paint and natural walnut wood, gorgeous natural stone countertops with unique character, exquisite handcrafted Moroccan patterned tile backsplash, curated mixed metal hardware in antique brass and copper, rich walnut hardwood floors, beautiful artisanal pendant lights with natural materials, sophisticated global-inspired design, rich layered textures and warm inviting colors`
   };
 
   const selectedStylePrompt = stylePrompts[selectedStyle?.id] || stylePrompts['modern-minimalist'];
   
-  return `${basePrompt}, ${selectedStylePrompt}, professional real estate photography style, natural lighting, realistic materials, no artificial effects, no text, no labels, photorealistic kitchen interior`;
+  return `${basePrompt}, ${selectedStylePrompt}, shot with professional camera, perfect composition, seamless design, flawless execution, natural lighting, realistic materials and textures, no artificial effects, no text, no labels, no watermarks, magazine-quality interior photography`;
 }
 
 // Create negative prompt to avoid unwanted elements
 function createNegativePrompt() {
-  return `cartoon, anime, sketch, drawing, painting, illustration, text, labels, words, letters, watermark, signature, blurry, low quality, distorted, deformed, ugly, bad anatomy, extra limbs, missing parts, oversaturated, unrealistic colors, amateur photography, artificial looking, plastic appearance, overly processed, fake materials, CGI, rendered look, synthetic textures`;
+  return `cartoon, anime, sketch, drawing, painting, illustration, text, labels, words, letters, watermark, signature, blurry, low quality, distorted, deformed, ugly, bad anatomy, extra limbs, missing parts, oversaturated, unrealistic colors, amateur photography, artificial looking, plastic appearance, overly processed, fake materials, CGI, rendered look, synthetic textures, fragmented, split image, multiple exposures, collage, patchwork, seams, visible joints, mismatched lighting, inconsistent perspective, choppy composition, layered images, composite look`;
 }
 
 // Demo images for fallback
