@@ -107,37 +107,52 @@ export default async function handler(req, res) {
 
     try {
       console.log('🏗️ Calling Stable Diffusion XL with ControlNet...');
-      console.log('🏗️ Model: stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b');
+      console.log('🏗️ Model: tencentarc/gfpgan (image-to-image for layout preservation)');
       console.log('🏗️ Prompt length:', professionalPrompt.length);
       
-      // Use SDXL with ControlNet for layout preservation
+      // Try image-to-image model first for layout preservation
       const output = await replicate.run(
-        "stability-ai/sdxl:7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc",
+        "tencentarc/gfpgan:9283608cc6b7be6b65a8e44983db012355fde4132009bf99d976b2f0896856a3",
         {
           input: {
-            prompt: professionalPrompt,
-            negative_prompt: negativePrompt,
-            width: 1024,
-            height: 1024,
-            num_inference_steps: 25,
-            refine: "expert_ensemble_refiner",
-            apply_watermark: false
+            img: imageUrl,
+            version: "v1.4",
+            scale: 2
           }
         }
       );
       
-      console.log('✅ Stable Diffusion XL completed');
-      console.log('🏗️ Output type:', typeof output);
-      console.log('🏗️ Output content:', output);
+      console.log('✅ GFPGAN completed - now applying style transformation...');
+      
+      // Now use the enhanced image for style transformation with SDXL img2img
+      const enhancedImage = Array.isArray(output) ? output[0] : output;
+      
+      const styleOutput = await replicate.run(
+        "stability-ai/stable-diffusion-img2img:15a3689ee13b0d2616e98820eca31d4c3abcd36672df6afce5cb6feb1d66087d",
+        {
+          input: {
+            image: enhancedImage,
+            prompt: professionalPrompt,
+            negative_prompt: negativePrompt,
+            num_inference_steps: 20,
+            guidance_scale: 7.5,
+            strength: 0.6  // Lower strength preserves more of original layout
+          }
+        }
+      );
+      
+      console.log('✅ Style transformation completed');
+      console.log('🏗️ Output type:', typeof styleOutput);
+      console.log('🏗️ Output content:', styleOutput);
       
       let generatedImageUrl;
-      if (Array.isArray(output) && output.length > 0 && output[0]) {
+      if (Array.isArray(styleOutput) && styleOutput.length > 0 && styleOutput[0]) {
         // Handle both URL strings and file objects
-        generatedImageUrl = typeof output[0] === 'string' ? output[0] : output[0].url();
-      } else if (typeof output === 'string') {
-        generatedImageUrl = output;
-      } else if (output && typeof output.url === 'function') {
-        generatedImageUrl = output.url();
+        generatedImageUrl = typeof styleOutput[0] === 'string' ? styleOutput[0] : styleOutput[0].url();
+      } else if (typeof styleOutput === 'string') {
+        generatedImageUrl = styleOutput;
+      } else if (styleOutput && typeof styleOutput.url === 'function') {
+        generatedImageUrl = styleOutput.url();
       } else {
         throw new Error('Unexpected output format from Stable Diffusion');
       }
@@ -152,10 +167,10 @@ export default async function handler(req, res) {
       return res.status(200).json({
         success: true,
         generatedImageUrl: generatedImageUrl,
-        message: `Professional SDXL rendering with ${selectedStyle?.name || 'custom'} style`,
+        message: `Layout-preserving renovation with ${selectedStyle?.name || 'custom'} style`,
         appliedStyle: selectedStyle?.name,
         roomType: roomType,
-        method: 'stable-diffusion-xl-controlnet',
+        method: 'gfpgan-enhancement-plus-img2img',
         prompt: professionalPrompt
       });
       

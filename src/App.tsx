@@ -11,8 +11,6 @@ import InspirationFeed from './components/InspirationFeed';
 import HowItWorksSection from './components/HowItWorksSection';
 import WhyChooseUsSection from './components/WhyChooseUsSection';
 import Footer from './components/Footer';
-import DebugPanel from './components/DebugPanel';
-import EnvDisplay from './components/EnvDisplay';
 
 function App() {
   const [showZipCodeModal, setShowZipCodeModal] = useState(false);
@@ -157,12 +155,6 @@ function App() {
       <HowItWorksSection />
       <WhyChooseUsSection />
       <Footer />
-      
-      {/* Debug Panel - Remove in production */}
-      <DebugPanel />
-      
-      {/* Environment Variables Display - Remove in production */}
-      <EnvDisplay />
       
       <ZipCodeModal 
         isOpen={showZipCodeModal}
