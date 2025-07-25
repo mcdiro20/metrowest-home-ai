@@ -374,6 +374,46 @@ const DebugPanel: React.FC = () => {
     setIsLoading(false);
   };
 
+  const testReplicateModels = async () => {
+    setIsLoading(true);
+    try {
+      console.log('🔍 Testing Replicate models...');
+      
+      const response = await fetch('/api/debug-replicate', {
+        method: 'GET'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API response not ok: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log('🔍 Replicate debug result:', result);
+      
+      setDebugResults({
+        success: result.success,
+        message: result.message,
+        type: 'replicate-models',
+        details: {
+          workingModels: result.workingModels || [],
+          allTests: result.modelTests || [],
+          stabilityModels: result.stabilityAiModels || [],
+          recommendation: result.recommendation
+        }
+      });
+      
+    } catch (error) {
+      console.error('💥 Replicate debug error:', error);
+      setDebugResults({
+        success: false,
+        message: `Replicate debug failed: ${error.message}`,
+        type: 'replicate-models',
+        error: error.message
+      });
+    }
+    setIsLoading(false);
+  };
+
   const testDirectSupabase = async () => {
     setIsLoading(true);
     try {
@@ -525,6 +565,15 @@ const DebugPanel: React.FC = () => {
           </button>
           
           <button
+            onClick={testReplicateModels}
+            disabled={isLoading}
+            className="w-full flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded text-sm transition-colors disabled:opacity-50"
+          >
+            <Database className="w-4 h-4" />
+            {isLoading ? 'Testing...' : 'Debug Replicate Models'}
+          </button>
+          
+          <button
             onClick={testDirectSupabase}
             disabled={isLoading}
             className="w-full flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm transition-colors disabled:opacity-50"
@@ -600,6 +649,27 @@ const DebugPanel: React.FC = () => {
                 )}
                 {debugResults.details.contractorResponse?.score && (
                   <div>Lead Score: {debugResults.details.contractorResponse.score}</div>
+                )}
+              </div>
+            )}
+            
+            {debugResults.type === 'replicate-models' && debugResults.details && (
+              <div className="text-xs text-gray-500 space-y-1">
+                <div>Working Models Found: {debugResults.details.workingModels?.length || 0}</div>
+                {debugResults.details.workingModels?.map((model, index) => (
+                  <div key={index} className="text-green-600">
+                    ✅ {model.name} (v: {model.latestVersion?.substring(0, 8)}...)
+                  </div>
+                ))}
+                {debugResults.details.allTests?.filter(test => test.status !== 'exists').map((model, index) => (
+                  <div key={index} className="text-red-600">
+                    ❌ {model.name} ({model.status})
+                  </div>
+                ))}
+                {debugResults.details.recommendation && (
+                  <div className="text-blue-600 font-medium mt-2">
+                    💡 {debugResults.details.recommendation}
+                  </div>
                 )}
               </div>
             )}

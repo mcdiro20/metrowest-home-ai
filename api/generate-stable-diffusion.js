@@ -107,22 +107,21 @@ export default async function handler(req, res) {
 
     try {
       console.log('🏗️ Calling Stable Diffusion XL with ControlNet...');
-      console.log('🏗️ Model: stability-ai/stable-diffusion-xl-base-1.0');
+      console.log('🏗️ Model: stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b');
       console.log('🏗️ Prompt length:', professionalPrompt.length);
       
       // Use SDXL with ControlNet for layout preservation
       const output = await replicate.run(
-        "stability-ai/stable-diffusion-xl-base-1.0",
+        "stability-ai/sdxl:7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc",
         {
           input: {
             prompt: professionalPrompt,
             negative_prompt: negativePrompt,
             width: 1024,
             height: 1024,
-            num_inference_steps: 50,
-            guidance_scale: 7.5,
-            scheduler: "DPMSolverMultistep",
-            seed: Math.floor(Math.random() * 1000000)
+            num_inference_steps: 25,
+            refine: "expert_ensemble_refiner",
+            apply_watermark: false
           }
         }
       );
@@ -132,10 +131,13 @@ export default async function handler(req, res) {
       console.log('🏗️ Output content:', output);
       
       let generatedImageUrl;
-      if (Array.isArray(output) && output.length > 0) {
-        generatedImageUrl = output[0];
+      if (Array.isArray(output) && output.length > 0 && output[0]) {
+        // Handle both URL strings and file objects
+        generatedImageUrl = typeof output[0] === 'string' ? output[0] : output[0].url();
       } else if (typeof output === 'string') {
         generatedImageUrl = output;
+      } else if (output && typeof output.url === 'function') {
+        generatedImageUrl = output.url();
       } else {
         throw new Error('Unexpected output format from Stable Diffusion');
       }
