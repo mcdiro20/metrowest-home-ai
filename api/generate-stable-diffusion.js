@@ -103,71 +103,40 @@ export default async function handler(req, res) {
 
     // Convert base64 to data URL for Replicate
     const imageUrl = imageData;
-    console.log('📸 Image data prepared for ControlNet');
+    console.log('📸 Image data prepared for img2img');
 
     try {
-      console.log('🏗️ Calling Stable Diffusion XL with ControlNet...');
-      console.log('🏗️ Model: tencentarc/gfpgan (image-to-image for layout preservation)');
+      console.log('🏗️ Calling Stable Diffusion img2img for layout-preserving renovation...');
+      console.log('🏗️ Model: stability-ai/stable-diffusion-img2img');
       console.log('🏗️ Prompt length:', professionalPrompt.length);
       
-      // Try image-to-image model first for layout preservation
+      // Use single img2img model with conservative strength for layout preservation
       const output = await replicate.run(
-        "tencentarc/gfpgan:9283608cc6b7be6b65a8e44983db012355fde4132009bf99d976b2f0896856a3",
-        {
-          input: {
-            img: imageUrl,
-            version: "v1.4",
-            scale: 2
-          }
-        }
-      );
-      
-      console.log('✅ GFPGAN completed - now applying style transformation...');
-      
-      // Now use the enhanced image for style transformation with SDXL img2img
-      const enhancedImage = Array.isArray(output) ? output[0] : output;
-      
-      // Convert the enhanced image to a URL string if it's a file object
-      let enhancedImageUrl;
-      if (typeof enhancedImage === 'string') {
-        enhancedImageUrl = enhancedImage;
-      } else if (enhancedImage && typeof enhancedImage.url === 'function') {
-        enhancedImageUrl = enhancedImage.url();
-      } else if (enhancedImage && enhancedImage.url) {
-        enhancedImageUrl = enhancedImage.url;
-      } else {
-        console.error('❌ Could not extract URL from enhanced image:', typeof enhancedImage, enhancedImage);
-        throw new Error('Could not extract URL from enhanced image');
-      }
-      
-      console.log('🔗 Enhanced image URL:', enhancedImageUrl);
-      
-      const styleOutput = await replicate.run(
         "stability-ai/stable-diffusion-img2img:15a3689ee13b0d2616e98820eca31d4c3abcd36672df6afce5cb6feb1d66087d",
         {
           input: {
-            image: enhancedImageUrl,
+            image: imageUrl,
             prompt: professionalPrompt,
             negative_prompt: negativePrompt,
             num_inference_steps: 20,
             guidance_scale: 7.5,
-            strength: 0.6  // Lower strength preserves more of original layout
+            strength: 0.5  // Conservative strength to preserve layout
           }
         }
       );
       
-      console.log('✅ Style transformation completed');
-      console.log('🏗️ Output type:', typeof styleOutput);
-      console.log('🏗️ Output content:', styleOutput);
+      console.log('✅ Img2img renovation completed');
+      console.log('🏗️ Output type:', typeof output);
+      console.log('🏗️ Output content:', output);
       
       let generatedImageUrl;
-      if (Array.isArray(styleOutput) && styleOutput.length > 0 && styleOutput[0]) {
+      if (Array.isArray(output) && output.length > 0 && output[0]) {
         // Handle both URL strings and file objects
-        generatedImageUrl = typeof styleOutput[0] === 'string' ? styleOutput[0] : styleOutput[0].url();
-      } else if (typeof styleOutput === 'string') {
-        generatedImageUrl = styleOutput;
-      } else if (styleOutput && typeof styleOutput.url === 'function') {
-        generatedImageUrl = styleOutput.url();
+        generatedImageUrl = typeof output[0] === 'string' ? output[0] : output[0].url();
+      } else if (typeof output === 'string') {
+        generatedImageUrl = output;
+      } else if (output && typeof output.url === 'function') {
+        generatedImageUrl = output.url();
       } else {
         throw new Error('Unexpected output format from Stable Diffusion');
       }
@@ -185,7 +154,7 @@ export default async function handler(req, res) {
         message: `Layout-preserving renovation with ${selectedStyle?.name || 'custom'} style`,
         appliedStyle: selectedStyle?.name,
         roomType: roomType,
-        method: 'gfpgan-enhancement-plus-img2img',
+        method: 'single-img2img-layout-preserving',
         prompt: professionalPrompt
       });
       
