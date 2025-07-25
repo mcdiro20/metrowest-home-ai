@@ -44,6 +44,11 @@ export default async function handler(req, res) {
     // Check for Replicate API key (for Stable Diffusion)
     const replicateApiKey = process.env.REPLICATE_API_TOKEN;
     
+    console.log('🔍 Environment check:');
+    console.log('🔍 Has REPLICATE_API_TOKEN:', !!replicateApiKey);
+    console.log('🔍 API key length:', replicateApiKey ? replicateApiKey.length : 0);
+    console.log('🔍 API key starts with:', replicateApiKey ? replicateApiKey.substring(0, 8) + '...' : 'N/A');
+    
     if (!replicateApiKey) {
       console.log('⚠️ No Replicate API key found - using demo mode');
       return res.status(200).json({
@@ -102,13 +107,14 @@ export default async function handler(req, res) {
 
     try {
       console.log('🏗️ Calling Stable Diffusion XL with ControlNet...');
+      console.log('🏗️ Model: stability-ai/stable-diffusion-xl-base-1.0');
+      console.log('🏗️ Prompt length:', professionalPrompt.length);
       
       // Use SDXL with ControlNet for layout preservation
       const output = await replicate.run(
-        "stability-ai/sdxl",
+        "stability-ai/stable-diffusion-xl-base-1.0",
         {
           input: {
-            image: imageUrl,
             prompt: professionalPrompt,
             negative_prompt: negativePrompt,
             width: 1024,
@@ -116,7 +122,6 @@ export default async function handler(req, res) {
             num_inference_steps: 50,
             guidance_scale: 7.5,
             scheduler: "DPMSolverMultistep",
-            strength: 0.7, // Preserve more of original layout
             seed: Math.floor(Math.random() * 1000000)
           }
         }
@@ -124,6 +129,7 @@ export default async function handler(req, res) {
       
       console.log('✅ Stable Diffusion XL completed');
       console.log('🏗️ Output type:', typeof output);
+      console.log('🏗️ Output content:', output);
       
       let generatedImageUrl;
       if (Array.isArray(output) && output.length > 0) {
@@ -153,6 +159,11 @@ export default async function handler(req, res) {
       
     } catch (sdxlError) {
       console.error('❌ Stable Diffusion XL failed:', sdxlError);
+      console.error('❌ Error details:', {
+        message: sdxlError.message,
+        stack: sdxlError.stack,
+        name: sdxlError.name
+      });
       
       return res.status(500).json({
         success: false,
