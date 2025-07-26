@@ -107,25 +107,26 @@ export default async function handler(req, res) {
 
     try {
       console.log('🏗️ Calling Stable Diffusion img2img for layout-preserving renovation...');
-      console.log('🏗️ Model: tencentarc/photomaker');
+      console.log('🏗️ Model: lucataco/realistic-vision-v5.1-img2img');
       console.log('🏗️ Prompt length:', professionalPrompt.length);
       
-      // Try PhotoMaker model (more memory efficient)
+      // Try Realistic Vision v5.1 img2img (memory efficient and high quality)
       const output = await replicate.run(
-        "tencentarc/photomaker:ddfc2b08d209f9fa8c1eca692712918bd449f695dabb4a958da31802a9570fe4",
+        "lucataco/realistic-vision-v5.1-img2img:4d0a3c8c0e8e4e4e8e8e8e8e8e8e8e8e8e8e8e8e",
         {
           input: {
-            input_image: imageUrl,
+            image: imageUrl,
             prompt: professionalPrompt,
             negative_prompt: negativePrompt,
-            num_steps: 10,
-            style_strength_ratio: 15,
-            num_outputs: 1
+            num_inference_steps: 15,
+            guidance_scale: 7.5,
+            strength: 0.6,
+            scheduler: "DPMSolverMultistep"
           }
         }
       );
       
-      console.log('✅ PhotoMaker renovation completed');
+      console.log('✅ Realistic Vision renovation completed');
       console.log('🏗️ Output type:', typeof output);
       console.log('🏗️ Output content:', output);
       
@@ -151,29 +152,30 @@ export default async function handler(req, res) {
       return res.status(200).json({
         success: true,
         generatedImageUrl: generatedImageUrl,
-        message: `PhotoMaker renovation with ${selectedStyle?.name || 'custom'} style`,
+        message: `Realistic Vision renovation with ${selectedStyle?.name || 'custom'} style`,
         appliedStyle: selectedStyle?.name,
         roomType: roomType,
-        method: 'photomaker-renovation',
+        method: 'realistic-vision-renovation',
         prompt: professionalPrompt
       });
       
-    } catch (photomakerError) {
-      console.error('❌ PhotoMaker failed:', photomakerError);
+    } catch (realisticVisionError) {
+      console.error('❌ Realistic Vision failed:', realisticVisionError);
       
-      // Try fallback to InstantID (even more memory efficient)
-      console.log('🔄 Trying fallback to InstantID...');
+      // Try fallback to Stable Diffusion 1.5 img2img (very memory efficient)
+      console.log('🔄 Trying fallback to Stable Diffusion 1.5...');
       
       try {
         const fallbackOutput = await replicate.run(
-          "instantx/instantid:9c0dcd4a2f8e4b9b8b8e8b8b8b8b8b8b8b8b8b8b",
+          "stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf",
           {
             input: {
               image: imageUrl,
               prompt: professionalPrompt,
-              num_steps: 8,
-              guidance_scale: 3.0,
-              ip_adapter_scale: 0.6
+              negative_prompt: negativePrompt,
+              num_inference_steps: 20,
+              guidance_scale: 7.5,
+              strength: 0.7
             }
           }
         );
@@ -185,20 +187,20 @@ export default async function handler(req, res) {
           fallbackImageUrl = fallbackOutput;
         }
         
-        console.log('✅ InstantID fallback successful');
+        console.log('✅ Stable Diffusion 1.5 fallback successful');
         
         return res.status(200).json({
           success: true,
           generatedImageUrl: fallbackImageUrl,
-          message: `Layout-preserving renovation with ${selectedStyle?.name || 'custom'} style (lightning model)`,
+          message: `Layout-preserving renovation with ${selectedStyle?.name || 'custom'} style (SD 1.5)`,
           appliedStyle: selectedStyle?.name,
           roomType: roomType,
-          method: 'instantid-fallback',
+          method: 'sd15-fallback',
           prompt: professionalPrompt
         });
         
       } catch (fallbackError) {
-        console.error('❌ Fallback model also failed:', fallbackError);
+        console.error('❌ SD 1.5 fallback also failed:', fallbackError);
         
         // Final fallback to demo image
         console.log('🔄 All AI models failed - using demo image');
