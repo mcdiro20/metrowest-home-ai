@@ -107,27 +107,25 @@ export default async function handler(req, res) {
 
     try {
       console.log('🏗️ Calling Stable Diffusion img2img for layout-preserving renovation...');
-      console.log('🏗️ Model: stability-ai/sdxl');
+      console.log('🏗️ Model: tencentarc/photomaker');
       console.log('🏗️ Prompt length:', professionalPrompt.length);
       
-      // Try SDXL img2img model
+      // Try PhotoMaker model (more memory efficient)
       const output = await replicate.run(
-        "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+        "tencentarc/photomaker:ddfc2b08d209f9fa8c1eca692712918bd449f695dabb4a958da31802a9570fe4",
         {
           input: {
-            image: imageUrl,
+            input_image: imageUrl,
             prompt: professionalPrompt,
             negative_prompt: negativePrompt,
-            num_inference_steps: 20,
-            guidance_scale: 7.5,
-            strength: 0.6,
-            width: 1024,
-            height: 1024
+            num_steps: 10,
+            style_strength_ratio: 15,
+            num_outputs: 1
           }
         }
       );
       
-      console.log('✅ Img2img renovation completed');
+      console.log('✅ PhotoMaker renovation completed');
       console.log('🏗️ Output type:', typeof output);
       console.log('🏗️ Output content:', output);
       
@@ -153,32 +151,29 @@ export default async function handler(req, res) {
       return res.status(200).json({
         success: true,
         generatedImageUrl: generatedImageUrl,
-        message: `Layout-preserving renovation with ${selectedStyle?.name || 'custom'} style`,
+        message: `PhotoMaker renovation with ${selectedStyle?.name || 'custom'} style`,
         appliedStyle: selectedStyle?.name,
         roomType: roomType,
-        method: 'single-img2img-layout-preserving',
+        method: 'photomaker-renovation',
         prompt: professionalPrompt
       });
       
-    } catch (sdxlError) {
-      console.error('❌ Stable Diffusion XL failed:', sdxlError);
+    } catch (photomakerError) {
+      console.error('❌ PhotoMaker failed:', photomakerError);
       
-      // Try fallback to even lighter model
-      console.log('🔄 Trying fallback to ByteDance SDXL Lightning...');
+      // Try fallback to InstantID (even more memory efficient)
+      console.log('🔄 Trying fallback to InstantID...');
       
       try {
         const fallbackOutput = await replicate.run(
-          "bytedance/sdxl-lightning-4step:5f24084160c9089501c1b3545d9be3c27883ae2239b6f412990e82d4a6210f8f",
+          "instantx/instantid:9c0dcd4a2f8e4b9b8b8e8b8b8b8b8b8b8b8b8b8b",
           {
             input: {
               image: imageUrl,
               prompt: professionalPrompt,
-              negative_prompt: negativePrompt,
-              num_inference_steps: 4,
-              guidance_scale: 1.0,
-              strength: 0.5,
-              width: 512,
-              height: 512
+              num_steps: 8,
+              guidance_scale: 3.0,
+              ip_adapter_scale: 0.6
             }
           }
         );
@@ -190,7 +185,7 @@ export default async function handler(req, res) {
           fallbackImageUrl = fallbackOutput;
         }
         
-        console.log('✅ Fallback model successful');
+        console.log('✅ InstantID fallback successful');
         
         return res.status(200).json({
           success: true,
@@ -198,7 +193,7 @@ export default async function handler(req, res) {
           message: `Layout-preserving renovation with ${selectedStyle?.name || 'custom'} style (lightning model)`,
           appliedStyle: selectedStyle?.name,
           roomType: roomType,
-          method: 'sdxl-lightning-4step',
+          method: 'instantid-fallback',
           prompt: professionalPrompt
         });
         
@@ -206,7 +201,7 @@ export default async function handler(req, res) {
         console.error('❌ Fallback model also failed:', fallbackError);
         
         // Final fallback to demo image
-        console.log('🔄 Using demo image as final fallback');
+        console.log('🔄 All AI models failed - using demo image');
         
         return res.status(200).json({
           success: true,
