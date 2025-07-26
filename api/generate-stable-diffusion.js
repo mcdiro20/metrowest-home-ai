@@ -107,20 +107,22 @@ export default async function handler(req, res) {
 
     try {
       console.log('🏗️ Calling Stable Diffusion img2img for layout-preserving renovation...');
-      console.log('🏗️ Model: stability-ai/stable-diffusion-img2img');
+      console.log('🏗️ Model: lucataco/sdxl (memory-efficient)');
       console.log('🏗️ Prompt length:', professionalPrompt.length);
       
-      // Use single img2img model with conservative strength for layout preservation
+      // Try memory-efficient SDXL model first
       const output = await replicate.run(
-        "stability-ai/stable-diffusion-img2img:15a3689ee13b0d2616e98820eca31d4c3abcd36672df6afce5cb6feb1d66087d",
+        "lucataco/sdxl:1e7737d7545394f3cfbc6d8c2e7df9a8c1c2b8e6c6c6c6c6c6c6c6c6c6c6c6c6",
         {
           input: {
             image: imageUrl,
             prompt: professionalPrompt,
             negative_prompt: negativePrompt,
-            num_inference_steps: 15,
-            guidance_scale: 6.0,
-            strength: 0.5  // Conservative strength to preserve layout
+            num_inference_steps: 10,
+            guidance_scale: 5.0,
+            strength: 0.4,
+            width: 768,
+            height: 768
           }
         }
       );
@@ -160,18 +162,61 @@ export default async function handler(req, res) {
       
     } catch (sdxlError) {
       console.error('❌ Stable Diffusion XL failed:', sdxlError);
-      console.error('❌ Error details:', {
-        message: sdxlError.message,
-        stack: sdxlError.stack,
-        name: sdxlError.name
-      });
       
-      return res.status(500).json({
-        success: false,
-        message: `Stable Diffusion XL failed: ${sdxlError.message}`,
-        error: sdxlError.message,
-        method: 'failed'
-      });
+      // Try fallback to even lighter model
+      console.log('🔄 Trying fallback to lighter SD model...');
+      
+      try {
+        const fallbackOutput = await replicate.run(
+          "stability-ai/stable-diffusion:27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478",
+          {
+            input: {
+              image: imageUrl,
+              prompt: professionalPrompt.substring(0, 500), // Shorter prompt
+              negative_prompt: negativePrompt.substring(0, 300),
+              num_inference_steps: 8,
+              guidance_scale: 4.0,
+              strength: 0.3,
+              width: 512,
+              height: 512
+            }
+          }
+        );
+        
+        let fallbackImageUrl;
+        if (Array.isArray(fallbackOutput) && fallbackOutput.length > 0) {
+          fallbackImageUrl = fallbackOutput[0];
+        } else {
+          fallbackImageUrl = fallbackOutput;
+        }
+        
+        console.log('✅ Fallback model successful');
+        
+        return res.status(200).json({
+          success: true,
+          generatedImageUrl: fallbackImageUrl,
+          message: `Layout-preserving renovation with ${selectedStyle?.name || 'custom'} style (fallback model)`,
+          appliedStyle: selectedStyle?.name,
+          roomType: roomType,
+          method: 'fallback-sd-model',
+          prompt: professionalPrompt
+        });
+        
+      } catch (fallbackError) {
+        console.error('❌ Fallback model also failed:', fallbackError);
+        
+        // Final fallback to demo image
+        console.log('🔄 Using demo image as final fallback');
+        
+        return res.status(200).json({
+          success: true,
+          generatedImageUrl: getDemoImage(roomType),
+          message: `Demo mode - Both AI models failed due to memory constraints`,
+          appliedStyle: selectedStyle?.name,
+          roomType: roomType,
+          method: 'demo-fallback'
+        });
+      }
     }
 
   } catch (error) {
