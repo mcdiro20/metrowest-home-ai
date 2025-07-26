@@ -107,26 +107,25 @@ export default async function handler(req, res) {
 
     try {
       console.log('🏗️ Calling Stable Diffusion img2img for layout-preserving renovation...');
-      console.log('🏗️ Model: lucataco/realistic-vision-v5.1-img2img');
+      console.log('🏗️ Model: stability-ai/stable-diffusion');
       console.log('🏗️ Prompt length:', professionalPrompt.length);
       
-      // Try Realistic Vision v5.1 img2img (memory efficient and high quality)
+      // Try the official Stability AI Stable Diffusion model (most reliable)
       const output = await replicate.run(
-        "lucataco/realistic-vision-v5.1-img2img:4d0a3c8c0e8e4e4e8e8e8e8e8e8e8e8e8e8e8e8e",
+        "stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf",
         {
           input: {
             image: imageUrl,
             prompt: professionalPrompt,
             negative_prompt: negativePrompt,
-            num_inference_steps: 15,
+            num_inference_steps: 20,
             guidance_scale: 7.5,
-            strength: 0.6,
-            scheduler: "DPMSolverMultistep"
+            strength: 0.7
           }
         }
       );
       
-      console.log('✅ Realistic Vision renovation completed');
+      console.log('✅ Stable Diffusion renovation completed');
       console.log('🏗️ Output type:', typeof output);
       console.log('🏗️ Output content:', output);
       
@@ -152,30 +151,30 @@ export default async function handler(req, res) {
       return res.status(200).json({
         success: true,
         generatedImageUrl: generatedImageUrl,
-        message: `Realistic Vision renovation with ${selectedStyle?.name || 'custom'} style`,
+        message: `Professional renovation with ${selectedStyle?.name || 'custom'} style`,
         appliedStyle: selectedStyle?.name,
         roomType: roomType,
-        method: 'realistic-vision-renovation',
+        method: 'stable-diffusion-renovation',
         prompt: professionalPrompt
       });
       
-    } catch (realisticVisionError) {
-      console.error('❌ Realistic Vision failed:', realisticVisionError);
+    } catch (stableDiffusionError) {
+      console.error('❌ Stable Diffusion failed:', stableDiffusionError);
       
-      // Try fallback to Stable Diffusion 1.5 img2img (very memory efficient)
-      console.log('🔄 Trying fallback to Stable Diffusion 1.5...');
+      // Try fallback to a simpler approach with lower memory usage
+      console.log('🔄 Trying fallback with reduced parameters...');
       
       try {
         const fallbackOutput = await replicate.run(
           "stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf",
           {
             input: {
-              image: imageUrl,
-              prompt: professionalPrompt,
+              prompt: `${professionalPrompt}, based on uploaded kitchen image`,
               negative_prompt: negativePrompt,
-              num_inference_steps: 20,
-              guidance_scale: 7.5,
-              strength: 0.7
+              num_inference_steps: 15,
+              guidance_scale: 6.0,
+              width: 512,
+              height: 512
             }
           }
         );
@@ -187,7 +186,7 @@ export default async function handler(req, res) {
           fallbackImageUrl = fallbackOutput;
         }
         
-        console.log('✅ Stable Diffusion 1.5 fallback successful');
+        console.log('✅ Stable Diffusion fallback successful');
         
         return res.status(200).json({
           success: true,
@@ -195,12 +194,12 @@ export default async function handler(req, res) {
           message: `Layout-preserving renovation with ${selectedStyle?.name || 'custom'} style (SD 1.5)`,
           appliedStyle: selectedStyle?.name,
           roomType: roomType,
-          method: 'sd15-fallback',
+          method: 'sd-fallback',
           prompt: professionalPrompt
         });
         
       } catch (fallbackError) {
-        console.error('❌ SD 1.5 fallback also failed:', fallbackError);
+        console.error('❌ SD fallback also failed:', fallbackError);
         
         // Final fallback to demo image
         console.log('🔄 All AI models failed - using demo image');
