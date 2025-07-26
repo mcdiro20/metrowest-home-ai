@@ -107,20 +107,20 @@ export default async function handler(req, res) {
 
     try {
       console.log('🏗️ Calling Stable Diffusion img2img for layout-preserving renovation...');
-      console.log('🏗️ Model: stability-ai/stable-diffusion');
+      console.log('🏗️ Model: stability-ai/stable-diffusion (img2img mode)');
       console.log('🏗️ Prompt length:', professionalPrompt.length);
       
-      // Try the official Stability AI Stable Diffusion model (most reliable)
+      // Use img2img with high strength to preserve layout but allow style changes
       const output = await replicate.run(
         "stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf",
         {
           input: {
             image: imageUrl,
-            prompt: professionalPrompt,
+            prompt: `renovation of this exact kitchen layout: ${professionalPrompt}`,
             negative_prompt: negativePrompt,
             num_inference_steps: 20,
             guidance_scale: 7.5,
-            strength: 0.7
+            strength: 0.6  // Higher strength for more transformation while keeping layout
           }
         }
       );
@@ -161,53 +161,53 @@ export default async function handler(req, res) {
     } catch (stableDiffusionError) {
       console.error('❌ Stable Diffusion failed:', stableDiffusionError);
       
-      // Try fallback to a simpler approach with lower memory usage
-      console.log('🔄 Trying fallback with reduced parameters...');
+      // Try fallback with lower strength to preserve more of original
+      console.log('🔄 Trying fallback with lower strength to preserve layout...');
       
       try {
-        const fallbackOutput = await replicate.run(
+        const layoutPreservingOutput = await replicate.run(
           "stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf",
           {
             input: {
-              prompt: `${professionalPrompt}, based on uploaded kitchen image`,
+              image: imageUrl,
+              prompt: `subtle renovation of this exact kitchen keeping the same layout: ${professionalPrompt}`,
               negative_prompt: negativePrompt,
               num_inference_steps: 15,
               guidance_scale: 6.0,
-              width: 512,
-              height: 512
+              strength: 0.4  // Lower strength to preserve more of the original
             }
           }
         );
         
-        let fallbackImageUrl;
-        if (Array.isArray(fallbackOutput) && fallbackOutput.length > 0) {
-          fallbackImageUrl = fallbackOutput[0];
+        let layoutPreservingImageUrl;
+        if (Array.isArray(layoutPreservingOutput) && layoutPreservingOutput.length > 0) {
+          layoutPreservingImageUrl = layoutPreservingOutput[0];
         } else {
-          fallbackImageUrl = fallbackOutput;
+          layoutPreservingImageUrl = layoutPreservingOutput;
         }
         
-        console.log('✅ Stable Diffusion fallback successful');
+        console.log('✅ Layout-preserving renovation successful');
         
         return res.status(200).json({
           success: true,
-          generatedImageUrl: fallbackImageUrl,
-          message: `Layout-preserving renovation with ${selectedStyle?.name || 'custom'} style (SD 1.5)`,
+          generatedImageUrl: layoutPreservingImageUrl,
+          message: `Layout-preserving renovation with ${selectedStyle?.name || 'custom'} style (lower strength)`,
           appliedStyle: selectedStyle?.name,
           roomType: roomType,
-          method: 'sd-fallback',
+          method: 'layout-preserving-fallback',
           prompt: professionalPrompt
         });
         
-      } catch (fallbackError) {
-        console.error('❌ SD fallback also failed:', fallbackError);
+      } catch (layoutPreservingError) {
+        console.error('❌ Layout-preserving fallback also failed:', layoutPreservingError);
         
         // Final fallback to demo image
-        console.log('🔄 All AI models failed - using demo image');
+        console.log('🔄 All layout-preserving attempts failed - using demo image');
         
         return res.status(200).json({
           success: true,
           generatedImageUrl: getDemoImage(roomType),
-          message: `Demo mode - Both AI models failed due to memory constraints`,
+          message: `Demo mode - Layout-preserving AI failed due to memory constraints`,
           appliedStyle: selectedStyle?.name,
           roomType: roomType,
           method: 'demo-fallback'
@@ -229,25 +229,25 @@ export default async function handler(req, res) {
 
 // Create professional SDXL prompt for architectural rendering
 function createProfessionalSDXLPrompt(selectedStyle, roomType) {
-  const basePrompt = `ultra-realistic interior design photography by top architectural firm, $100,000 luxury ${roomType} renovation, shot with Canon EOS R5 85mm lens, perfect natural window lighting, zero artifacts, completely seamless renovation, museum-quality craftsmanship, Architectural Digest cover photo, crystal clear focus, professional real estate photography, no digital artifacts, pristine execution`;
+  const basePrompt = `professional architectural renovation of this exact kitchen layout, maintaining the same room dimensions, window positions, and island placement, ultra-realistic interior design photography, luxury ${roomType} renovation with identical spatial arrangement, shot with Canon EOS R5, perfect natural lighting, seamless renovation preserving original architecture`;
 
   const stylePrompts = {
-    'modern-minimalist': `flawless modern minimalist kitchen renovation with museum-quality white lacquer slab cabinets, invisible push-to-open hardware, seamless white Caesarstone quartz waterfall island, perfectly integrated Miele appliances, professional LED strip lighting, large format Porcelanosa gray tiles, brushed stainless steel fixtures, architectural millwork, natural daylight from windows, zero visible seams or joints, pristine white walls, professional staging`,
+    'modern-minimalist': `modern minimalist style renovation keeping the exact same kitchen layout: sleek white lacquer cabinets replacing existing cabinets in same positions, white quartz countertops, integrated appliances, LED lighting, maintaining the same island size and placement, same window positions, same room dimensions`,
     
-    'farmhouse-chic': `museum-quality farmhouse kitchen renovation with custom white painted shaker cabinets, perfectly crafted raised panel doors, honed Carrara marble countertops with book-matched veining, handcrafted white subway tile backsplash with dark grout, professional white porcelain farmhouse sink, authentic oil-rubbed bronze hardware, wide-plank white oak hardwood floors, artisan glass pendant lights, exposed wood ceiling beams, natural window light, flawless paint finish`,
+    'farmhouse-chic': `farmhouse chic style renovation keeping the exact same kitchen layout: white shaker cabinets replacing existing cabinets in same positions, marble countertops, subway tile backsplash, farmhouse sink, maintaining the same island size and placement, same window positions, same room dimensions`,
     
-    'transitional': `architectural firm quality transitional kitchen with custom warm gray raised panel cabinets, premium granite countertops with natural veining, sophisticated travertine backsplash, brushed nickel cup pulls, rich red oak hardwood floors with satin finish, classic pendant lighting with fabric shades, crown molding details, natural window lighting, museum-quality millwork, seamless paint finish`,
+    'transitional': `transitional style renovation keeping the exact same kitchen layout: warm neutral cabinets replacing existing cabinets in same positions, granite countertops, classic backsplash, maintaining the same island size and placement, same window positions, same room dimensions`,
     
-    'coastal-new-england': `top architectural firm coastal kitchen with museum-quality white shaker cabinets, beadboard panel details, pristine Carrara marble countertops, handcrafted sea glass subway tiles, polished chrome hardware, light oak hardwood floors with natural finish, nautical pendant lights, bright natural window light, professional white paint finish, zero imperfections, coastal elegance`,
+    'coastal-new-england': `coastal New England style renovation keeping the exact same kitchen layout: white cabinets with beadboard details replacing existing cabinets in same positions, marble countertops, glass tile backsplash, maintaining the same island size and placement, same window positions, same room dimensions`,
     
-    'contemporary-luxe': `$150,000 contemporary luxury kitchen by top architectural firm, high-gloss charcoal lacquer cabinets with invisible hardware, dramatic Calacatta Gold marble waterfall island with perfect book-matching, large format marble slab backsplash, brushed gold fixtures, ebony hardwood floors, crystal chandelier lighting, Sub-Zero and Wolf appliances, museum-quality execution, natural window lighting, zero artifacts`,
+    'contemporary-luxe': `contemporary luxury style renovation keeping the exact same kitchen layout: high-gloss dark cabinets replacing existing cabinets in same positions, marble countertops, luxury finishes, maintaining the same island size and placement, same window positions, same room dimensions`,
     
-    'eclectic-bohemian': `architectural firm eclectic kitchen with custom emerald green painted lower cabinets, natural walnut upper cabinets, exotic granite countertops with natural character, handcrafted Moroccan cement tile backsplash, mixed antique brass and copper hardware, rich walnut hardwood floors, artisan pendant lights, natural window lighting, museum-quality paint finish, sophisticated global design, zero digital artifacts`
+    'eclectic-bohemian': `eclectic bohemian style renovation keeping the exact same kitchen layout: colorful mixed cabinets replacing existing cabinets in same positions, patterned tile backsplash, mixed hardware, maintaining the same island size and placement, same window positions, same room dimensions`
   };
 
   const selectedStylePrompt = stylePrompts[selectedStyle?.id] || stylePrompts['modern-minimalist'];
   
-  return `${basePrompt}, ${selectedStylePrompt}, shot by professional architectural photographer, Canon EOS R5 with 24-70mm f/2.8 lens, natural window lighting only, zero post-processing artifacts, museum-quality renovation, pristine execution, seamless joints, perfect paint finish, no digital noise, crystal clear details, architectural photography standards`;
+  return `${basePrompt}, ${selectedStylePrompt}, professional architectural photography, natural lighting, preserving the exact same room layout and dimensions`;
 }
 
 // Create negative prompt to avoid unwanted elements
