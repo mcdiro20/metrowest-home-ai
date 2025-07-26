@@ -107,22 +107,22 @@ export default async function handler(req, res) {
 
     try {
       console.log('🏗️ Calling Stable Diffusion img2img for layout-preserving renovation...');
-      console.log('🏗️ Model: lucataco/sdxl (memory-efficient)');
+      console.log('🏗️ Model: stability-ai/sdxl');
       console.log('🏗️ Prompt length:', professionalPrompt.length);
       
-      // Try memory-efficient SDXL model first
+      // Try SDXL img2img model
       const output = await replicate.run(
-        "lucataco/sdxl:1e7737d7545394f3cfbc6d8c2e7df9a8c1c2b8e6c6c6c6c6c6c6c6c6c6c6c6c6",
+        "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
         {
           input: {
             image: imageUrl,
             prompt: professionalPrompt,
             negative_prompt: negativePrompt,
-            num_inference_steps: 10,
-            guidance_scale: 5.0,
-            strength: 0.4,
-            width: 768,
-            height: 768
+            num_inference_steps: 20,
+            guidance_scale: 7.5,
+            strength: 0.6,
+            width: 1024,
+            height: 1024
           }
         }
       );
@@ -164,19 +164,19 @@ export default async function handler(req, res) {
       console.error('❌ Stable Diffusion XL failed:', sdxlError);
       
       // Try fallback to even lighter model
-      console.log('🔄 Trying fallback to lighter SD model...');
+      console.log('🔄 Trying fallback to ByteDance SDXL Lightning...');
       
       try {
         const fallbackOutput = await replicate.run(
-          "stability-ai/stable-diffusion:27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478",
+          "bytedance/sdxl-lightning-4step:5f24084160c9089501c1b3545d9be3c27883ae2239b6f412990e82d4a6210f8f",
           {
             input: {
               image: imageUrl,
-              prompt: professionalPrompt.substring(0, 500), // Shorter prompt
-              negative_prompt: negativePrompt.substring(0, 300),
-              num_inference_steps: 8,
-              guidance_scale: 4.0,
-              strength: 0.3,
+              prompt: professionalPrompt,
+              negative_prompt: negativePrompt,
+              num_inference_steps: 4,
+              guidance_scale: 1.0,
+              strength: 0.5,
               width: 512,
               height: 512
             }
@@ -195,10 +195,10 @@ export default async function handler(req, res) {
         return res.status(200).json({
           success: true,
           generatedImageUrl: fallbackImageUrl,
-          message: `Layout-preserving renovation with ${selectedStyle?.name || 'custom'} style (fallback model)`,
+          message: `Layout-preserving renovation with ${selectedStyle?.name || 'custom'} style (lightning model)`,
           appliedStyle: selectedStyle?.name,
           roomType: roomType,
-          method: 'fallback-sd-model',
+          method: 'sdxl-lightning-4step',
           prompt: professionalPrompt
         });
         
