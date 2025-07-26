@@ -118,8 +118,8 @@ export default async function handler(req, res) {
             image: imageUrl,
             prompt: professionalPrompt,
             negative_prompt: negativePrompt,
-            num_inference_steps: 20,
-            guidance_scale: 7.5,
+            num_inference_steps: 15,
+            guidance_scale: 6.0,
             strength: 0.5  // Conservative strength to preserve layout
           }
         }
