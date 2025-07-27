@@ -91,14 +91,14 @@ export default async function handler(req, res) {
           input: {
             image: imageData,
             prompt: `architectural renovation: ${layoutPreservingPrompt}`,
-            num_samples: 1,
-            image_resolution: 512,
+            num_samples: "1",
+            image_resolution: "512",
             ddim_steps: 20,
             scale: 7.0,
             eta: 0.0,
             low_threshold: 100,
             high_threshold: 200,
-            detect_resolution: 512
+            detect_resolution: "512"
           }
         }
       );
@@ -135,16 +135,16 @@ export default async function handler(req, res) {
       console.log('🏗️ Attempting ControlNet Depth for 3D layout preservation...');
       
       const depthOutput = await replicate.run(
-        "jagilley/controlnet-depth:8b3b8c4e8b8c4e8b8c4e8b8c4e8b8c4e8b8c4e8b8c4e8b8c4e8b8c4e8b8c4e8b",
+        "rossjillian/controlnet:795433b19458d0f4fa172a7ccf93178d2adb1cb8ab2ad6c8faeee23e48820306",
         {
           input: {
             image: imageData,
             prompt: `architectural renovation maintaining exact 3D layout: ${layoutPreservingPrompt}`,
-            num_samples: 1,
-            image_resolution: 512,
+            structure: "depth",
+            num_samples: "1",
+            image_resolution: "512",
             ddim_steps: 15,
-            scale: 6.0,
-            eta: 0.0
+            scale: 6.0
           }
         }
       );
