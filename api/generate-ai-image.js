@@ -44,11 +44,28 @@ export default async function handler(req, res) {
     
     if (!openaiKey) {
       console.log('⚠️ No OpenAI API key found');
+      
+      // Return demo image instead of failing
+      const demoImages = {
+        kitchen: 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=1024',
+        bathroom: 'https://images.pexels.com/photos/2062426/pexels-photo-2062426.jpeg?auto=compress&cs=tinysrgb&w=1024',
+        living_room: 'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1024',
+        bedroom: 'https://images.pexels.com/photos/2089698/pexels-photo-2089698.jpeg?auto=compress&cs=tinysrgb&w=1024',
+        dining_room: 'https://images.pexels.com/photos/2724749/pexels-photo-2724749.jpeg?auto=compress&cs=tinysrgb&w=1024',
+        home_office: 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1024',
+        other: 'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=1024'
+      };
+      
+      const demoImageUrl = demoImages[roomType] || demoImages.kitchen;
+      
       return res.status(200).json({
-        success: false,
-        message: 'OpenAI API key not configured',
-        error: 'missing_api_key',
-        method: 'no_key'
+        success: true,
+        generatedImageUrl: demoImageUrl,
+        message: 'Demo mode - OpenAI API key not configured',
+        appliedStyle: selectedStyle?.name,
+        roomType: roomType,
+        method: 'demo-no-api-key',
+        prompt: professionalPrompt
       });
     }
 

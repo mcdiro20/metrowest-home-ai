@@ -69,14 +69,23 @@ export class EmailService {
           body: JSON.stringify(request)
         });
         
+        if (!response.ok) {
+          throw new Error(`Email API failed with status ${response.status}`);
+        }
+        
         const result = await response.json();
+        
+        if (!result.success) {
+          throw new Error(result.message || 'Email sending failed');
+        }
+        
         return result;
       }
     } catch (error) {
       console.error('Email Service Error:', error);
       return {
         success: false,
-        message: 'Failed to send email. Please try again.',
+        message: `Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`,
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }

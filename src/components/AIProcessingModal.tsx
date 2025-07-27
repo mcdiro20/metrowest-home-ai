@@ -81,28 +81,47 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         console.log('📸 Final originalImageBase64 length:', originalImageBase64?.length);
         
         try {
-          // Use the Stable Diffusion XL + ControlNet service
-          console.log('🏗️ Using professional Stable Diffusion XL + ControlNet service...');
-          const { StableDiffusionService } = await import('../services/stableDiffusionService');
+          // Use professional Replicate renovation service
+          console.log('🎨 Using professional Replicate renovation service...');
           
-          const renovationResult = await StableDiffusionService.processRenovationRequest({
-            imageFile: uploadedFile,
-            styleChoice: selectedStyle?.id || 'modern-minimalist',
-            roomType: roomType,
-            customPrompt: customPrompt
+          // Convert file to base64
+          const imageBase64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(uploadedFile);
           });
           
-          console.log('🎨 Renovation result:', renovationResult);
+          // Call professional renovation API
+          const response = await fetch('/api/generate-renovation', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              imageData: imageBase64,
+              roomType: roomType,
+              selectedStyle: selectedStyle?.name || 'Modern Minimalist',
+              customPrompt: customPrompt
+            })
+          });
+          
+          if (!response.ok) {
+            throw new Error(`API request failed with status ${response.status}`);
+          }
+          
+          const renovationResult = await response.json();
+          console.log('🎨 Professional renovation result:', renovationResult);
           
           if (renovationResult.success) {
-            generatedImageUrl = renovationResult.imageUrl!;
-            console.log('✅ Professional SDXL + ControlNet rendering successful');
+            generatedImageUrl = renovationResult.generatedImageUrl!;
+            console.log('✅ Professional renovation successful');
           } else {
-            console.error('❌ Professional SDXL rendering failed:', renovationResult.error);
-            throw new Error(renovationResult.error || 'AI generation failed');
+            console.error('❌ Professional renovation failed:', renovationResult.error);
+            throw new Error(renovationResult.error || 'Professional renovation failed');
           }
         } catch (aiError) {
-          console.error('❌ Stable Diffusion generation failed:', aiError);
+          console.error('❌ Professional renovation failed:', aiError);
           // Final fallback to demo image
           const demoImages = {
             kitchen: 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=1024',
@@ -114,7 +133,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
             other: 'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=1024'
           };
           generatedImageUrl = demoImages[roomType as keyof typeof demoImages] || demoImages.kitchen;
-          console.log('🔄 Using demo image as final fallback from SDXL failure');
+          console.log('🔄 Using demo image as fallback after professional renovation failure');
         }
 
         // Update progress during generation
@@ -242,19 +261,19 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         <div className="mt-6 space-y-2">
           <div className={`flex items-center gap-3 text-sm ${stage === 'analyzing' ? 'text-blue-600' : progress > 30 ? 'text-emerald-600' : 'text-gray-400'}`}>
             <div className={`w-2 h-2 rounded-full ${stage === 'analyzing' && currentStep === 'analysis' ? 'bg-blue-600 animate-pulse' : progress > 20 ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
-            <span>ControlNet layout analysis</span>
+            <span>Analyzing architectural elements with ControlNet</span>
           </div>
           <div className={`flex items-center gap-3 text-sm ${currentStep === 'prompt' ? 'text-blue-600' : progress > 40 ? 'text-emerald-600' : 'text-gray-400'}`}>
             <div className={`w-2 h-2 rounded-full ${currentStep === 'prompt' ? 'bg-blue-600 animate-pulse' : progress > 40 ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
-            <span>Configuring SDXL + ControlNet parameters</span>
+            <span>Preserving layout while selecting premium materials</span>
           </div>
           <div className={`flex items-center gap-3 text-sm ${currentStep === 'generation' ? 'text-blue-600' : progress > 90 ? 'text-emerald-600' : 'text-gray-400'}`}>
             <div className={`w-2 h-2 rounded-full ${currentStep === 'generation' ? 'bg-blue-600 animate-pulse' : progress > 90 ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
-            <span>Stable Diffusion XL professional rendering</span>
+            <span>Professional renovation rendering in progress</span>
           </div>
           <div className={`flex items-center gap-3 text-sm ${stage === 'complete' ? 'text-emerald-600' : 'text-gray-400'}`}>
             <div className={`w-2 h-2 rounded-full ${stage === 'complete' ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
-            <span>Finalizing SDXL visualization</span>
+            <span>Finalizing professional renovation portfolio</span>
           </div>
         </div>
       </div>

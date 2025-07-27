@@ -53,9 +53,11 @@ const EmailModal: React.FC<EmailModalProps> = ({
       const result = await EmailService.sendDesignImages(requestData);
       
       if (!result.success) {
-        throw new Error(result.message || 'Failed to send email');
+        console.error('❌ Email service returned failure:', result);
+        throw new Error(result.message || result.error || 'Failed to send email');
       }
       
+      console.log('✅ Email sent successfully:', result);
       setIsSubmitting(false);
       setIsSuccess(true);
       
@@ -77,10 +79,7 @@ const EmailModal: React.FC<EmailModalProps> = ({
       setIsSubmitting(false);
       
       // Show user-friendly error message
-      let errorMessage = 'Failed to send email. Please try again.';
-      if (error.message.includes('JSON')) {
-        errorMessage = 'Server error occurred. Please try again in a moment.';
-      }
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       alert(`Email failed: ${errorMessage}`);
     }
   };

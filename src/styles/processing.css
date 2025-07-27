@@ -1,0 +1,81 @@
+/* Premium Processing Experience Styles */
+.processing-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  color: #fafafa;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.processing-header h1 {
+  font-size: 2.5rem;
+  margin: 1rem 0;
+  background: linear-gradient(135deg, #d4af37 0%, #fafafa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.sparkle-icon {
+  color: #d4af37;
+  margin-bottom: 1rem;
+}
+
+.processing-steps {
+  margin: 3rem 0;
+  max-width: 600px;
+}
+
+.processing-step {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+  opacity: 0.3;
+  transition: all 0.5s ease;
+}
+
+.processing-step.active {
+  opacity: 1;
+  transform: translateX(10px);
+}
+
+.step-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #d4af37;
+  flex-shrink: 0;
+}
+
+.delivery-info {
+  background: rgba(212, 175, 55, 0.1);
+  padding: 2rem;
+  border-radius: 16px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  margin: 2rem 0;
+}
+
+.countdown {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #d4af37;
+}
+
+.social-proof {
+  margin-top: 2rem;
+  opacity: 0.8;
+}
+
+.social-proof p {
+  margin: 0.5rem 0;
+}
