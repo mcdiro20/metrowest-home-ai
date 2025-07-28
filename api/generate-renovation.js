@@ -56,21 +56,18 @@ export default async function handler(req, res) {
     let generationResponse;
     
     try {
-      // PRIMARY: SDXL img2img with correct parameters
+      // PRIMARY: SDXL img2img with correct model version
       generationResponse = await replicate.run(
-        "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+        "stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf",
         {
           input: {
             image: imageData,
             prompt: fullPrompt,
             negative_prompt: negativePrompt,
-            strength: 0.45, // CRITICAL: Lower for layout preservation!
+            strength: 0.45,
             guidance_scale: 7.5,
             num_inference_steps: 50,
-            scheduler: "DPMSolverMultistep",
-            width: 1024,
-            height: 1024,
-            seed: Math.floor(Math.random() * 1000000)
+            scheduler: "DPMSolverMultistep"
           }
         }
       );
@@ -79,24 +76,26 @@ export default async function handler(req, res) {
     } catch (sdxlError) {
       console.log('⚠️ SDXL failed, trying backup model...');
       
-      // BACKUP: Realistic Vision model
-      generationResponse = await replicate.run(
-        "lucataco/realistic-vision-v5:ac732df83cea7fff18b63c9068be49e3b78b2f6e7344b0b2fb8b87c6b2db43de",
-        {
-          input: {
-            image: imageData,
-            prompt: fullPrompt,
-            negative_prompt: negativePrompt,
-            strength: 0.5,
-            guidance_scale: 7.5,
-            num_inference_steps: 50,
-            width: 1024,
-            height: 1024,
-            seed: Math.floor(Math.random() * 1000000)
+      try {
+        // BACKUP: Try a different working model
+        generationResponse = await replicate.run(
+          "tencentarc/photomaker:ddfc2b08d209f9fa8c1eca692712918bd449f695dabb4a958da31802a9570fe4",
+          {
+            input: {
+              input_image: imageData,
+              prompt: fullPrompt,
+              negative_prompt: negativePrompt,
+              num_steps: 50,
+              style_strength_ratio: 20,
+              num_outputs: 1
+            }
           }
-        }
-      );
-      console.log('✅ Backup model successful');
+        );
+        console.log('✅ Backup model successful');
+      } catch (backupError) {
+        console.log('⚠️ Backup model also failed, using demo image');
+        throw backupError;
+      }
     }
 
     const generatedImageUrl = Array.isArray(generationResponse) ? generationResponse[0] : generationResponse;
@@ -126,7 +125,7 @@ export default async function handler(req, res) {
     // Fallback to demo image
     return res.status(200).json({
       success: true,
-      generatedImageUrl: getDemoImage(roomType),
+      generatedImageUrl: getDemoImage(req.body.roomType || 'kitchen'),
       message: `Demo mode - ${error.message}`,
       provider: 'demo-fallback'
     });
