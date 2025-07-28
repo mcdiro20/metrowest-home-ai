@@ -66,9 +66,10 @@ export default async function handler(req, res) {
             negative_prompt: negativePrompt,
             strength: 0.6, // Higher for dramatic change from yellow
             guidance_scale: 7.0,
-            num_inference_steps: 75, // Higher steps for better quality
-            scheduler: "DPMSolverMultistep"
           }
+          scheduler: "K_EULER_ANCESTRAL",
+            scheduler: "DPMSolverMultistep"
+          scheduler: "K_EULER"
         }
       );
       console.log('✅ Realistic Vision photorealistic renovation successful');
