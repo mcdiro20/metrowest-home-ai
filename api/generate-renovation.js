@@ -66,10 +66,8 @@ export default async function handler(req, res) {
             negative_prompt: negativePrompt,
             strength: 0.6, // Higher for dramatic change from yellow
             guidance_scale: 7.0,
+            scheduler: "K_EULER_ANCESTRAL"
           }
-          scheduler: "K_EULER_ANCESTRAL",
-            scheduler: "DPMSolverMultistep"
-          scheduler: "K_EULER"
         }
       );
       console.log('✅ Realistic Vision photorealistic renovation successful');
@@ -84,11 +82,11 @@ export default async function handler(req, res) {
           {
             input: {
               image: imageData,
-             prompt: `interior design photography, professional kitchen renovation, shot with DSLR camera, natural window lighting, architectural digest magazine quality, real photograph not CGI, luxury home renovation, photojournalism style, realistic materials, actual kitchen space, ${selectedStylePrompt}`,
+              prompt: `interior design photography, professional kitchen renovation, shot with DSLR camera, natural window lighting, architectural digest magazine quality, real photograph not CGI, luxury home renovation, photojournalism style, realistic materials, actual kitchen space, ${selectedStylePrompt}`,
               negative_prompt: negativePrompt,
-             strength: 0.65, // Moderate strength for backup
-             guidance_scale: 7.5,
-             num_inference_steps: 75,
+              strength: 0.65, // Moderate strength for backup
+              guidance_scale: 7.5,
+              num_inference_steps: 75,
               scheduler: "DPMSolverMultistep"
             }
           }
