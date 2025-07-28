@@ -86,7 +86,6 @@ export default async function handler(req, res) {
               negative_prompt: negativePrompt,
               strength: 0.65, // Moderate strength for backup
                 scheduler: "DPMSolverMultistep"
-              scheduler: "DPMSolverMultistep"
             }
           }
         );
