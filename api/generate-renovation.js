@@ -48,7 +48,7 @@ export default async function handler(req, res) {
     const fullPrompt = `luxury kitchen renovation keeping exact same layout and room shape, ${selectedStylePrompt}${customPrompt ? `, ${customPrompt}` : ''}, preserve window and door placement, same room dimensions, interior design magazine quality, photorealistic, high resolution, warm lighting`;
 
     // CRITICAL NEGATIVE PROMPT TO PREVENT SKETCHES
-    const negativePrompt = 'sketch, drawing, line art, cartoon, anime, black and white, monochrome, pencil drawing, artistic interpretation, low quality, blurry, distorted, unrealistic, amateur, different layout, moved walls, changed room shape, relocated windows, architectural changes';
+    const negativePrompt = 'sketch, drawing, line art, cartoon, anime, black and white, monochrome, pencil drawing, artistic interpretation, low quality, blurry, distorted, unrealistic, amateur, different layout, moved walls, changed room shape, relocated windows, architectural changes, brick walls, islands, different cabinet configuration, moved peninsula, changed kitchen shape';
 
 
     console.log('🎨 Using SDXL img2img for kitchen renovation...');
@@ -56,42 +56,43 @@ export default async function handler(req, res) {
     let generationResponse;
     
     try {
-      // PRIMARY: SDXL img2img with correct model version
+      // PRIMARY: SDXL img2img with ultra-conservative layout preservation
       generationResponse = await replicate.run(
-        "stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf",
+        "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
         {
           input: {
             image: imageData,
             prompt: fullPrompt,
             negative_prompt: negativePrompt,
-            strength: 0.45,
-            guidance_scale: 7.5,
+            strength: 0.35, // ULTRA-CONSERVATIVE for strict layout preservation
+            guidance_scale: 6.0, // Lower for more input image adherence
             num_inference_steps: 50,
             scheduler: "DPMSolverMultistep"
           }
         }
       );
-      console.log('✅ SDXL img2img successful');
+      console.log('✅ SDXL ultra-conservative renovation successful');
       
     } catch (sdxlError) {
-      console.log('⚠️ SDXL failed, trying backup model...');
+      console.log('⚠️ SDXL failed, trying realistic vision backup...');
       
       try {
-        // BACKUP: Try a different working model
+        // BACKUP: Realistic Vision v5 with conservative settings
         generationResponse = await replicate.run(
-          "tencentarc/photomaker:ddfc2b08d209f9fa8c1eca692712918bd449f695dabb4a958da31802a9570fe4",
+          "lucataco/realistic-vision-v5:ac732df83cea7fff18b63c9068be49e3b78b2f6e7344b0b2fb8b87c6b2db43de",
           {
             input: {
-              input_image: imageData,
+              image: imageData,
               prompt: fullPrompt,
               negative_prompt: negativePrompt,
-              num_steps: 50,
-              style_strength_ratio: 20,
-              num_outputs: 1
+              strength: 0.4, // Slightly higher for backup model
+              guidance_scale: 6.5,
+              num_inference_steps: 50,
+              scheduler: "DPMSolverMultistep"
             }
           }
         );
-        console.log('✅ Backup model successful');
+        console.log('✅ Realistic Vision backup successful');
       } catch (backupError) {
         console.log('⚠️ Backup model also failed, using demo image');
         throw backupError;
