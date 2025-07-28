@@ -29,94 +29,69 @@ export default async function handler(req, res) {
     const { default: Replicate } = await import('replicate');
     const replicate = new Replicate({ auth: replicateToken });
 
-    // PROFESSIONAL ARCHITECTURAL RENDERING PROMPTS
+    // OPTIMIZED IMG2IMG PROMPTS FOR KITCHEN RENOVATION
     const stylePrompts = {
-      'Modern Minimalist': `IMPORTANT: You are receiving a COLOR PHOTOGRAPH of an existing kitchen. Transform this existing kitchen photograph into a stunning, luxury renovation rendering while keeping it as a FULL COLOR, PHOTOREALISTIC image.
+      'Modern Minimalist': 'luxury kitchen renovation, modern minimalist design, handleless white cabinets, quartz waterfall countertops, stainless steel appliances, under-cabinet LED lighting, large format tile backsplash, hardwood floors, minimal brushed steel hardware, clean lines, professional interior photography, photorealistic, high resolution, warm lighting, detailed textures',
 
-MANDATORY: KEEP AS FULL COLOR PHOTOGRAPH - never convert to black and white or sketches. START with the existing kitchen layout and IMPROVE everything.
+      'Farmhouse Chic': 'luxury kitchen renovation, modern farmhouse design, white shaker cabinets, butcher block countertops, subway tile backsplash, brass hardware, Edison bulb pendant lighting, wide plank hardwood floors, farmhouse sink, open shelving, professional interior photography, photorealistic, high resolution, warm lighting, detailed textures',
 
-Transform into: Ultra-modern luxury kitchen with handleless flat-panel cabinets in matte white or charcoal, premium quartz waterfall countertops with subtle veining, integrated stainless steel appliances, under-cabinet LED strip lighting, large format porcelain tile backsplash, polished hardwood floors, minimal hardware in brushed stainless steel, clean geometric lines, warm ambient lighting (2700K), fresh flowers in ceramic vases, professional architectural photography quality, 8K resolution, cinematic lighting with natural daylight, soft shadows and realistic material reflections.
+      'Contemporary Luxe': 'luxury kitchen renovation, contemporary design, navy or forest green cabinets, dramatic quartz countertops, waterfall edge, natural stone backsplash, brushed gold hardware, geometric pendant lighting, rich hardwood floors, integrated appliances, professional interior photography, photorealistic, high resolution, dramatic lighting, detailed textures',
 
-FORBIDDEN: NO black and white images, NO sketches, NO line drawings, NO removing color, NO monochrome conversion.`,
+      'Industrial Loft': 'luxury kitchen renovation, industrial loft design, dark steel cabinets, concrete countertops, exposed brick backsplash, black metal hardware, Edison bulb lighting, polished concrete floors, stainless steel appliances, urban loft aesthetic, professional interior photography, photorealistic, high resolution, dramatic lighting, detailed textures',
 
-      'Farmhouse Chic': `IMPORTANT: You are receiving a COLOR PHOTOGRAPH of an existing kitchen. Transform this existing kitchen photograph into a stunning, luxury renovation rendering while keeping it as a FULL COLOR, PHOTOREALISTIC image.
-
-MANDATORY: KEEP AS FULL COLOR PHOTOGRAPH - never convert to black and white or sketches. START with the existing kitchen layout and IMPROVE everything.
-
-Transform into: Elegant modern farmhouse kitchen with custom white or sage green shaker-style cabinetry, natural butcher block or honed marble countertops, classic subway tile or natural stone backsplash with dark grout, vintage brass or matte black hardware, pendant lighting with Edison bulbs or lantern styles, wide plank hardwood floors in natural oak, farmhouse sink, open shelving with rustic wood, warm inviting atmosphere (2700K lighting), fresh flowers and herbs in mason jars, professional interior photography quality, 8K resolution, golden hour natural light, rich saturated colors.
-
-FORBIDDEN: NO black and white images, NO sketches, NO line drawings, NO removing color, NO monochrome conversion.`,
-
-      'Contemporary Luxe': `IMPORTANT: You are receiving a COLOR PHOTOGRAPH of an existing kitchen. Transform this existing kitchen photograph into a stunning, luxury renovation rendering while keeping it as a FULL COLOR, PHOTOREALISTIC image.
-
-MANDATORY: KEEP AS FULL COLOR PHOTOGRAPH - never convert to black and white or sketches. START with the existing kitchen layout and IMPROVE everything.
-
-Transform into: Luxury contemporary kitchen with custom cabinetry in navy, forest green, or rich walnut, premium natural stone or dramatic quartz countertops with waterfall edges, large format natural stone or glass tile backsplash, brushed gold or matte black premium hardware, statement pendant lighting with geometric designs, hardwood floors in rich contemporary tones, integrated luxury appliances, sophisticated color palette, fresh orchids in elegant vases, professional architectural photography quality, 8K resolution, dramatic cinematic lighting, perfect material textures.
-
-FORBIDDEN: NO black and white images, NO sketches, NO line drawings, NO removing color, NO monochrome conversion.`,
-
-      'Industrial Loft': `IMPORTANT: You are receiving a COLOR PHOTOGRAPH of an existing kitchen. Transform this existing kitchen photograph into a stunning, luxury renovation rendering while keeping it as a FULL COLOR, PHOTOREALISTIC image.
-
-MANDATORY: KEEP AS FULL COLOR PHOTOGRAPH - never convert to black and white or sketches. START with the existing kitchen layout and IMPROVE everything.
-
-Transform into: Industrial loft kitchen with dark steel or charcoal cabinets with metal framework, concrete or butcher block countertops, exposed brick or metal tile backsplash, black metal fixtures and hardware, Edison bulb pendant lighting, polished concrete floors, stainless steel appliances, raw steel accents, urban loft aesthetic, warm industrial lighting (2700K), curated industrial accessories, professional architectural photography quality, 8K resolution, dramatic mood lighting with rich colors.
-
-FORBIDDEN: NO black and white images, NO sketches, NO line drawings, NO removing color, NO monochrome conversion.`,
-
-      'Transitional': `IMPORTANT: You are receiving a COLOR PHOTOGRAPH of an existing kitchen. Transform this existing kitchen photograph into a stunning, luxury renovation rendering while keeping it as a FULL COLOR, PHOTOREALISTIC image.
-
-MANDATORY: KEEP AS FULL COLOR PHOTOGRAPH - never convert to black and white or sketches. START with the existing kitchen layout and IMPROVE everything.
-
-Transform into: Timeless transitional kitchen with custom raised panel or shaker cabinetry in warm neutrals, premium granite or marble countertops, classic subway tile or natural stone backsplash, brushed nickel or champagne bronze hardware, traditional pendant or chandelier lighting, hardwood floors in medium tones, seamlessly integrated appliances, warm balanced lighting (2700K), fresh flowers in elegant arrangements, professional interior photography quality, 8K resolution, natural daylight with professional color grading.
-
-FORBIDDEN: NO black and white images, NO sketches, NO line drawings, NO removing color, NO monochrome conversion.`
+      'Transitional': 'luxury kitchen renovation, transitional design, raised panel cabinets, granite countertops, subway tile backsplash, brushed nickel hardware, traditional pendant lighting, hardwood floors, integrated appliances, professional interior photography, photorealistic, high resolution, warm lighting, detailed textures'
     };
 
     const selectedStylePrompt = stylePrompts[selectedStyle] || stylePrompts['Modern Minimalist'];
 
-    // LAYOUT PRESERVATION PROMPT (CRITICAL)
-    const layoutPrompt = `CRITICAL LAYOUT PRESERVATION: Maintain exact room dimensions, window positions, door locations, and architectural elements from the original photograph. Keep all cabinets, appliances, and structural features in their exact same positions and sizes. Only transform surface finishes, colors, materials, and decorative elements. Preserve original perspective and camera angle.`;
+    // OPTIMIZED PROMPT FOR IMG2IMG
+    const fullPrompt = `${selectedStylePrompt}${customPrompt ? `, ${customPrompt}` : ''}, interior design magazine, architectural digest style, professional photography, detailed, high quality`;
 
-    const fullPrompt = `${layoutPrompt} ${selectedStylePrompt} ${customPrompt ? `Additional requirements: ${customPrompt}.` : ''} Result must be a stunning full-color luxury kitchen renovation that looks like it belongs in Architectural Digest and would cost $75,000+ to execute.`;
+    // CRITICAL NEGATIVE PROMPT TO PREVENT SKETCHES
+    const negativePrompt = 'sketch, drawing, line art, cartoon, anime, black and white, monochrome, pencil drawing, artistic interpretation, low quality, blurry, distorted, unrealistic, amateur, changing room layout, moving cabinets, moving appliances, different room structure';
 
-    const negativePrompt = 'black and white, monochrome, grayscale, sketch, line drawing, pencil drawing, artistic interpretation, desaturated, removing color, converting to black and white, cartoon, unrealistic, blurry, low quality, distorted, changing room layout, moving cabinets, moving appliances, different room structure, relocating windows or doors, adding or removing architectural elements, amateur photography, poor lighting, cluttered, messy, outdated fixtures';
 
-    console.log('🎨 Using ControlNet for layout preservation...');
+    console.log('🎨 Using SDXL img2img for kitchen renovation...');
 
     let generationResponse;
     
     try {
-      // PRIMARY: ControlNet Canny for layout preservation
+      // PRIMARY: SDXL img2img with correct parameters
       generationResponse = await replicate.run(
-        "jagilley/controlnet-canny:aff48af9c68d162388d230a2ab003f68d2638d88307bdaf1c2f1ac95079c9613",
+        "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
         {
           input: {
             image: imageData,
             prompt: fullPrompt,
             negative_prompt: negativePrompt,
+            strength: 0.75, // CRITICAL: 0.7-0.8 for renovations
+            guidance_scale: 7.5,
             num_inference_steps: 50,
-            guidance_scale: 12,
-            controlnet_conditioning_scale: 0.95,
+            scheduler: "DPMSolverMultistep",
+            width: 1024,
+            height: 1024,
             seed: Math.floor(Math.random() * 1000000)
           }
         }
       );
-      console.log('✅ ControlNet successful');
+      console.log('✅ SDXL img2img successful');
       
-    } catch (controlnetError) {
-      console.log('⚠️ ControlNet failed, trying backup...');
+    } catch (sdxlError) {
+      console.log('⚠️ SDXL failed, trying backup model...');
       
-      // BACKUP: High-quality img2img
+      // BACKUP: Realistic Vision model
       generationResponse = await replicate.run(
-        "stability-ai/stable-diffusion:27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478",
+        "lucataco/realistic-vision-v5:ac732df83cea7fff18b63c9068be49e3b78b2f6e7344b0b2fb8b87c6b2db43de",
         {
           input: {
-            init_image: imageData,
+            image: imageData,
             prompt: fullPrompt,
             negative_prompt: negativePrompt,
-            num_inference_steps: 50,
-            guidance_scale: 10,
-            strength: 0.75,
+            strength: 0.8,
+            guidance_scale: 7.5,
+            num_inference_steps: 40,
+            width: 1024,
+            height: 1024,
             seed: Math.floor(Math.random() * 1000000)
           }
         }
@@ -124,7 +99,7 @@ FORBIDDEN: NO black and white images, NO sketches, NO line drawings, NO removing
       console.log('✅ Backup model successful');
     }
 
-    const generatedImageUrl = generationResponse[0];
+    const generatedImageUrl = Array.isArray(generationResponse) ? generationResponse[0] : generationResponse;
     
     if (!generatedImageUrl) {
       throw new Error('No image generated');
@@ -142,7 +117,7 @@ FORBIDDEN: NO black and white images, NO sketches, NO line drawings, NO removing
         roomType: roomType
       },
       message: `Professional ${selectedStyle} kitchen renovation complete`,
-      provider: 'replicate-controlnet'
+      provider: 'replicate-sdxl-img2img'
     });
 
   } catch (error) {
