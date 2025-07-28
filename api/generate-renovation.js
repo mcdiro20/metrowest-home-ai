@@ -85,7 +85,7 @@ export default async function handler(req, res) {
               prompt: `interior design photography, professional kitchen renovation, shot with DSLR camera, natural window lighting, architectural digest magazine quality, real photograph not CGI, luxury home renovation, photojournalism style, realistic materials, actual kitchen space, ${selectedStylePrompt}`,
               negative_prompt: negativePrompt,
               strength: 0.65, // Moderate strength for backup
-                scheduler: "DPMSolverMultistep"
+                scheduler: "K_EULER"
             }
           }
         );
