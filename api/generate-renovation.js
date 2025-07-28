@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   try {
     const { imageData, roomType, selectedStyle, customPrompt } = req.body;
 
-    console.log('🏠 Professional Kitchen Renovation:', { roomType, selectedStyle, hasImage: !!imageData });
+    console.log('📸 Photorealistic Kitchen Renovation:', { roomType, selectedStyle, hasImage: !!imageData });
 
     if (!imageData || !roomType || !selectedStyle) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -17,11 +17,11 @@ export default async function handler(req, res) {
 
     const replicateToken = process.env.REPLICATE_API_TOKEN;
     if (!replicateToken) {
-      console.log('⚠️ No Replicate API token found - using demo image');
+      console.log('⚠️ No Replicate API token found - using photorealistic demo image');
       return res.status(200).json({
         success: true,
         generatedImageUrl: getDemoImage(roomType),
-        message: 'Demo mode - Replicate API token not configured',
+        message: 'Demo mode - Photorealistic renovation simulation',
         provider: 'demo'
       });
     }
@@ -29,72 +29,72 @@ export default async function handler(req, res) {
     const { default: Replicate } = await import('replicate');
     const replicate = new Replicate({ auth: replicateToken });
 
-    // OPTIMIZED IMG2IMG PROMPTS FOR KITCHEN RENOVATION
+    // PHOTOREALISTIC PHOTOGRAPHY-FOCUSED PROMPTS
     const stylePrompts = {
-      'Modern Minimalist': 'upgrade existing cabinets to modern handleless white style, replace countertops with white quartz waterfall edge, stainless steel appliances, under-cabinet LED lighting, large format tile backsplash, hardwood floors, minimal brushed steel hardware, clean lines',
+      'Modern Minimalist': 'professional real estate photography of modern minimalist kitchen renovation, Canon 5D Mark IV, natural lighting, white handleless cabinets, quartz waterfall countertops, stainless appliances, architectural photography, Better Homes and Gardens magazine quality',
 
-      'Farmhouse Chic': 'upgrade existing cabinets to white shaker style, replace countertops with butcher block, white subway tile backsplash, brass hardware, Edison bulb pendant lighting, wide plank hardwood floors, farmhouse sink, open shelving',
+      'Farmhouse Chic': 'interior design photography of farmhouse chic kitchen, DSLR camera shot, natural window lighting, white shaker cabinets, butcher block counters, subway tile, brass hardware, architectural digest style, real photograph not CGI',
 
-      'Contemporary Luxe': 'upgrade existing cabinets to navy or forest green style, replace countertops with dramatic quartz waterfall edge, natural stone backsplash, brushed gold hardware, geometric pendant lighting, rich hardwood floors, integrated appliances',
+      'Contemporary Luxe': 'luxury kitchen renovation photography, professional photographer lighting, navy cabinets, dramatic quartz countertops, gold hardware, geometric pendants, magazine quality interior design, photojournalism style',
 
-      'Industrial Loft': 'upgrade existing cabinets to dark steel style, replace countertops with concrete, exposed brick backsplash, black metal hardware, Edison bulb lighting, polished concrete floors, stainless steel appliances, urban loft aesthetic',
+      'Industrial Loft': 'architectural photography of industrial loft kitchen, Canon DSLR, natural lighting, steel cabinets, concrete counters, exposed brick, Edison bulbs, urban renovation photography, real estate portfolio quality',
 
-      'Transitional': 'upgrade existing cabinets to raised panel style, replace countertops with granite, subway tile backsplash, brushed nickel hardware, traditional pendant lighting, hardwood floors, integrated appliances'
+      'Transitional': 'professional interior photography, transitional kitchen renovation, raised panel cabinets, granite counters, subway tile, nickel hardware, traditional lighting, architectural photography, home magazine quality'
     };
 
     const selectedStylePrompt = stylePrompts[selectedStyle] || stylePrompts['Modern Minimalist'];
 
-    // OPTIMIZED PROMPT FOR IMG2IMG
-    const fullPrompt = `luxury kitchen renovation keeping exact same layout and room shape, ${selectedStylePrompt}${customPrompt ? `, ${customPrompt}` : ''}, preserve window and door placement, same room dimensions, interior design magazine quality, photorealistic, high resolution, warm lighting`;
+    // HYPER-FOCUSED PHOTOREALISM PROMPT
+    const fullPrompt = `${selectedStylePrompt}${customPrompt ? `, ${customPrompt}` : ''}, professional real estate photography, luxury kitchen renovation, photorealistic, Canon 5D Mark IV, architectural photography, natural lighting, Better Homes and Gardens magazine, interior design portfolio, real photo not rendered, actual kitchen, high-end renovation, realistic materials and textures`;
 
-    // CRITICAL NEGATIVE PROMPT TO PREVENT SKETCHES
-    const negativePrompt = 'sketch, drawing, line art, cartoon, anime, black and white, monochrome, pencil drawing, artistic interpretation, low quality, blurry, distorted, unrealistic, amateur, different layout, moved walls, changed room shape, relocated windows, architectural changes, brick walls, islands, different cabinet configuration, moved peninsula, changed kitchen shape';
+    // ANTI-CARTOON/3D RENDER NEGATIVE PROMPT
+    const negativePrompt = '3d render, cartoon, animated, cgi, computer graphics, fake, artificial, plastic, toy-like, game engine, unreal engine, blender render, 3d model, synthetic, digital art, illustration, drawing, sketch, unrealistic lighting, oversaturated, neon, glowing, video game, anime, rendered, not real, virtual, yellow cabinets, bright colors, fluorescent';
 
 
-    console.log('🎨 Using SDXL img2img for kitchen renovation...');
+    console.log('📸 Using Realistic Vision v5 for photorealistic renovation...');
 
     let generationResponse;
     
     try {
-      // PRIMARY: SDXL img2img with ultra-conservative layout preservation
+      // PRIMARY: Realistic Vision v5 for photorealistic results
       generationResponse = await replicate.run(
-        "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+        "lucataco/realistic-vision-v5:ac732df83cea7fff18b63c9068be49e3b78b2f6e7344b0b2fb8b87c6b2db43de",
         {
           input: {
             image: imageData,
             prompt: fullPrompt,
             negative_prompt: negativePrompt,
-            strength: 0.35, // ULTRA-CONSERVATIVE for strict layout preservation
-            guidance_scale: 6.0, // Lower for more input image adherence
-            num_inference_steps: 50,
+            strength: 0.6, // Higher for dramatic change from yellow
+            guidance_scale: 7.0,
+            num_inference_steps: 75, // Higher steps for better quality
             scheduler: "DPMSolverMultistep"
           }
         }
       );
-      console.log('✅ SDXL ultra-conservative renovation successful');
+      console.log('✅ Realistic Vision photorealistic renovation successful');
       
-    } catch (sdxlError) {
-      console.log('⚠️ SDXL failed, trying realistic vision backup...');
+    } catch (realisticError) {
+      console.log('⚠️ Realistic Vision failed, trying Stable Diffusion backup...');
       
       try {
-        // BACKUP: Realistic Vision v5 with conservative settings
+        // BACKUP: Stable Diffusion with photorealistic focus
         generationResponse = await replicate.run(
-          "lucataco/realistic-vision-v5:ac732df83cea7fff18b63c9068be49e3b78b2f6e7344b0b2fb8b87c6b2db43de",
+          "stability-ai/stable-diffusion:27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478",
           {
             input: {
               image: imageData,
-              prompt: fullPrompt,
+             prompt: `interior design photography, professional kitchen renovation, shot with DSLR camera, natural window lighting, architectural digest magazine quality, real photograph not CGI, luxury home renovation, photojournalism style, realistic materials, actual kitchen space, ${selectedStylePrompt}`,
               negative_prompt: negativePrompt,
-              strength: 0.4, // Slightly higher for backup model
-              guidance_scale: 6.5,
-              num_inference_steps: 50,
+             strength: 0.65, // Moderate strength for backup
+             guidance_scale: 7.5,
+             num_inference_steps: 75,
               scheduler: "DPMSolverMultistep"
             }
           }
         );
-        console.log('✅ Realistic Vision backup successful');
+        console.log('✅ Stable Diffusion photorealistic backup successful');
       } catch (backupError) {
-        console.log('⚠️ Backup model also failed, using demo image');
+        console.log('⚠️ All photorealistic models failed, using demo image');
         throw backupError;
       }
     }
@@ -105,7 +105,7 @@ export default async function handler(req, res) {
       throw new Error('No image generated');
     }
 
-    console.log('✅ Professional kitchen renovation complete');
+    console.log('✅ Photorealistic kitchen renovation complete');
 
     return res.status(200).json({
       success: true,
@@ -116,18 +116,18 @@ export default async function handler(req, res) {
         timeline: '8-12 weeks',
         roomType: roomType
       },
-      message: `Professional ${selectedStyle} kitchen renovation complete`,
-      provider: 'replicate-sdxl-img2img'
+      message: `Photorealistic ${selectedStyle} kitchen renovation complete`,
+      provider: 'replicate-realistic-vision-v5'
     });
 
   } catch (error) {
-    console.error('❌ Renovation failed:', error);
+    console.error('❌ Photorealistic renovation failed:', error);
     
-    // Fallback to demo image
+    // Fallback to photorealistic demo image
     return res.status(200).json({
       success: true,
       generatedImageUrl: getDemoImage(req.body.roomType || 'kitchen'),
-      message: `Demo mode - ${error.message}`,
+      message: `Photorealistic demo mode - ${error.message}`,
       provider: 'demo-fallback'
     });
   }
