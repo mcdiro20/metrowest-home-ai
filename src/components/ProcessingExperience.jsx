@@ -6,11 +6,11 @@ export default function ProcessingExperience({ userEmail, selectedStyle }) {
   const [timeRemaining, setTimeRemaining] = useState(300); // 5 minutes
 
   const steps = [
-    "Analyzing your kitchen's architectural elements...",
-    "Preserving layout while selecting premium materials...",
-    "Applying professional design expertise...",
-    "Adding architectural photography lighting...",
-    "Finalizing your renovation portfolio..."
+    "Analyzing architectural elements with AI precision...",
+    "Preserving exact layout while selecting luxury materials...",
+    "Applying $5,000 professional rendering techniques...",
+    "Adding cinematic lighting and ray-traced reflections...",
+    "Finalizing your magazine-quality renovation portfolio..."
   ];
 
   useEffect(() => {

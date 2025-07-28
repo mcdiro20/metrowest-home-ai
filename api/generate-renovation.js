@@ -25,21 +25,73 @@ export default async function handler(req, res) {
 
     // PROFESSIONAL PROMPT ENGINEERING
     const stylePrompts = {
-      'Modern Minimalist': 'Ultra-modern kitchen interior design, handleless flat-panel cabinets in matte white or charcoal, quartz waterfall countertops, integrated premium appliances, under-cabinet LED strip lighting, large format porcelain tile backsplash, polished concrete floors, minimal hardware in brushed stainless steel, clean geometric lines, neutral color palette, professional architectural photography, award-winning interior design',
-      'Farmhouse Chic': 'Elegant farmhouse kitchen design, white or sage green shaker-style cabinets, natural butcher block or marble countertops, subway tile or natural stone backsplash, vintage brass or matte black hardware, pendant lighting with Edison bulbs, hardwood floors in natural oak, farmhouse sink, open shelving with rustic wood, warm inviting atmosphere, professional interior photography',
-      'Industrial Loft': 'Industrial loft kitchen design, dark steel or charcoal cabinets with metal framework, concrete or butcher block countertops, exposed brick or metal tile backsplash, black metal fixtures and hardware, Edison bulb pendant lighting, polished concrete floors, stainless steel appliances, raw steel accents, urban loft aesthetic, dramatic mood lighting, professional architectural photography',
-      'Scandinavian': 'Scandinavian kitchen interior design, light wood cabinets in natural oak or birch, white or light gray countertops, white subway tile backsplash, minimalist brass hardware, simple pendant lighting, light hardwood floors, clean simple lines, bright natural lighting, neutral palette with wood accents, cozy hygge atmosphere, professional Nordic interior photography',
-      'Traditional': 'Traditional kitchen interior design, raised panel cabinets in cherry or maple wood, granite or marble countertops, classic subway tile backsplash, traditional brass hardware, elegant pendant lighting, hardwood floors, warm color palette, classic crown molding, timeless design elements, professional interior photography'
+      'Modern Minimalist': `Transform this kitchen into a stunning, photorealistic architectural rendering of a luxury modern minimalist renovation. Create a professional interior design visualization with:
+
+VISUAL QUALITY: Photorealistic 3D rendering quality with ray-traced lighting, professional architectural visualization style, 8K ultra-high resolution detail, perfect perspective matching original layout, cinematic lighting with natural daylight, soft shadows and realistic material reflections.
+
+DESIGN ELEMENTS: Premium white or charcoal quartz countertops with waterfall edges, handleless flat-panel cabinetry in matte white or warm charcoal, brushed stainless steel or matte black hardware, large format porcelain tile backsplash, hardwood flooring in rich contemporary tones, geometric pendant lighting with warm LED, integrated premium appliances, fresh greenery in modern planters.
+
+LIGHTING & ATMOSPHERE: Warm ambient lighting (2700K-3000K), layered lighting with under-cabinet LED strips, natural daylight filtering through windows, professional photographer-quality setup, golden hour lighting, subtle depth of field effects.
+
+STYLING DETAILS: Clean uncluttered surfaces, high-end small appliances, coordinated neutral palette, luxury textiles, elegant accessories. Generate as if it were a $5,000 professional architectural rendering featured in Architectural Digest.`,
+
+      'Farmhouse Chic': `Transform this kitchen into a breathtaking, photorealistic architectural rendering of an elegant modern farmhouse renovation. Create a professional interior design visualization with:
+
+VISUAL QUALITY: Photorealistic 3D rendering quality with ray-traced lighting, professional architectural visualization style, 8K ultra-high resolution detail, perfect perspective matching original layout, warm cinematic lighting, soft shadows and realistic wood grain textures.
+
+DESIGN ELEMENTS: Premium butcher block or honed marble countertops, custom white or sage green shaker-style cabinetry, vintage brass or matte black hardware, subway tile or natural stone backsplash with perfect grout lines, wide plank hardwood flooring in natural oak, pendant lighting with Edison bulbs or lantern styles, farmhouse sink, open shelving with rustic wood, fresh flowers and herbs.
+
+LIGHTING & ATMOSPHERE: Warm inviting ambient lighting, natural daylight streaming through windows, professional interior photography lighting, golden hour warmth, cozy yet sophisticated atmosphere.
+
+STYLING DETAILS: Fresh greenery, woven baskets, vintage-inspired accessories, coordinated warm color palette, luxury linen textiles. Generate as if it were a $5,000 professional architectural rendering featured in Better Homes & Gardens.`,
+
+      'Contemporary Luxe': `Transform this kitchen into a stunning, photorealistic architectural rendering of a luxury contemporary renovation. Create a professional interior design visualization with:
+
+VISUAL QUALITY: Photorealistic 3D rendering quality with ray-traced lighting, professional architectural visualization style, 8K ultra-high resolution detail, perfect perspective matching original layout, dramatic cinematic lighting, soft shadows and realistic material reflections.
+
+DESIGN ELEMENTS: Premium natural stone or dramatic quartz countertops with waterfall edges, custom cabinetry in navy, forest green, or rich walnut, brushed gold or matte black premium hardware, natural stone or glass tile backsplash, hardwood flooring in rich contemporary tones, statement pendant lighting with geometric designs, integrated luxury appliances, fresh orchids or elegant styling.
+
+LIGHTING & ATMOSPHERE: Sophisticated ambient lighting with warm undertones, layered lighting design, natural daylight with dramatic shadows, professional architectural photography lighting, subtle lens flares.
+
+STYLING DETAILS: High-end accessories, designer coffee table books, luxury small appliances, coordinated sophisticated palette, premium textiles. Generate as if it were a $5,000 professional architectural rendering featured in Architectural Digest luxury edition.`,
+
+      'Industrial Loft': `Transform this kitchen into a stunning, photorealistic architectural rendering of a luxury industrial loft renovation. Create a professional interior design visualization with:
+
+VISUAL QUALITY: Photorealistic 3D rendering quality with ray-traced lighting, professional architectural visualization style, 8K ultra-high resolution detail, perfect perspective matching original layout, dramatic moody lighting, realistic metal and concrete textures.
+
+DESIGN ELEMENTS: Premium concrete or butcher block countertops, custom steel-framed or charcoal cabinetry, black metal fixtures and hardware, exposed brick or metal tile backsplash, polished concrete or reclaimed wood flooring, Edison bulb pendant lighting, stainless steel appliances, raw steel accents, industrial-chic accessories.
+
+LIGHTING & ATMOSPHERE: Dramatic mood lighting with warm industrial fixtures, natural light filtering through large windows, professional architectural photography style, urban loft aesthetic with sophisticated edge.
+
+STYLING DETAILS: Curated industrial accessories, vintage elements, coordinated urban palette, luxury industrial textiles. Generate as if it were a $5,000 professional architectural rendering featured in a luxury loft design magazine.`,
+
+      'Transitional': `Transform this kitchen into a stunning, photorealistic architectural rendering of a luxury transitional renovation. Create a professional interior design visualization with:
+
+VISUAL QUALITY: Photorealistic 3D rendering quality with ray-traced lighting, professional architectural visualization style, 8K ultra-high resolution detail, perfect perspective matching original layout, balanced natural lighting, soft shadows and realistic material textures.
+
+DESIGN ELEMENTS: Premium granite or marble countertops, custom raised panel or shaker cabinetry in warm neutrals, brushed nickel or champagne bronze hardware, classic subway tile or natural stone backsplash, hardwood flooring in medium tones, traditional pendant or chandelier lighting, seamlessly integrated appliances, fresh flowers and classic styling.
+
+LIGHTING & ATMOSPHERE: Warm balanced lighting combining traditional and contemporary elements, natural daylight with professional interior photography quality, timeless sophisticated atmosphere.
+
+STYLING DETAILS: Classic accessories with modern touches, coordinated neutral palette, luxury traditional textiles, elegant styling. Generate as if it were a $5,000 professional architectural rendering featured in Traditional Home magazine.`
     };
 
     const selectedStylePrompt = stylePrompts[selectedStyle] || stylePrompts['Modern Minimalist'];
 
     // LAYOUT PRESERVATION PROMPT (CRITICAL)
-    const layoutPrompt = `Interior design transformation of this exact kitchen layout. CRITICAL: Keep all cabinets, appliances, windows, doors, and architectural elements in their exact same positions and sizes. Only transform surface finishes, colors, materials, and decorative elements.`;
+    const layoutPrompt = `CRITICAL LAYOUT PRESERVATION: Maintain exact room dimensions and window/door placement from original. Keep all cabinets, appliances, windows, doors, and architectural elements in their exact same positions and sizes. Only transform surface finishes, colors, materials, and decorative elements. Preserve original perspective and camera angle.`;
 
-    const fullPrompt = `${layoutPrompt} Transform into: ${selectedStylePrompt}. ${customPrompt ? `Additional: ${customPrompt}.` : ''} Maintain exact room proportions. Photorealistic, perfect lighting, 8K resolution.`;
+    const fullPrompt = `${layoutPrompt}
 
-    const negativePrompt = 'changing room layout, moving cabinets, moving appliances, different room structure, relocating windows or doors, adding or removing architectural elements, blurry, low quality, distorted, unrealistic, cartoon, text overlay, watermarks, amateur photography, poor lighting, cluttered, messy';
+${selectedStylePrompt}
+
+${customPrompt ? `ADDITIONAL CUSTOM REQUIREMENTS: ${customPrompt}` : ''}
+
+TECHNICAL SPECIFICATIONS: Maintain exact room dimensions, professional interior design magazine quality, sharp focus on all elements, color-balanced with rich saturated natural tones, no visible flaws or imperfections.
+
+FORBIDDEN ELEMENTS: No outdated fixtures, no cluttered surfaces, no harsh fluorescent lighting, no visible wear or damage, no amateur photography lighting, no unrealistic proportions.`;
+
+    const negativePrompt = 'changing room layout, moving cabinets, moving appliances, different room structure, relocating windows or doors, adding or removing architectural elements, blurry, low quality, distorted, unrealistic, cartoon, text overlay, watermarks, amateur photography, poor lighting, cluttered, messy, outdated fixtures, harsh fluorescent lighting, visible wear, damage, imperfections, unrealistic proportions, sketchy, drawn, illustration';
 
     console.log('🎨 Using ControlNet for layout preservation...');
 
@@ -54,8 +106,8 @@ export default async function handler(req, res) {
             image: imageData,
             prompt: fullPrompt,
             negative_prompt: negativePrompt,
-            num_inference_steps: 30,
-            guidance_scale: 9,
+            num_inference_steps: 50,
+            guidance_scale: 12,
             controlnet_conditioning_scale: 0.95,
             seed: Math.floor(Math.random() * 1000000)
           }
@@ -74,9 +126,9 @@ export default async function handler(req, res) {
             init_image: imageData,
             prompt: fullPrompt,
             negative_prompt: negativePrompt,
-            num_inference_steps: 35,
-            guidance_scale: 8,
-            strength: 0.65,
+            num_inference_steps: 50,
+            guidance_scale: 10,
+            strength: 0.75,
             seed: Math.floor(Math.random() * 1000000)
           }
         }
@@ -97,8 +149,8 @@ export default async function handler(req, res) {
       generatedImageUrl: generatedImageUrl,
       renovationDetails: {
         style: selectedStyle,
-        estimatedCost: selectedStyle === 'Modern Minimalist' ? '$60,000 - $90,000' : '$45,000 - $75,000',
-        timeline: '6-8 weeks',
+        estimatedCost: getEstimatedCost(selectedStyle),
+        timeline: '8-12 weeks',
         roomType: roomType
       },
       message: `Professional ${selectedStyle} kitchen renovation complete`,
@@ -114,4 +166,16 @@ export default async function handler(req, res) {
       message: 'Professional renovation generation failed'
     });
   }
+}
+
+function getEstimatedCost(selectedStyle) {
+  const costRanges = {
+    'Modern Minimalist': '$75,000 - $120,000',
+    'Farmhouse Chic': '$65,000 - $95,000', 
+    'Contemporary Luxe': '$90,000 - $150,000',
+    'Industrial Loft': '$70,000 - $110,000',
+    'Transitional': '$60,000 - $90,000'
+  };
+  
+  return costRanges[selectedStyle] || '$65,000 - $100,000';
 }

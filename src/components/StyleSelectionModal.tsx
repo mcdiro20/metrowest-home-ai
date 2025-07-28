@@ -33,45 +33,38 @@ const StyleSelectionModal: React.FC<StyleSelectionModalProps> = ({
     {
       id: 'modern-minimalist',
       name: 'Modern Minimalist',
-      description: 'Clean lines, hidden handles, sleek surfaces',
+      description: 'Architectural-quality rendering with handleless cabinetry, waterfall countertops, and cinematic lighting',
       imageUrl: 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=600',
       prompt: 'modern minimalist style with clean white cabinets, hidden handles, quartz countertops, and sleek stainless steel appliances'
     },
     {
       id: 'farmhouse-chic',
       name: 'Farmhouse Chic',
-      description: 'Rustic charm with open shelving and vintage touches',
+      description: 'Elegant modern farmhouse with shaker cabinetry, butcher block counters, and warm Edison lighting',
       imageUrl: 'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=600',
       prompt: 'farmhouse chic style with white shaker cabinets, open wood shelving, farmhouse sink, and vintage lighting fixtures'
     },
     {
-      id: 'transitional',
-      name: 'Transitional',
-      description: 'Classic meets contemporary in neutral tones',
-      imageUrl: 'https://images.pexels.com/photos/2089698/pexels-photo-2089698.jpeg?auto=compress&cs=tinysrgb&w=600',
-      prompt: 'transitional style with shaker cabinets, neutral colors, classic hardware, and timeless design elements'
-    },
-    {
-      id: 'coastal-new-england',
-      name: 'Coastal New England',
-      description: 'Light blues, beadboard, and natural textures',
-      imageUrl: 'https://images.pexels.com/photos/2724749/pexels-photo-2724749.jpeg?auto=compress&cs=tinysrgb&w=600',
-      prompt: 'coastal New England style with light blue accents, white beadboard, natural wood elements, and nautical touches'
-    },
-    {
       id: 'contemporary-luxe',
       name: 'Contemporary Luxe',
-      description: 'High-end finishes with waterfall islands and gold accents',
+      description: 'Luxury finishes with dramatic stone, navy cabinetry, and statement lighting',
       imageUrl: 'https://images.pexels.com/photos/2062426/pexels-photo-2062426.jpeg?auto=compress&cs=tinysrgb&w=600',
       prompt: 'contemporary luxe style with dark cabinetry, waterfall marble island, gold fixtures, and high-end appliances'
     },
     {
-      id: 'eclectic-bohemian',
-      name: 'Eclectic Bohemian',
-      description: 'Colorful patterns, plants, and layered textures',
+      id: 'industrial-loft',
+      name: 'Industrial Loft',
+      description: 'Urban sophistication with steel frames, concrete counters, and Edison bulb lighting',
       imageUrl: 'https://images.pexels.com/photos/1599791/pexels-photo-1599791.jpeg?auto=compress&cs=tinysrgb&w=600',
-      prompt: 'eclectic bohemian style with colorful patterned tiles, open shelving with plants, mixed textures, and artistic elements'
-    }
+      prompt: 'industrial loft style with steel-framed cabinets, concrete countertops, and Edison bulb lighting'
+    },
+    {
+      id: 'transitional',
+      name: 'Transitional',
+      description: 'Timeless elegance blending classic and contemporary with premium materials',
+      imageUrl: 'https://images.pexels.com/photos/2089698/pexels-photo-2089698.jpeg?auto=compress&cs=tinysrgb&w=600',
+      prompt: 'transitional style with shaker cabinets, neutral colors, classic hardware, and timeless design elements'
+    },
   ];
 
   const backyardStyles: StyleOption[] = [
