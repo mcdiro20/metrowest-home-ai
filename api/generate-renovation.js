@@ -83,39 +83,10 @@ STYLING DETAILS: Classic accessories with modern touches, coordinated neutral pa
 
     const fullPrompt = `${layoutPrompt}
 
-${selectedStylePrompt}
 
-${customPrompt ? `ADDITIONAL CUSTOM REQUIREMENTS: ${customPrompt}` : ''}
-
-TECHNICAL SPECIFICATIONS: Maintain exact room dimensions, professional interior design magazine quality, sharp focus on all elements, color-balanced with rich saturated natural tones, no visible flaws or imperfections.
-
-FORBIDDEN ELEMENTS: No outdated fixtures, no cluttered surfaces, no harsh fluorescent lighting, no visible wear or damage, no amateur photography lighting, no unrealistic proportions.`;
-
-    const negativePrompt = 'changing room layout, moving cabinets, moving appliances, different room structure, relocating windows or doors, adding or removing architectural elements, blurry, low quality, distorted, unrealistic, cartoon, text overlay, watermarks, amateur photography, poor lighting, cluttered, messy, outdated fixtures, harsh fluorescent lighting, visible wear, damage, imperfections, unrealistic proportions, sketchy, drawn, illustration';
-
-    console.log('🎨 Using ControlNet for layout preservation...');
-
-    let generationResponse;
-    
     try {
-      // PRIMARY: ControlNet Canny for layout preservation
-      generationResponse = await replicate.run(
-        "jagilley/controlnet-canny:aff48af9c68d162388d230a2ab003f68d2638d88307bdaf1c2f1ac95079c9613",
-        {
-          input: {
-            image: imageData,
             prompt: fullPrompt,
-            negative_prompt: negativePrompt,
-            num_inference_steps: 50,
-            guidance_scale: 12,
-            controlnet_conditioning_scale: 0.95,
-            seed: Math.floor(Math.random() * 1000000)
           }
-        }
-      );
-      console.log('✅ ControlNet successful');
-      
-    } catch (controlnetError) {
       console.log('⚠️ ControlNet failed, trying backup...');
       
       // BACKUP: High-quality img2img
@@ -178,4 +149,6 @@ function getEstimatedCost(selectedStyle) {
   };
   
   return costRanges[selectedStyle] || '$65,000 - $100,000';
+}
+  }
 }
