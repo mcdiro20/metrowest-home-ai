@@ -31,24 +31,24 @@ export default async function handler(req, res) {
 
     // OPTIMIZED IMG2IMG PROMPTS FOR KITCHEN RENOVATION
     const stylePrompts = {
-      'Modern Minimalist': 'luxury kitchen renovation, modern minimalist design, handleless white cabinets, quartz waterfall countertops, stainless steel appliances, under-cabinet LED lighting, large format tile backsplash, hardwood floors, minimal brushed steel hardware, clean lines, professional interior photography, photorealistic, high resolution, warm lighting, detailed textures',
+      'Modern Minimalist': 'upgrade existing cabinets to modern handleless white style, replace countertops with white quartz waterfall edge, stainless steel appliances, under-cabinet LED lighting, large format tile backsplash, hardwood floors, minimal brushed steel hardware, clean lines',
 
-      'Farmhouse Chic': 'luxury kitchen renovation, modern farmhouse design, white shaker cabinets, butcher block countertops, subway tile backsplash, brass hardware, Edison bulb pendant lighting, wide plank hardwood floors, farmhouse sink, open shelving, professional interior photography, photorealistic, high resolution, warm lighting, detailed textures',
+      'Farmhouse Chic': 'upgrade existing cabinets to white shaker style, replace countertops with butcher block, white subway tile backsplash, brass hardware, Edison bulb pendant lighting, wide plank hardwood floors, farmhouse sink, open shelving',
 
-      'Contemporary Luxe': 'luxury kitchen renovation, contemporary design, navy or forest green cabinets, dramatic quartz countertops, waterfall edge, natural stone backsplash, brushed gold hardware, geometric pendant lighting, rich hardwood floors, integrated appliances, professional interior photography, photorealistic, high resolution, dramatic lighting, detailed textures',
+      'Contemporary Luxe': 'upgrade existing cabinets to navy or forest green style, replace countertops with dramatic quartz waterfall edge, natural stone backsplash, brushed gold hardware, geometric pendant lighting, rich hardwood floors, integrated appliances',
 
-      'Industrial Loft': 'luxury kitchen renovation, industrial loft design, dark steel cabinets, concrete countertops, exposed brick backsplash, black metal hardware, Edison bulb lighting, polished concrete floors, stainless steel appliances, urban loft aesthetic, professional interior photography, photorealistic, high resolution, dramatic lighting, detailed textures',
+      'Industrial Loft': 'upgrade existing cabinets to dark steel style, replace countertops with concrete, exposed brick backsplash, black metal hardware, Edison bulb lighting, polished concrete floors, stainless steel appliances, urban loft aesthetic',
 
-      'Transitional': 'luxury kitchen renovation, transitional design, raised panel cabinets, granite countertops, subway tile backsplash, brushed nickel hardware, traditional pendant lighting, hardwood floors, integrated appliances, professional interior photography, photorealistic, high resolution, warm lighting, detailed textures'
+      'Transitional': 'upgrade existing cabinets to raised panel style, replace countertops with granite, subway tile backsplash, brushed nickel hardware, traditional pendant lighting, hardwood floors, integrated appliances'
     };
 
     const selectedStylePrompt = stylePrompts[selectedStyle] || stylePrompts['Modern Minimalist'];
 
     // OPTIMIZED PROMPT FOR IMG2IMG
-    const fullPrompt = `${selectedStylePrompt}${customPrompt ? `, ${customPrompt}` : ''}, interior design magazine, architectural digest style, professional photography, detailed, high quality`;
+    const fullPrompt = `luxury kitchen renovation keeping exact same layout and room shape, ${selectedStylePrompt}${customPrompt ? `, ${customPrompt}` : ''}, preserve window and door placement, same room dimensions, interior design magazine quality, photorealistic, high resolution, warm lighting`;
 
     // CRITICAL NEGATIVE PROMPT TO PREVENT SKETCHES
-    const negativePrompt = 'sketch, drawing, line art, cartoon, anime, black and white, monochrome, pencil drawing, artistic interpretation, low quality, blurry, distorted, unrealistic, amateur, changing room layout, moving cabinets, moving appliances, different room structure';
+    const negativePrompt = 'sketch, drawing, line art, cartoon, anime, black and white, monochrome, pencil drawing, artistic interpretation, low quality, blurry, distorted, unrealistic, amateur, different layout, moved walls, changed room shape, relocated windows, architectural changes';
 
 
     console.log('🎨 Using SDXL img2img for kitchen renovation...');
@@ -64,7 +64,7 @@ export default async function handler(req, res) {
             image: imageData,
             prompt: fullPrompt,
             negative_prompt: negativePrompt,
-            strength: 0.75, // CRITICAL: 0.7-0.8 for renovations
+            strength: 0.45, // CRITICAL: Lower for layout preservation!
             guidance_scale: 7.5,
             num_inference_steps: 50,
             scheduler: "DPMSolverMultistep",
@@ -87,9 +87,9 @@ export default async function handler(req, res) {
             image: imageData,
             prompt: fullPrompt,
             negative_prompt: negativePrompt,
-            strength: 0.8,
+            strength: 0.5,
             guidance_scale: 7.5,
-            num_inference_steps: 40,
+            num_inference_steps: 50,
             width: 1024,
             height: 1024,
             seed: Math.floor(Math.random() * 1000000)
