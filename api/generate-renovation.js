@@ -10,6 +10,23 @@ export default async function handler(req, res) {
     const { imageData, roomType, selectedStyle, customPrompt, seed } = req.body;
 
     console.log('🏛️ Premium Architectural Rendering:', { roomType, selectedStyle, hasImage: !!imageData, seed });
+    
+    // DEBUG: Check image data format and size
+    if (imageData) {
+      console.log('📸 Image data format check:');
+      console.log('- Starts with data:image:', imageData.startsWith('data:image/'));
+      console.log('- Total length:', imageData.length);
+      console.log('- First 100 chars:', imageData.substring(0, 100));
+      
+      // Check if it's a valid base64 image
+      const base64Part = imageData.split(',')[1];
+      if (base64Part) {
+        console.log('- Base64 part length:', base64Part.length);
+        console.log('- Valid base64 format:', /^[A-Za-z0-9+/]*={0,2}$/.test(base64Part.substring(0, 100)));
+      }
+    } else {
+      console.error('❌ No imageData received from frontend!');
+    }
 
     if (!imageData || !roomType || !selectedStyle) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -31,15 +48,19 @@ export default async function handler(req, res) {
 
     // STRUCTURE-PRESERVING PROMPTS WITH PREMIUM DESIGN FOCUS
     const architecturalPrompts = {
-      'Modern Minimalist': '(architectural photography:1.4), modern minimalist kitchen transformation, (preserve original room layout:1.3), professional interior design, Canon R5 mirrorless, (dramatic natural lighting:1.2), white handleless cabinets, Carrara marble waterfall island, premium stainless steel appliances, under-cabinet LED strips, (maintain window placement:1.2), clean geometric lines, floating shelves, Scandinavian design principles, (Architectural Digest quality:1.3), sharp focus, 8K resolution',
+      'Modern Minimalist': 'modern minimalist kitchen transformation, clean white flat-panel cabinets, integrated appliances, polished concrete or hardwood flooring, waterfall-edge island in marble or quartz, matte black or brushed steel fixtures, seamless LED lighting, open and airy vibe, Scandinavian-Japanese fusion, Architectural Digest aesthetic',
 
-      'Farmhouse Chic': '(preserve room architecture:1.3), luxury farmhouse kitchen renovation, professional interior photography, (maintain original layout:1.2), white shaker cabinets with crown molding, live-edge walnut island, premium farmhouse sink, brass cabinet hardware, ship-lap accent wall, restored hardwood floors, (dramatic window lighting:1.2), Edison bulb chandeliers, (Southern Living magazine quality:1.3), rustic elegance',
+      'Farmhouse Chic': 'luxury farmhouse kitchen makeover, white shaker cabinets with brass hardware, exposed ceiling beams, rustic wood island with butcher block top, farmhouse sink, open shelving, vintage lantern pendant lights, ship-lap backsplash, warm color palette, inviting and homey, Southern Living style',
 
-      'Contemporary Luxe': '(high-end interior design:1.4), contemporary luxury kitchen, (preserve structural elements:1.3), professional architectural photography, navy blue lower cabinets, white upper cabinets, premium quartz countertops, gold brass fixtures, geometric pendant lighting, wine storage, built-in coffee station, (maintain room proportions:1.2), (Robb Report luxury:1.3), museum-quality lighting',
+      'Contemporary Luxe': 'contemporary luxury kitchen upgrade, two-tone high-gloss cabinets, premium quartz countertops, gold or bronze accents, integrated wine fridge, designer pendant lights, slab backsplash, hidden storage, built-in espresso bar, clean but opulent, Robb Report-worthy finish',
 
-      'Industrial Loft': '(preserve loft architecture:1.3), industrial luxury kitchen renovation, professional photography, exposed brick walls, steel-framed cabinets, concrete waterfall counters, copper pipe shelving, Edison bulb track lighting, (maintain window character:1.2), polished concrete floors, vintage leather bar stools, (Wallpaper Magazine quality:1.3), urban sophistication',
+      'Industrial Loft': 'industrial loft kitchen transformation, exposed brick walls, steel-framed cabinets, concrete waterfall counters, copper pipe shelving, Edison bulb track lighting, polished concrete floors, vintage leather bar stools, urban sophistication',
 
-      'Transitional': '(classic architectural preservation:1.3), transitional luxury kitchen, professional interior photography, raised panel cabinets, premium granite island, subway tile with dark grout, brushed gold hardware, crystal pendant lighting, coffered ceiling details, (maintain room character:1.2), hardwood floors, (Traditional Home magazine:1.3), timeless elegance'
+      'Transitional': 'transitional high-end kitchen redesign, blend of classic and modern elements, raised panel cabinetry in soft greys or creams, quartz or granite countertops, statement lighting, subway tile backsplash, brushed gold or chrome fixtures, warm hardwood floors, timeless design, Traditional Home magazine look',
+      
+      'Coastal New England': 'coastal New England kitchen transformation, soft whites and seafoam blues, beadboard cabinetry, brass or chrome nautical hardware, open wood shelving, large farmhouse windows, natural light focus, driftwood accents, nautical pendant lighting, coastal elegance, Cape Cod charm',
+      
+      'Eclectic Bohemian': 'boho-chic kitchen renovation, colorful tile backsplash, mixed textures and materials, open shelves with artisan ceramics, patterned rugs, vintage light fixtures, earth-toned cabinets, plants and greenery, creative and cozy vibe, artsy elegance, Elle Decor inspired'
     };
 
     // PREMIUM QUALITY ENHANCERS
@@ -73,7 +94,7 @@ export default async function handler(req, res) {
       image: imageData,
       prompt: fullPrompt,
       negative_prompt: negativePrompt,
-      strength: 0.4, // Lower strength to preserve more original structure
+      strength: 0.4, // Much lower strength for testing - preserve maximum structure
       guidance_scale: 9.5, // Higher for better prompt adherence
       num_inference_steps: 35, // More steps for premium quality
       scheduler: "DPMSolverMultistep",
@@ -81,6 +102,12 @@ export default async function handler(req, res) {
       height: 768,   // Maintain aspect ratio
       ...(seed && { seed: parseInt(seed) })
     };
+    
+    console.log('🎯 Generation parameters:');
+    console.log('- Strength (image influence):', premiumParams.strength);
+    console.log('- Guidance scale:', premiumParams.guidance_scale);
+    console.log('- Steps:', premiumParams.num_inference_steps);
+    console.log('- Image parameter passed:', !!premiumParams.image);
 
     let generationResponse;
     
@@ -90,14 +117,18 @@ export default async function handler(req, res) {
       
       try {
         // First attempt: Latest Realistic Vision
+        console.log('📸 Passing image to model:', !!premiumParams.image);
         generationResponse = await replicate.run(
           "lucataco/realistic-vision-v5:ac732df83cea7fff18b63c9068be49e3b78b2f6e7344b0b2fb8b87c6b2db43de",
           { input: premiumParams }
         );
         console.log('✅ Realistic Vision premium rendering successful');
+        console.log('🖼️ Generated response type:', typeof generationResponse);
+        console.log('🖼️ Generated response preview:', Array.isArray(generationResponse) ? `Array with ${generationResponse.length} items` : 'Single item');
         
       } catch (primaryError) {
         console.log('🔄 Trying SDXL for premium architectural rendering...');
+        console.log('❌ Primary model error:', primaryError.message);
         
         // Second attempt: SDXL for higher quality
         const sdxlParams = {
@@ -105,6 +136,8 @@ export default async function handler(req, res) {
           prompt: `architectural photography, luxury interior design, ${selectedStylePrompt}, ${qualityEnhancers}`,
           scheduler: "K_EULER"
         };
+        
+        console.log('📸 SDXL also receiving image:', !!sdxlParams.image);
         
         generationResponse = await replicate.run(
           "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",

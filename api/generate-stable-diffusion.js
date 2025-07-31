@@ -81,159 +81,64 @@ export default async function handler(req, res) {
     const layoutPreservingPrompt = createLayoutPreservingPrompt(selectedStyle, roomType);
     console.log('🏗️ Layout-preserving prompt:', layoutPreservingPrompt);
 
-    // Method 1: Try ControlNet Canny (best for layout preservation)
+    // Use Flux Canny Pro for professional edge-guided image generation
     try {
-      console.log('🏗️ Attempting ControlNet Canny for perfect layout preservation...');
+      console.log('🏗️ Using Flux Canny Pro for professional layout preservation...');
       
-      const controlNetOutput = await replicate.run(
-        "jagilley/controlnet-canny:aff48af9c68d162388d230a2ab003f68d2638d88307bdaf1c2f1ac95079c9613",
+      const fluxOutput = await replicate.run(
+        "black-forest-labs/flux-canny-pro",
         {
           input: {
-            image: imageData,
+            control_image: imageData,
             prompt: `architectural renovation: ${layoutPreservingPrompt}`,
-            num_samples: "1",
-            image_resolution: "512",
-            ddim_steps: 20,
-            scale: 7.0,
-            eta: 0.0,
-            low_threshold: 100,
-            high_threshold: 200,
-            detect_resolution: "512"
+            guidance: 7.5,
+            steps: 30,
+            safety_tolerance: 2
           }
         }
       );
       
-      console.log('✅ ControlNet Canny renovation completed');
+      console.log('✅ Flux Canny Pro renovation completed');
       
-      let controlNetImageUrl;
-      if (Array.isArray(controlNetOutput) && controlNetOutput.length > 0) {
-        controlNetImageUrl = controlNetOutput[0];
+      let fluxImageUrl;
+      if (Array.isArray(fluxOutput) && fluxOutput.length > 0) {
+        fluxImageUrl = fluxOutput[0];
       } else {
-        controlNetImageUrl = controlNetOutput;
+        fluxImageUrl = fluxOutput;
       }
       
-      if (controlNetImageUrl) {
-        console.log('✅ Perfect layout preservation successful with ControlNet');
+      if (fluxImageUrl) {
+        console.log('✅ Professional layout preservation successful with Flux Canny Pro');
         
         return res.status(200).json({
           success: true,
-          generatedImageUrl: controlNetImageUrl,
-          message: `Perfect layout preservation with ${selectedStyle?.name || 'custom'} style using ControlNet`,
+          generatedImageUrl: fluxImageUrl,
+          message: `Professional layout preservation with ${selectedStyle?.name || 'custom'} style using Flux Canny Pro`,
           appliedStyle: selectedStyle?.name,
           roomType: roomType,
-          method: 'controlnet-canny-layout-preservation',
+          method: 'flux-canny-pro-layout-preservation',
           prompt: layoutPreservingPrompt
         });
       }
       
-    } catch (controlNetError) {
-      console.error('❌ ControlNet Canny failed:', controlNetError);
-    }
-
-    // Method 2: Try ControlNet Depth (good for 3D layout preservation)
-    try {
-      console.log('🏗️ Attempting ControlNet Depth for 3D layout preservation...');
-      
-      const depthOutput = await replicate.run(
-        "rossjillian/controlnet:795433b19458d0f4fa172a7ccf93178d2adb1cb8ab2ad6c8faeee23e48820306",
-        {
-          input: {
-            image: imageData,
-            prompt: `architectural renovation maintaining exact 3D layout: ${layoutPreservingPrompt}`,
-            structure: "depth",
-            num_samples: "1",
-            image_resolution: "512",
-            ddim_steps: 15,
-            scale: 6.0
-          }
-        }
-      );
-      
-      console.log('✅ ControlNet Depth renovation completed');
-      
-      let depthImageUrl;
-      if (Array.isArray(depthOutput) && depthOutput.length > 0) {
-        depthImageUrl = depthOutput[0];
-      } else {
-        depthImageUrl = depthOutput;
-      }
-      
-      if (depthImageUrl) {
-        console.log('✅ 3D layout preservation successful with ControlNet Depth');
-        
-        return res.status(200).json({
-          success: true,
-          generatedImageUrl: depthImageUrl,
-          message: `3D layout preservation with ${selectedStyle?.name || 'custom'} style using ControlNet Depth`,
-          appliedStyle: selectedStyle?.name,
-          roomType: roomType,
-          method: 'controlnet-depth-layout-preservation',
-          prompt: layoutPreservingPrompt
-        });
-      }
-      
-    } catch (depthError) {
-      console.error('❌ ControlNet Depth failed:', depthError);
-    }
-
-    // Method 3: Try very conservative img2img with high layout preservation
-    try {
-      console.log('🏗️ Attempting conservative img2img with maximum layout preservation...');
-      
-      const conservativeOutput = await replicate.run(
-        "stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf",
-        {
-          input: {
-            image: imageData,
-            prompt: `subtle renovation of this EXACT kitchen layout: ${layoutPreservingPrompt}. CRITICAL: Keep the same room dimensions, island placement, window positions, cabinet arrangement, and camera angle. Only change cabinet colors and finishes.`,
-            num_inference_steps: 15,
-            guidance_scale: 5.0,
-            strength: 0.25  // Very low strength to preserve maximum layout
-          }
-        }
-      );
-      
-      console.log('✅ Conservative img2img renovation completed');
-      
-      let conservativeImageUrl;
-      if (Array.isArray(conservativeOutput) && conservativeOutput.length > 0) {
-        conservativeImageUrl = conservativeOutput[0];
-      } else {
-        conservativeImageUrl = conservativeOutput;
-      }
-      
-      if (conservativeImageUrl) {
-        console.log('✅ Maximum layout preservation successful');
-        
-        return res.status(200).json({
-          success: true,
-          generatedImageUrl: conservativeImageUrl,
-          message: `Maximum layout preservation with ${selectedStyle?.name || 'custom'} style (conservative approach)`,
-          appliedStyle: selectedStyle?.name,
-          roomType: roomType,
-          method: 'conservative-img2img-layout-preservation',
-          prompt: layoutPreservingPrompt
-        });
-      }
-      
-    } catch (conservativeError) {
-      console.error('❌ Conservative img2img failed:', conservativeError);
+    } catch (fluxError) {
+      console.error('❌ Flux Canny Pro failed:', fluxError);
     }
 
     // Final fallback: Demo image
-    console.log('🔄 All layout-preserving methods failed - using demo image');
+    console.log('🔄 Flux Canny Pro failed - using demo image');
     
     return res.status(200).json({
       success: true,
       generatedImageUrl: getDemoImage(roomType),
-      message: `Demo mode - All layout-preserving AI methods failed`,
+      message: `Demo mode - Flux Canny Pro failed`,
       appliedStyle: selectedStyle?.name,
       roomType: roomType,
       method: 'demo-fallback'
     });
 
   } catch (error) {
-    console.error('❌ Unexpected error in Layout-Preserving Renovation:', error);
+    console.error('❌ Unexpected error in Flux Canny Pro Renovation:', error);
     
     return res.status(500).json({
       success: false,
