@@ -76,7 +76,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
           // Generate a premium seed for consistency
           const premiumSeed = Math.floor(Math.random() * 1000000);
           
-          const response = await fetch('/api/generate-renovation', {
+          const response = await fetch('/api/generate-stable-diffusion', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
