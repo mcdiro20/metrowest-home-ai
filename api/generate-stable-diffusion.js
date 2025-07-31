@@ -86,7 +86,7 @@ export default async function handler(req, res) {
       console.log('🏗️ Using Flux Canny Pro for professional layout preservation...');
       
       const fluxOutput = await replicate.run(
-        "black-forest-labs/flux-canny-pro",
+        black-forest-labs/flux-canny-pro:b0a59442583d6a8946e4766836f11b8d3fc516fe847c22cf11309c5f0a792111",
         {
           input: {
             control_image: imageData,
