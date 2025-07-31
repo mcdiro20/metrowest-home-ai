@@ -81,8 +81,8 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         console.log('📸 Final originalImageBase64 length:', originalImageBase64?.length);
         
         try {
-          // Use ControlNet for precise architectural layout preservation
-          console.log('🏗️ Using ControlNet for architectural structure preservation...');
+          // Use professional architectural rendering service
+          console.log('🏗️ Starting professional architectural rendering...');
           
           // Convert file to base64
           const imageBase64 = await new Promise<string>((resolve, reject) => {
@@ -92,8 +92,8 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
             reader.readAsDataURL(uploadedFile);
           });
           
-          // Call ControlNet-enabled API for layout preservation
-          const response = await fetch('/api/generate-stable-diffusion', {
+          // Call professional rendering API
+          const response = await fetch('/api/generate-renovation', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -101,7 +101,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
             body: JSON.stringify({
               imageData: imageBase64,
               roomType: roomType,
-              selectedStyle: selectedStyle?.name || 'Modern Minimalist',
+              selectedStyle: selectedStyle,
               customPrompt: customPrompt
             })
           });
@@ -110,18 +110,18 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
             throw new Error(`API request failed with status ${response.status}`);
           }
           
-          const controlNetResult = await response.json();
-          console.log('🏗️ ControlNet renovation result:', controlNetResult);
+          const renovationResult = await response.json();
+          console.log('🏗️ Professional renovation result:', renovationResult);
           
-          if (controlNetResult.success) {
-            generatedImageUrl = controlNetResult.generatedImageUrl!;
-            console.log('✅ ControlNet architectural preservation successful');
+          if (renovationResult.success) {
+            generatedImageUrl = renovationResult.generatedImageUrl!;
+            console.log('✅ Professional architectural rendering successful');
           } else {
-            console.error('❌ ControlNet renovation failed:', controlNetResult.error);
-            throw new Error(controlNetResult.error || 'ControlNet renovation failed');
+            console.error('❌ Professional renovation failed:', renovationResult.error);
+            throw new Error(renovationResult.error || 'Professional renovation failed');
           }
         } catch (aiError) {
-          console.error('❌ ControlNet renovation failed:', aiError);
+          console.error('❌ Professional renovation failed:', aiError);
           // Fallback to demo image
           const demoImages = {
             kitchen: 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=1024',
@@ -133,7 +133,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
             other: 'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=1024'
           };
           generatedImageUrl = demoImages[roomType as keyof typeof demoImages] || demoImages.kitchen;
-          console.log('🔄 Using demo image as fallback after ControlNet failure');
+          console.log('🔄 Using demo image as fallback after professional rendering failure');
         }
 
         // Update progress during generation
@@ -187,27 +187,27 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
       case 'analyzing':
         if (currentStep === 'analysis') {
           return {
-            title: 'ControlNet Edge Detection',
-            description: 'Extracting architectural edges and structural elements using ControlNet Canny for precise layout preservation.',
+            title: 'Professional Vision Analysis',
+            description: 'AI architects analyzing your space with $10,000 professional rendering precision.',
             icon: <Eye className="w-6 h-6" />
           };
         } else {
           return {
-            title: 'Preparing ControlNet Pipeline',
-            description: 'Configuring ControlNet depth and edge detection for architectural structure preservation during renovation.',
+            title: 'Preparing Premium Rendering Pipeline',
+            description: 'Configuring professional DALL-E 3 HD quality rendering with architectural precision.',
             icon: <Cpu className="w-6 h-6" />
           };
         }
       case 'generating':
         return {
-          title: 'ControlNet Architectural Rendering',
-          description: 'ControlNet is generating your renovation while maintaining exact room dimensions, window positions, and structural elements.',
+          title: '$10,000 Architectural Rendering',
+          description: 'Creating your magazine-quality renovation with photorealistic materials and professional lighting.',
           icon: <Zap className="w-6 h-6 animate-pulse" />
         };
       case 'complete':
         return {
-          title: 'ControlNet Rendering Complete!',
-          description: 'Your architectural renovation with precise layout preservation is ready!',
+          title: 'Premium Rendering Complete!',
+          description: 'Your $10,000 quality architectural visualization is ready!',
           icon: <CheckCircle className="w-6 h-6" />
         };
     }
@@ -261,19 +261,19 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         <div className="mt-6 space-y-2">
           <div className={`flex items-center gap-3 text-sm ${stage === 'analyzing' ? 'text-blue-600' : progress > 30 ? 'text-emerald-600' : 'text-gray-400'}`}>
             <div className={`w-2 h-2 rounded-full ${stage === 'analyzing' && currentStep === 'analysis' ? 'bg-blue-600 animate-pulse' : progress > 20 ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
-            <span>Extracting edges and depth with ControlNet Canny</span>
+            <span>Professional architectural analysis with Vision API</span>
           </div>
           <div className={`flex items-center gap-3 text-sm ${currentStep === 'prompt' ? 'text-blue-600' : progress > 40 ? 'text-emerald-600' : 'text-gray-400'}`}>
             <div className={`w-2 h-2 rounded-full ${currentStep === 'prompt' ? 'bg-blue-600 animate-pulse' : progress > 40 ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
-            <span>Preserving architectural structure with ControlNet</span>
+            <span>Generating $10,000 quality rendering prompts</span>
           </div>
           <div className={`flex items-center gap-3 text-sm ${currentStep === 'generation' ? 'text-blue-600' : progress > 90 ? 'text-emerald-600' : 'text-gray-400'}`}>
             <div className={`w-2 h-2 rounded-full ${currentStep === 'generation' ? 'bg-blue-600 animate-pulse' : progress > 90 ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
-            <span>ControlNet renovation rendering with layout preservation</span>
+            <span>DALL-E 3 HD professional architectural rendering</span>
           </div>
           <div className={`flex items-center gap-3 text-sm ${stage === 'complete' ? 'text-emerald-600' : 'text-gray-400'}`}>
             <div className={`w-2 h-2 rounded-full ${stage === 'complete' ? 'bg-emerald-600' : 'bg-gray-300'}`}></div>
-            <span>Finalizing ControlNet architectural renovation</span>
+            <span>Finalizing magazine-quality architectural visualization</span>
           </div>
         </div>
       </div>
