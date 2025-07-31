@@ -73,7 +73,7 @@ export default async function handler(req, res) {
       image: imageData,
       prompt: fullPrompt,
       negative_prompt: negativePrompt,
-      strength: 0.55, // Lower strength to preserve more original structure
+      strength: 0.4, // Lower strength to preserve more original structure
       guidance_scale: 9.5, // Higher for better prompt adherence
       num_inference_steps: 35, // More steps for premium quality
       scheduler: "DPMSolverMultistep",
