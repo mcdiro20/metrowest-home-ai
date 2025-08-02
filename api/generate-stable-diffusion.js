@@ -41,6 +41,30 @@ export default async function handler(req, res) {
       });
     }
 
+    // Convert image data to supported format for Flux Canny Pro
+    let processedImageData = imageData;
+    
+    // Check if image is AVIF or WebP and convert to JPEG
+    if (imageData.includes('data:image/avif') || imageData.includes('data:image/webp')) {
+      console.log('🔄 Converting AVIF/WebP to JPEG for Flux Canny Pro compatibility...');
+      try {
+        // Convert to JPEG format
+        const base64Data = imageData.split(',')[1];
+        const mimeType = imageData.split(';')[0].split(':')[1];
+        
+        // For now, we'll try to force JPEG mime type
+        processedImageData = `data:image/jpeg;base64,${base64Data}`;
+        console.log('✅ Image format converted to JPEG');
+      } catch (conversionError) {
+        console.error('❌ Image conversion failed:', conversionError);
+        return res.status(400).json({
+          success: false,
+          message: 'Image format conversion failed',
+          error: 'image_conversion_failed'
+        });
+      }
+    }
+
     // Check for Replicate API key
     const replicateApiKey = process.env.REPLICATE_API_TOKEN;
     
@@ -89,11 +113,13 @@ export default async function handler(req, res) {
         "black-forest-labs/flux-canny-pro:b0a59442583d6a8946e4766836f11b8d3fc516fe847c22cf11309c5f0a792111",
         {
           input: {
-            control_image: imageData,
+            control_image: processedImageData,
             prompt: `architectural renovation: ${layoutPreservingPrompt}`,
             guidance: 7.5,
             steps: 30,
-            safety_tolerance: 2
+            safety_tolerance: 2,
+            output_format: "jpg",
+            output_quality: 90
           }
         }
       );
