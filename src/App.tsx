@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HeroSection from './components/HeroSection';
 import UploadSection from './components/UploadSection';
 import RoomTypeModal from './components/RoomTypeModal';
@@ -13,6 +14,7 @@ import InspirationFeed from './components/InspirationFeed';
 import HowItWorksSection from './components/HowItWorksSection';
 import WhyChooseUsSection from './components/WhyChooseUsSection';
 import Footer from './components/Footer';
+import FraminghamLanding from './pages/FraminghamLanding';
 import { supabase } from './lib/supabase';
 import type { User } from '@supabase/supabase-js';
 
@@ -179,81 +181,97 @@ function App() {
     }
   };
   return (
-    <div className="min-h-screen bg-white">
-      <HeroSection 
-        onUploadClick={handleUploadClick} 
-        user={user}
-        onSignOut={handleSignOut}
-        onShowAuth={() => setShowAuthModal(true)}
-      />
-      
-      <div id="upload-section">
-        <UploadSection 
-          onFileUpload={handleFileUpload} 
-          isZipCodeApproved={!!userZipCode}
-        />
-      </div>
-      
-      <InspirationFeed user={user} onShowAuth={() => setShowAuthModal(true)} />
-      <HowItWorksSection />
-      <WhyChooseUsSection />
-      <Footer />
-      
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        onAuthSuccess={handleAuthSuccess}
-      />
-      
-      <ZipCodeModal 
-        isOpen={showZipCodeModal}
-        onClose={() => setShowZipCodeModal(false)}
-        onZipCodeApproved={handleZipCodeApproved}
-      />
-      
-      <RoomTypeModal
-        isOpen={showRoomTypeModal}
-        onClose={() => setShowRoomTypeModal(false)}
-        onRoomTypeSelected={handleRoomTypeSelected}
-      />
-      
-      <StyleSelectionModal
-        isOpen={showStyleSelectionModal}
-        onClose={() => setShowStyleSelectionModal(false)}
-        onStyleSelected={handleStyleSelected}
-        onCustomStyleSelected={handleCustomStyleSelected}
-        roomType={roomType}
-      />
-      
-      <AIProcessingModal
-        isOpen={showAIProcessingModal}
-        onClose={() => setShowAIProcessingModal(false)}
-        onComplete={handleAIProcessingComplete}
-        uploadedFile={uploadedFile}
-        selectedStyle={selectedStyle}
-        roomType={roomType}
-        customPrompt={customPrompt}
-      />
-      
-      <EmailModal 
-        isOpen={showEmailModal} 
-        onClose={closeEmailModal}
-        uploadedImage={aiResult?.generatedImage}
-        beforeImage={aiResult?.originalImageBase64 || aiResult?.originalImage}
-        selectedStyle={selectedStyle?.name}
-        roomType={roomType}
-        zipCode={userZipCode}
-        designRequestId={currentDesignRequestId}
-        onEmailSubmitted={handleEmailSubmitted}
-        user={user}
-      />
-      
-      <QuoteRequestModal
-        isOpen={showQuoteModal}
-        onClose={closeQuoteModal}
-        zipCode={userZipCode}
-      />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/framingham-ma-ai-home-renovations" element={<FraminghamLanding />} />
+        <Route path="/" element={
+          <div className="min-h-screen bg-white">
+            <HeroSection 
+              onUploadClick={handleUploadClick} 
+              user={user}
+              onSignOut={handleSignOut}
+              onShowAuth={() => setShowAuthModal(true)}
+            />
+            
+            <div id="upload-section">
+              <UploadSection 
+                onFileUpload={handleFileUpload} 
+                isZipCodeApproved={!!userZipCode}
+              />
+            </div>
+            
+            <div id="inspiration-feed">
+              <InspirationFeed user={user} onShowAuth={() => setShowAuthModal(true)} />
+            </div>
+            
+            <div id="how-it-works">
+              <HowItWorksSection />
+            </div>
+            
+            <div id="why-choose-us">
+              <WhyChooseUsSection />
+            </div>
+            
+            <Footer />
+            
+            <AuthModal
+              isOpen={showAuthModal}
+              onClose={() => setShowAuthModal(false)}
+              onAuthSuccess={handleAuthSuccess}
+            />
+            
+            <ZipCodeModal 
+              isOpen={showZipCodeModal}
+              onClose={() => setShowZipCodeModal(false)}
+              onZipCodeApproved={handleZipCodeApproved}
+            />
+            
+            <RoomTypeModal
+              isOpen={showRoomTypeModal}
+              onClose={() => setShowRoomTypeModal(false)}
+              onRoomTypeSelected={handleRoomTypeSelected}
+            />
+            
+            <StyleSelectionModal
+              isOpen={showStyleSelectionModal}
+              onClose={() => setShowStyleSelectionModal(false)}
+              onStyleSelected={handleStyleSelected}
+              onCustomStyleSelected={handleCustomStyleSelected}
+              roomType={roomType}
+            />
+            
+            <AIProcessingModal
+              isOpen={showAIProcessingModal}
+              onClose={() => setShowAIProcessingModal(false)}
+              onComplete={handleAIProcessingComplete}
+              uploadedFile={uploadedFile}
+              selectedStyle={selectedStyle}
+              roomType={roomType}
+              customPrompt={customPrompt}
+            />
+            
+            <EmailModal 
+              isOpen={showEmailModal} 
+              onClose={closeEmailModal}
+              uploadedImage={aiResult?.generatedImage}
+              beforeImage={aiResult?.originalImageBase64 || aiResult?.originalImage}
+              selectedStyle={selectedStyle?.name}
+              roomType={roomType}
+              zipCode={userZipCode}
+              designRequestId={currentDesignRequestId}
+              onEmailSubmitted={handleEmailSubmitted}
+              user={user}
+            />
+            
+            <QuoteRequestModal
+              isOpen={showQuoteModal}
+              onClose={closeQuoteModal}
+              zipCode={userZipCode}
+            />
+          </div>
+        } />
+      </Routes>
+    </Router>
   );
 }
 

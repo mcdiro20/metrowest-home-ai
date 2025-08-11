@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Upload, Sparkles, User, LogOut } from 'lucide-react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -88,6 +89,16 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onUploadClick, user, onSignOu
             <h3 className="text-white font-semibold mb-2">After (AI Generated)</h3>
             <div className="w-full h-32 bg-gradient-to-br from-blue-400/30 to-emerald-400/30 rounded-lg"></div>
           </div>
+        </div>
+        
+        {/* SEO-friendly link to Framingham landing page */}
+        <div className="mt-8 text-center">
+          <Link 
+            to="/framingham-ma-ai-home-renovations"
+            className="inline-flex items-center gap-2 text-white/90 hover:text-white text-lg font-medium underline transition-colors bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full"
+          >
+            🏠 AI Home Renovations in Framingham, MA →
+          </Link>
         </div>
       </div>
     </section>

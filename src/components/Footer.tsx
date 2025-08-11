@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin, Users } from 'lucide-react';
 
 const Footer: React.FC = () => {
@@ -35,10 +36,10 @@ const Footer: React.FC = () => {
           <div>
             <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2">
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">How It Works</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Inspiration Gallery</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+              <li><a href="#about" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+              <li><a href="#how-it-works" className="text-gray-400 hover:text-white transition-colors">How It Works</a></li>
+              <li><a href="#inspiration-feed" className="text-gray-400 hover:text-white transition-colors">Inspiration Gallery</a></li>
+              <li><a href="#contact" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
               <li>
                 <button 
                   onClick={() => setShowContractorModal(true)}
@@ -48,6 +49,23 @@ const Footer: React.FC = () => {
                   Join as Contractor
                 </button>
               </li>
+            </ul>
+          </div>
+
+          {/* MetroWest Towns Served */}
+          <div>
+            <h4 className="text-lg font-semibold mb-4">MetroWest Towns Served</h4>
+            <ul className="space-y-1 text-gray-400 text-sm">
+              <li><Link to="/framingham-ma-ai-home-renovations" className="hover:text-white transition-colors">Framingham, MA</Link></li>
+              <li><a href="#" className="hover:text-white transition-colors">Natick, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Wellesley, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Newton, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Waltham, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Wayland, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Sudbury, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Marlborough, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Hudson, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Ashland, MA</a></li>
             </ul>
           </div>
 
@@ -97,9 +115,9 @@ const Footer: React.FC = () => {
             © 2024 MetroWest Home AI. All rights reserved.
           </p>
           <div className="flex gap-6">
-            <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Terms of Service</a>
-            <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a>
-            <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Cookie Policy</a>
+            <a href="#terms" className="text-gray-400 hover:text-white text-sm transition-colors">Terms of Service</a>
+            <a href="#privacy" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a>
+            <a href="#cookies" className="text-gray-400 hover:text-white text-sm transition-colors">Cookie Policy</a>
           </div>
         </div>
         
