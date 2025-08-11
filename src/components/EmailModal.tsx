@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Mail, Check } from 'lucide-react';
 import { EmailService } from '../services/emailService';
+import type { User } from '@supabase/supabase-js';
 
 interface EmailModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface EmailModalProps {
   zipCode?: string;
   designRequestId?: string;
   onEmailSubmitted?: () => void;
+  user?: User | null;
 }
 
 const EmailModal: React.FC<EmailModalProps> = ({ 
@@ -23,9 +25,10 @@ const EmailModal: React.FC<EmailModalProps> = ({
   roomType,
   zipCode,
   designRequestId,
-  onEmailSubmitted 
+  onEmailSubmitted,
+  user
 }) => {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(user?.email || '');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [subscribe, setSubscribe] = useState(false);
@@ -38,7 +41,7 @@ const EmailModal: React.FC<EmailModalProps> = ({
     
     try {
       const requestData = {
-        email: email,
+        email: email || user?.email || '',
         name: name,
         phone: phone,
         beforeImage: beforeImage,
@@ -47,7 +50,8 @@ const EmailModal: React.FC<EmailModalProps> = ({
         roomType: roomType,
         subscribe: subscribe,
         zipCode: zipCode,
-        designRequestId: designRequestId
+        designRequestId: designRequestId,
+        userId: user?.id
       };
       
       const result = await EmailService.sendDesignImages(requestData);
@@ -158,7 +162,13 @@ const EmailModal: React.FC<EmailModalProps> = ({
                 placeholder="Enter your email address"
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-colors"
                 required
+                disabled={!!user?.email}
               />
+              {user?.email && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Using your account email: {user.email}
+                </p>
+              )}
             </div>
 
             <div>

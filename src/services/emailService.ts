@@ -9,6 +9,7 @@ export interface EmailImageRequest {
   subscribe?: boolean;
   zipCode?: string;
   designRequestId?: string;
+  userId?: string;
 }
 
 export interface EmailResponse {

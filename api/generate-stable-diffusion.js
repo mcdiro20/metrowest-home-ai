@@ -41,28 +41,46 @@ export default async function handler(req, res) {
       });
     }
 
-    // Convert image data to supported format for Flux Canny Pro
+    // Validate and process image data for Flux Canny Pro
     let processedImageData = imageData;
     
-    // Check if image is AVIF or WebP and convert to JPEG
-    if (imageData.includes('data:image/avif') || imageData.includes('data:image/webp')) {
-      console.log('🔄 Converting AVIF/WebP to JPEG for Flux Canny Pro compatibility...');
-      try {
-        // Convert to JPEG format
-        const base64Data = imageData.split(',')[1];
-        const mimeType = imageData.split(';')[0].split(':')[1];
-        
-        // For now, we'll try to force JPEG mime type
-        processedImageData = `data:image/jpeg;base64,${base64Data}`;
-        console.log('✅ Image format converted to JPEG');
-      } catch (conversionError) {
-        console.error('❌ Image conversion failed:', conversionError);
-        return res.status(400).json({
-          success: false,
-          message: 'Image format conversion failed',
-          error: 'image_conversion_failed'
-        });
+    try {
+      // Extract image format and base64 data
+      const [headerPart, base64Data] = imageData.split(',');
+      const mimeType = headerPart.split(':')[1].split(';')[0];
+      
+      console.log('📸 Original image format:', mimeType);
+      console.log('📏 Base64 data length:', base64Data?.length || 0);
+      
+      // Validate base64 data exists and is reasonable length
+      if (!base64Data || base64Data.length < 100) {
+        throw new Error('Invalid or too short base64 data');
       }
+      
+      // Validate base64 format
+      const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+      if (!base64Regex.test(base64Data)) {
+        throw new Error('Invalid base64 format');
+      }
+      
+      // Convert problematic formats to PNG (more universally supported)
+      if (mimeType.includes('avif') || mimeType.includes('webp') || mimeType.includes('heic')) {
+        console.log(`🔄 Converting ${mimeType} to PNG for better compatibility...`);
+        processedImageData = `data:image/png;base64,${base64Data}`;
+      } else if (!mimeType.includes('jpeg') && !mimeType.includes('jpg') && !mimeType.includes('png')) {
+        console.log(`🔄 Converting ${mimeType} to PNG as fallback...`);
+        processedImageData = `data:image/png;base64,${base64Data}`;
+      }
+      
+      console.log('✅ Image processing completed');
+      
+    } catch (imageProcessingError) {
+      console.error('❌ Image processing failed:', imageProcessingError.message);
+      return res.status(400).json({
+        success: false,
+        message: `Image processing failed: ${imageProcessingError.message}`,
+        error: 'image_processing_failed'
+      });
     }
 
     // Check for Replicate API key
@@ -108,6 +126,7 @@ export default async function handler(req, res) {
     // Use Flux Canny Pro for professional edge-guided image generation
     try {
       console.log('🏗️ Using Flux Canny Pro for professional layout preservation...');
+      console.log('📸 Sending image format:', processedImageData.substring(0, 50) + '...');
       
       const fluxOutput = await replicate.run(
         "black-forest-labs/flux-canny-pro:b0a59442583d6a8946e4766836f11b8d3fc516fe847c22cf11309c5f0a792111",
@@ -149,6 +168,49 @@ export default async function handler(req, res) {
       
     } catch (fluxError) {
       console.error('❌ Flux Canny Pro failed:', fluxError);
+      console.log('🔄 Attempting fallback to ControlNet...');
+      
+      // Try ControlNet as fallback
+      try {
+        console.log('🔄 Fallback: Using ControlNet Canny...');
+        
+        const controlNetOutput = await replicate.run(
+          "jagilley/controlnet-canny:aff48af9c68d162388d230a2ab003f68d2638d88307bdaf1c2f1ac95079c9613",
+          {
+            input: {
+              image: processedImageData,
+              prompt: `high quality architectural renovation: ${layoutPreservingPrompt}`,
+              a_prompt: "best quality, extremely detailed, professional photography, architectural digest, high resolution",
+              n_prompt: "longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, blurry, watermark",
+              num_samples: 1,
+              image_resolution: 1024,
+              ddim_steps: 20,
+              guess_mode: false,
+              strength: 1.0,
+              scale: 7.0,
+              eta: 0.0,
+              low_threshold: 100,
+              high_threshold: 200
+            }
+          }
+        );
+        
+        if (controlNetOutput && controlNetOutput.length > 0) {
+          console.log('✅ ControlNet fallback successful');
+          return res.status(200).json({
+            success: true,
+            generatedImageUrl: controlNetOutput[0],
+            message: `Layout preservation with ${selectedStyle?.name || 'custom'} style using ControlNet fallback`,
+            appliedStyle: selectedStyle?.name,
+            roomType: roomType,
+            method: 'controlnet-canny-fallback',
+            prompt: layoutPreservingPrompt
+          });
+        }
+        
+      } catch (controlNetError) {
+        console.error('❌ ControlNet fallback also failed:', controlNetError);
+      }
     }
 
     // Final fallback: Demo image

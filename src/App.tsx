@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import HeroSection from './components/HeroSection';
 import UploadSection from './components/UploadSection';
 import RoomTypeModal from './components/RoomTypeModal';
@@ -7,12 +8,17 @@ import AIProcessingModal from './components/AIProcessingModal';
 import EmailModal from './components/EmailModal';
 import ZipCodeModal from './components/ZipCodeModal';
 import QuoteRequestModal from './components/QuoteRequestModal';
+import AuthModal from './components/AuthModal';
 import InspirationFeed from './components/InspirationFeed';
 import HowItWorksSection from './components/HowItWorksSection';
 import WhyChooseUsSection from './components/WhyChooseUsSection';
 import Footer from './components/Footer';
+import { supabase } from './lib/supabase';
+import type { User } from '@supabase/supabase-js';
 
 function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [showZipCodeModal, setShowZipCodeModal] = useState(false);
   const [showRoomTypeModal, setShowRoomTypeModal] = useState(false);
   const [showStyleSelectionModal, setShowStyleSelectionModal] = useState(false);
@@ -30,7 +36,30 @@ function App() {
   const [currentCustomerId, setCurrentCustomerId] = useState<string | undefined>();
   const [currentDesignRequestId, setCurrentDesignRequestId] = useState<string | undefined>();
 
+  // Handle authentication state changes
+  useEffect(() => {
+    if (!supabase) return;
+
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
   const handleUploadClick = () => {
+    // Check if user is authenticated before allowing upload
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
     setShowZipCodeModal(true);
   };
 
@@ -140,9 +169,23 @@ function App() {
     setEmailSubmitted(false);
   };
 
+  const handleAuthSuccess = () => {
+    console.log('Authentication successful');
+  };
+
+  const handleSignOut = async () => {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+  };
   return (
     <div className="min-h-screen bg-white">
-      <HeroSection onUploadClick={handleUploadClick} />
+      <HeroSection 
+        onUploadClick={handleUploadClick} 
+        user={user}
+        onSignOut={handleSignOut}
+        onShowAuth={() => setShowAuthModal(true)}
+      />
       
       <div id="upload-section">
         <UploadSection 
@@ -151,10 +194,16 @@ function App() {
         />
       </div>
       
-      <InspirationFeed />
+      <InspirationFeed user={user} onShowAuth={() => setShowAuthModal(true)} />
       <HowItWorksSection />
       <WhyChooseUsSection />
       <Footer />
+      
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onAuthSuccess={handleAuthSuccess}
+      />
       
       <ZipCodeModal 
         isOpen={showZipCodeModal}
@@ -196,6 +245,7 @@ function App() {
         zipCode={userZipCode}
         designRequestId={currentDesignRequestId}
         onEmailSubmitted={handleEmailSubmitted}
+        user={user}
       />
       
       <QuoteRequestModal

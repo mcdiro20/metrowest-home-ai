@@ -1,11 +1,15 @@
 import React from 'react';
-import { Upload, Sparkles } from 'lucide-react';
+import { Upload, Sparkles, User, LogOut } from 'lucide-react';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface HeroSectionProps {
   onUploadClick: () => void;
+  user: SupabaseUser | null;
+  onSignOut: () => void;
+  onShowAuth: () => void;
 }
 
-const HeroSection: React.FC<HeroSectionProps> = ({ onUploadClick }) => {
+const HeroSection: React.FC<HeroSectionProps> = ({ onUploadClick, user, onSignOut, onShowAuth }) => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image */}
@@ -18,6 +22,32 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onUploadClick }) => {
             opacity: 0.4
           }}
         ></div>
+      </div>
+      
+      {/* Auth Section */}
+      <div className="absolute top-6 right-6 z-20">
+        {user ? (
+          <div className="flex items-center gap-4">
+            <div className="text-white/90 text-sm">
+              Welcome, {user.user_metadata?.name || user.email}
+            </div>
+            <button
+              onClick={onSignOut}
+              className="flex items-center gap-2 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white px-4 py-2 rounded-full transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={onShowAuth}
+            className="flex items-center gap-2 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white px-4 py-2 rounded-full transition-colors"
+          >
+            <User className="w-4 h-4" />
+            Sign In
+          </button>
+        )}
       </div>
       
       {/* Content */}
@@ -35,7 +65,10 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onUploadClick }) => {
         </h1>
         
         <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
-          Exclusively for MetroWest Massachusetts homeowners. Upload a photo of your kitchen or backyard and see what it could become with stunning AI-generated transformations.
+          {user 
+            ? "Upload a photo of your kitchen or backyard and see what it could become with stunning AI-generated transformations."
+            : "Exclusively for MetroWest Massachusetts homeowners. Sign in to upload a photo and see what your space could become with stunning AI-generated transformations."
+          }
         </p>
         
         <button
@@ -43,7 +76,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onUploadClick }) => {
           className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white font-semibold px-8 py-4 rounded-full text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
         >
           <Upload className="w-5 h-5" />
-          Upload Your Space
+          {user ? 'Upload Your Space' : 'Sign In to Upload'}
         </button>
         
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Heart, MessageCircle, Filter, Grid, List, ArrowRight } from 'lucide-react';
+import { Heart, MessageCircle, Filter, Grid, List, ArrowRight, Lock, User } from 'lucide-react';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface InspirationItem {
   id: string;
@@ -13,7 +14,12 @@ interface InspirationItem {
   projectType?: string;
 }
 
-const InspirationFeed: React.FC = () => {
+interface InspirationFeedProps {
+  user: SupabaseUser | null;
+  onShowAuth: () => void;
+}
+
+const InspirationFeed: React.FC<InspirationFeedProps> = ({ user, onShowAuth }) => {
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [selectedProjectType, setSelectedProjectType] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
@@ -80,6 +86,11 @@ const InspirationFeed: React.FC = () => {
   ];
 
   const handleLike = (id: string) => {
+    if (!user) {
+      onShowAuth();
+      return;
+    }
+    
     setInspirationItems(items =>
       items.map(item =>
         item.id === id
@@ -90,6 +101,11 @@ const InspirationFeed: React.FC = () => {
   };
 
   const handleGetQuote = (projectType: string) => {
+    if (!user) {
+      onShowAuth();
+      return;
+    }
+    
     setSelectedProjectType(projectType);
     setShowQuoteModal(true);
   };
@@ -99,6 +115,42 @@ const InspirationFeed: React.FC = () => {
     return item.tags.some(tag => tag.toLowerCase().includes(selectedFilter));
   });
 
+  // Show auth prompt if user is not logged in
+  if (!user) {
+    return (
+      <section className="py-20 bg-white">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              See What Others Are Creating
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              All designs created by homeowners in MetroWest Massachusetts. Explore AI-generated transformations and get inspired.
+            </p>
+          </div>
+
+          <div className="max-w-md mx-auto bg-gray-50 rounded-2xl p-8 text-center">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-8 h-8 text-blue-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Sign In to View Community Designs
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Join our community to see amazing transformations from other MetroWest homeowners and share your own designs.
+            </p>
+            <button
+              onClick={onShowAuth}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-300"
+            >
+              <User className="w-5 h-5" />
+              Sign In to Continue
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className="py-20 bg-white">
       <div className="max-w-6xl mx-auto px-4">

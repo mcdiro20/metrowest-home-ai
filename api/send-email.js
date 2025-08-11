@@ -24,7 +24,8 @@ export default async function handler(req, res) {
       subscribe, 
       zipCode, 
       beforeImage, 
-      afterImage 
+      afterImage,
+      userId
     } = req.body || {};
 
     // Basic validation
@@ -64,6 +65,7 @@ export default async function handler(req, res) {
         }
         
         const leadData = {
+          user_id: userId || null,
           name: name || null,
           email: email,
           phone: phone || null,
