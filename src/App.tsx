@@ -10,7 +10,7 @@ import HowItWorksSection from './components/HowItWorksSection';
 import WhyChooseUsSection from './components/WhyChooseUsSection';
 import Footer from './components/Footer';
 import TownLandingPage from './pages/TownLandingPage';
-import AdminDashboard from './components/AdminDashboard';
+import AdminPanel from './components/AdminPanel';
 import { supabase } from './lib/supabase';
 import { AnalyticsService } from './services/analyticsService';
 import type { User } from '@supabase/supabase-js';
@@ -78,9 +78,7 @@ function App() {
         <Route 
           path="/admin" 
           element={
-            <div className="min-h-screen bg-white">
-              <AdminDashboard />
-            </div>
+            <AdminPanel />
           } 
         />
         <Route 
