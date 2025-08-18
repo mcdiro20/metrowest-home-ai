@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Users, 
   Activity, 
@@ -16,7 +17,8 @@ import {
   Clock,
   Star,
   Home,
-  Zap
+  Zap,
+  ArrowLeft
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Lead, Profile, UserEvent } from '../lib/supabase';

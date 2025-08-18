@@ -11,6 +11,7 @@ import WhyChooseUsSection from './components/WhyChooseUsSection';
 import Footer from './components/Footer';
 import TownLandingPage from './pages/TownLandingPage';
 import AdminPanel from './components/AdminPanel';
+import AdminDashboard from './components/AdminDashboard';
 import { supabase } from './lib/supabase';
 import { AnalyticsService } from './services/analyticsService';
 import type { User } from '@supabase/supabase-js';
@@ -78,7 +79,7 @@ function App() {
         <Route 
           path="/admin" 
           element={
-            <AdminPanel />
+            <AdminDashboard />
           } 
         />
         <Route 
