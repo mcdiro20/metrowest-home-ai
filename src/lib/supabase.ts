@@ -43,4 +43,35 @@ export interface Lead {
   is_repeat_visitor: boolean;
   lead_score: number;
   created_at: string;
+  user_id?: string; // Added user_id
+}
+
+// New interfaces for dashboard tables
+export interface Profile {
+  id: string;
+  email: string;
+  role: 'admin' | 'contractor' | 'homeowner';
+  lead_score: number;
+  primary_zip_code?: string;
+  ai_renderings_count: number;
+  login_count: number;
+  total_time_on_site_ms: number;
+  last_login_at?: string;
+  created_at: string;
+}
+
+export interface Contractor {
+  id: string;
+  name: string;
+  email: string;
+  assigned_zip_codes: string[];
+  created_at: string;
+}
+
+export interface UserEvent {
+  id: string;
+  user_id: string;
+  event_type: 'login' | 'upload' | 'view' | 'share' | 'time_spent' | string; // Added string for flexibility
+  metadata?: Record<string, any>;
+  created_at: string;
 }

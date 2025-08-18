@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Zap, Clock, CheckCircle, Eye, Cpu, Award, Sparkles } from 'lucide-react';
+import { AnalyticsService } from '../services/analyticsService';
 
 interface AIProcessingModalProps {
   isOpen: boolean;
@@ -141,11 +142,27 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
           prompt: selectedStyle?.prompt || 'Premium architectural transformation'
         };
 
+        // Track AI render completion
+        AnalyticsService.trackAIRender(
+          roomType,
+          selectedStyle?.name || 'Custom',
+          timeElapsed * 1000,
+          true
+        );
         setTimeout(() => {
           onComplete(result);
         }, 1500);
       } catch (error) {
         console.error('❌ Premium Processing Error:', error);
+        
+        // Track AI render failure
+        AnalyticsService.trackAIRender(
+          roomType,
+          selectedStyle?.name || 'Custom',
+          timeElapsed * 1000,
+          false
+        );
+        
         setTimeout(() => {
           onClose();
         }, 3000);

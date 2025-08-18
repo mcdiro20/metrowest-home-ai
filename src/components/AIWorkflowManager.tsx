@@ -154,38 +154,6 @@ const AIWorkflowManager = forwardRef<AIWorkflowHandle, AIWorkflowManagerProps>(
           }}
         />
 
-        {/* Upload Section (only shown after ZIP approval) */}
-        {userZipCode && (
-          <section ref={uploadSectionRef} className="bg-gray-50 py-16 text-center">
-            <h2 className="text-3xl font-bold mb-6">Upload Your Space</h2>
-            <p className="mb-10 text-gray-600">Choose how you want to share your space with our AI renovation tool.</p>
-
-            <div className="flex flex-col md:flex-row gap-6 justify-center">
-              {/* File Upload */}
-              <label className="cursor-pointer bg-white shadow-md p-6 rounded-lg hover:shadow-lg transition">
-                <input type="file" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} />
-                <span className="block text-lg font-semibold">📁 Upload from Computer</span>
-              </label>
-
-              {/* Mobile Upload */}
-              <button
-                onClick={handleMobileUpload}
-                className="bg-white shadow-md p-6 rounded-lg hover:shadow-lg transition text-lg font-semibold"
-              >
-                📱 Upload from Mobile
-              </button>
-
-              {/* QR Code Upload */}
-              <button
-                onClick={handleQRCodeUpload}
-                className="bg-white shadow-md p-6 rounded-lg hover:shadow-lg transition text-lg font-semibold"
-              >
-                🔗 Upload via QR Code
-              </button>
-            </div>
-          </section>
-        )}
-
         <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onAuthSuccess={handleAuthSuccess} />
         <ZipCodeModal isOpen={showZipCodeModal} onClose={() => setShowZipCodeModal(false)} onZipCodeApproved={handleZipCodeApproved} />
         <RoomTypeModal isOpen={showRoomTypeModal} onClose={() => setShowRoomTypeModal(false)} onRoomTypeSelected={handleRoomTypeSelected} />

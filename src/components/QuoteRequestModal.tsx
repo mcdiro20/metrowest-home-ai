@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Home, Check, Calendar, DollarSign, Mail, Phone } from 'lucide-react';
+import { AnalyticsService } from '../services/analyticsService';
 
 interface QuoteRequestModalProps {
   isOpen: boolean;
@@ -51,6 +52,15 @@ const QuoteRequestModal: React.FC<QuoteRequestModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    
+    // Track quote request
+    AnalyticsService.trackEvent('quote_request', {
+      zip_code: formData.zipCode,
+      project_type: formData.projectType,
+      timeline: formData.timeline,
+      budget: formData.budget,
+      contact_method: formData.contactMethod
+    });
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 2000));

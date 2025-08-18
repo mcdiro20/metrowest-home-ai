@@ -10,13 +10,16 @@ import HowItWorksSection from './components/HowItWorksSection';
 import WhyChooseUsSection from './components/WhyChooseUsSection';
 import Footer from './components/Footer';
 import TownLandingPage from './pages/TownLandingPage';
+import AdminDashboard from './components/AdminDashboard';
 import { supabase } from './lib/supabase';
+import { AnalyticsService } from './services/analyticsService';
 import type { User } from '@supabase/supabase-js';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [userZipCode, setUserZipCode] = useState<string>('');
+  const [pageStartTime] = useState(Date.now());
   const aiWorkflowRef = React.useRef<any>(null);
 
   // Handle authentication state changes
@@ -26,6 +29,9 @@ function App() {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        AnalyticsService.trackEvent('login');
+      }
     });
 
     // Listen for auth changes
@@ -33,11 +39,22 @@ function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        AnalyticsService.trackEvent('login');
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
+  // Track page views and time spent
+  useEffect(() => {
+    AnalyticsService.trackPageView(window.location.pathname);
+    
+    return () => {
+      AnalyticsService.trackTimeSpent(window.location.pathname, pageStartTime);
+    };
+  }, [pageStartTime]);
   const handleStartAIWorkflow = () => {
     if (aiWorkflowRef.current) {
       aiWorkflowRef.current.startAIWorkflow();
@@ -58,6 +75,10 @@ function App() {
     <Router>
       <Analytics />
       <Routes>
+        <Route 
+          path="/admin" 
+          element={<AdminDashboard />} 
+        />
         <Route 
           path="/:townSlug-ma-ai-home-renovations" 
           element={

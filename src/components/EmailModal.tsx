@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Mail, Check } from 'lucide-react';
 import { EmailService } from '../services/emailService';
+import { AnalyticsService } from '../services/analyticsService';
 import type { User } from '@supabase/supabase-js';
 
 interface EmailModalProps {
@@ -64,6 +65,14 @@ const EmailModal: React.FC<EmailModalProps> = ({
       console.log('✅ Email sent successfully:', result);
       setIsSubmitting(false);
       setIsSuccess(true);
+      
+      // Track email submission
+      AnalyticsService.trackEmailSubmit(
+        roomType || 'unknown',
+        selectedStyle || 'unknown',
+        zipCode || 'unknown',
+        subscribe
+      );
       
       // Call onEmailSubmitted after success
       setTimeout(() => {

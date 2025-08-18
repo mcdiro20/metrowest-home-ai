@@ -67,7 +67,6 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onFileUpload, isZipCodeAp
             onDragOver={isZipCodeApproved ? handleDragOver : undefined}
             onDragLeave={isZipCodeApproved ? handleDragLeave : undefined}
             onDrop={isZipCodeApproved ? handleDrop : undefined}
-            onClick={isZipCodeApproved ? () => fileInputRef.current?.click() : undefined}
           >
             <div className="flex flex-col items-center">
               <div

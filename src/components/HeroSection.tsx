@@ -80,6 +80,18 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onUploadClick, user, onSignOu
           {user ? 'Upload Your Space' : 'Sign In to Upload'}
         </button>
         
+        {/* Admin Link (only show if user is authenticated) */}
+        {user && (
+          <div className="mt-4">
+            <a
+              href="/admin"
+              className="text-white/80 hover:text-white text-sm underline"
+            >
+              Admin Dashboard →
+            </a>
+          </div>
+        )}
+        
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
             <h3 className="text-white font-semibold mb-2">Before</h3>
