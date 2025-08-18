@@ -77,7 +77,11 @@ function App() {
       <Routes>
         <Route 
           path="/admin" 
-          element={<AdminDashboard />} 
+          element={
+            <div className="min-h-screen bg-white">
+              <AdminDashboard />
+            </div>
+          } 
         />
         <Route 
           path="/:townSlug-ma-ai-home-renovations" 
@@ -86,8 +90,8 @@ function App() {
               user={user}
               onSignOut={handleSignOut}
               onShowAuth={() => setShowAuthModal(true)}
-          userZipCode={userZipCode}
-          onZipCodeApproved={handleZipCodeApproved}
+              userZipCode={userZipCode}
+              onZipCodeApproved={handleZipCodeApproved}
             />
           } 
         />

@@ -198,6 +198,15 @@ const AdminDashboard: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
+              <div className="flex items-center gap-4 mb-2">
+                <Link 
+                  to="/"
+                  className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to Home
+                </Link>
+              </div>
               <h1 className="text-3xl font-bold text-gray-900">MetroWest Home AI Dashboard</h1>
               <p className="text-gray-600">Monitor user activity and lead generation</p>
             </div>
