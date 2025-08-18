@@ -1,75 +1,81 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, MessageCircle, Filter, Grid, List, ArrowRight, Lock, User } from 'lucide-react';
+import { LeadService, type RenovationItem } from '../services/leadService';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
-
-interface InspirationItem {
-  id: string;
-  beforeImage: string;
-  afterImage: string;
-  title: string;
-  tags: string[];
-  likes: number;
-  comments: number;
-  isLiked: boolean;
-  projectType?: string;
-}
 
 interface InspirationFeedProps {
   user: SupabaseUser | null;
   onShowAuth: () => void;
+  filterZipCodes?: string[];
 }
 
-const InspirationFeed: React.FC<InspirationFeedProps> = ({ user, onShowAuth }) => {
+const InspirationFeed: React.FC<InspirationFeedProps> = ({ user, onShowAuth, filterZipCodes }) => {
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [selectedProjectType, setSelectedProjectType] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [inspirationItems, setInspirationItems] = useState<InspirationItem[]>([
-    {
-      id: '1',
-      beforeImage: 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=400',
-      afterImage: 'https://images.pexels.com/photos/1080721/pexels-photo-1080721.jpeg?auto=compress&cs=tinysrgb&w=400',
-      title: 'Modern Kitchen Transformation',
-      tags: ['Modern Minimalist', 'Kitchen', 'Clean Lines'],
-      likes: 42,
-      comments: 8,
-      isLiked: false,
-      projectType: 'Kitchen'
-    },
-    {
-      id: '2',
-      beforeImage: 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=400',
-      afterImage: 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=400',
-      title: 'Modern Zen Backyard',
-      tags: ['Modern Zen', 'Backyard', 'Natural'],
-      likes: 38,
-      comments: 12,
-      isLiked: true,
-      projectType: 'Backyard'
-    },
-    {
-      id: '3',
-      beforeImage: 'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=400',
-      afterImage: 'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=400',
-      title: 'Farmhouse Chic Kitchen',
-      tags: ['Farmhouse Chic', 'Kitchen', 'Rustic'],
-      likes: 56,
-      comments: 15,
-      isLiked: false,
-      projectType: 'Kitchen'
-    },
-    {
-      id: '4',
-      beforeImage: 'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=400',
-      afterImage: 'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=400',
-      title: 'Mediterranean Oasis',
-      tags: ['Mediterranean Oasis', 'Backyard', 'Outdoor'],
-      likes: 33,
-      comments: 6,
-      isLiked: false,
-      projectType: 'Backyard'
+  const [inspirationItems, setInspirationItems] = useState<RenovationItem[]>([]);
+  const [validItems, setValidItems] = useState<RenovationItem[]>([]);
+  const [displayedItems, setDisplayedItems] = useState<RenovationItem[]>([]);
+  const [showingCount, setShowingCount] = useState(8);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Function to check if an image loads successfully
+  const checkImageLoad = (url: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = url;
+    });
+  };
+
+  // Filter out items with broken after images
+  const validateImages = async (items: RenovationItem[]) => {
+    const validatedItems: RenovationItem[] = [];
+    
+    for (const item of items) {
+      const afterImageValid = await checkImageLoad(item.afterImage);
+      if (afterImageValid) {
+        validatedItems.push(item);
+      }
     }
-  ]);
+    
+    return validatedItems;
+  };
+
+  // Fetch renovations when component mounts or filterZipCodes changes
+  useEffect(() => {
+    const fetchRenovations = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const renovations = await LeadService.getRenovations(filterZipCodes);
+        const validRenovations = await validateImages(renovations);
+        setInspirationItems(validRenovations);
+        setValidItems(validRenovations);
+      } catch (err) {
+        console.error('Error fetching renovations:', err);
+        setError('Failed to load renovations');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRenovations();
+  }, [filterZipCodes]);
+
+  // Update displayed items when filter changes
+  useEffect(() => {
+    const filtered = validItems.filter(item => {
+      if (selectedFilter === 'all') return true;
+      return item.tags.some(tag => tag.toLowerCase().includes(selectedFilter));
+    });
+    
+    setDisplayedItems(filtered.slice(0, showingCount));
+  }, [validItems, selectedFilter, showingCount]);
 
   const filters = [
     'all', 
@@ -91,7 +97,15 @@ const InspirationFeed: React.FC<InspirationFeedProps> = ({ user, onShowAuth }) =
       return;
     }
     
-    setInspirationItems(items =>
+    setValidItems(items =>
+      items.map(item =>
+        item.id === id
+          ? { ...item, isLiked: !item.isLiked, likes: item.isLiked ? item.likes - 1 : item.likes + 1 }
+          : item
+      )
+    );
+    
+    setDisplayedItems(items =>
       items.map(item =>
         item.id === id
           ? { ...item, isLiked: !item.isLiked, likes: item.isLiked ? item.likes - 1 : item.likes + 1 }
@@ -110,11 +124,16 @@ const InspirationFeed: React.FC<InspirationFeedProps> = ({ user, onShowAuth }) =
     setShowQuoteModal(true);
   };
 
-  const filteredItems = inspirationItems.filter(item => {
+  const handleLoadMore = () => {
+    setShowingCount(prev => prev + 8);
+  };
+
+  const filteredItems = validItems.filter(item => {
     if (selectedFilter === 'all') return true;
     return item.tags.some(tag => tag.toLowerCase().includes(selectedFilter));
   });
 
+  const hasMoreItems = displayedItems.length < filteredItems.length;
   // Show auth prompt if user is not logged in
   if (!user) {
     return (
@@ -125,7 +144,10 @@ const InspirationFeed: React.FC<InspirationFeedProps> = ({ user, onShowAuth }) =
               See What Others Are Creating
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              All designs created by homeowners in MetroWest Massachusetts. Explore AI-generated transformations and get inspired.
+              {filterZipCodes 
+                ? `Designs created by homeowners in your area. Explore AI-generated transformations and get inspired.`
+                : `All designs created by homeowners in MetroWest Massachusetts. Explore AI-generated transformations and get inspired.`
+              }
             </p>
           </div>
 
@@ -137,7 +159,10 @@ const InspirationFeed: React.FC<InspirationFeedProps> = ({ user, onShowAuth }) =
               Sign In to View Community Designs
             </h3>
             <p className="text-gray-600 mb-6">
-              Join our community to see amazing transformations from other MetroWest homeowners and share your own designs.
+              {filterZipCodes 
+                ? `Join our community to see amazing transformations from homeowners in your area and share your own designs.`
+                : `Join our community to see amazing transformations from other MetroWest homeowners and share your own designs.`
+              }
             </p>
             <button
               onClick={onShowAuth}
@@ -151,20 +176,58 @@ const InspirationFeed: React.FC<InspirationFeedProps> = ({ user, onShowAuth }) =
       </section>
     );
   }
+
   return (
     <section className="py-20 bg-white">
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            See What Others Are Creating
+            {filterZipCodes ? 'Local Home Transformations' : 'See What Others Are Creating'}
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            All designs created by homeowners in MetroWest Massachusetts. Explore AI-generated transformations and get inspired.
+            {filterZipCodes 
+              ? `Real AI-generated transformations from homeowners in your area. Get inspired by what's possible.`
+              : `All designs created by homeowners in MetroWest Massachusetts. Explore AI-generated transformations and get inspired.`
+            }
           </p>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="text-gray-600 mt-4">Loading renovations...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-12">
+            <p className="text-red-600 mb-4">{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="text-blue-600 hover:text-blue-800 underline"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {/* No Results State */}
+        {!isLoading && !error && displayedItems.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-600 mb-4">
+              {filterZipCodes 
+                ? `No renovations found in your area yet. Be the first to share your transformation!`
+                : `No renovations found. Try adjusting your filters or be the first to share your transformation!`
+              }
+            </p>
+          </div>
+        )}
+
         {/* Filters and View Toggle */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-8">
+        {!isLoading && !error && displayedItems.length > 0 && (
+          <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-8">
           <div className="flex flex-wrap gap-2">
             {filters.map(filter => (
               <button
@@ -199,11 +262,14 @@ const InspirationFeed: React.FC<InspirationFeedProps> = ({ user, onShowAuth }) =
               <List className="w-5 h-5" />
             </button>
           </div>
-        </div>
+          </div>
+        )}
 
         {/* Inspiration Grid */}
-        <div className={`${viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-6'}`}>
-          {filteredItems.map(item => (
+        {!isLoading && !error && displayedItems.length > 0 && (
+          <>
+          <div className={`${viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-6'}`}>
+          {displayedItems.map(item => (
             <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
               {/* Before/After Images */}
               <div className="relative">
@@ -260,7 +326,7 @@ const InspirationFeed: React.FC<InspirationFeedProps> = ({ user, onShowAuth }) =
                     </button>
                   </div>
                   <button
-                    onClick={() => handleGetQuote(item.projectType || 'Other')}
+                    onClick={() => handleGetQuote(item.projectType)}
                     className="flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1 rounded-full transition-colors"
                   >
                     Get quote like this
@@ -270,7 +336,21 @@ const InspirationFeed: React.FC<InspirationFeedProps> = ({ user, onShowAuth }) =
               </div>
             </div>
           ))}
-        </div>
+          </div>
+          
+          {/* Load More Button */}
+          {hasMoreItems && (
+            <div className="text-center mt-8">
+              <button
+                onClick={handleLoadMore}
+                className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300"
+              >
+                Load More Designs ({filteredItems.length - displayedItems.length} remaining)
+              </button>
+            </div>
+          )}
+          </>
+        )}
         
         {/* Simple Quote Modal */}
         {showQuoteModal && (

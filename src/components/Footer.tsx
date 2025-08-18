@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin, Users } from 'lucide-react';
+import { towns } from '../data/towns';
 
 const Footer: React.FC = () => {
   const [showContractorModal, setShowContractorModal] = useState(false);
@@ -56,9 +57,16 @@ const Footer: React.FC = () => {
           <div>
             <h4 className="text-lg font-semibold mb-4">MetroWest Towns Served</h4>
             <ul className="space-y-1 text-gray-400 text-sm">
-              <li><Link to="/framingham-ma-ai-home-renovations" className="hover:text-white transition-colors">Framingham, MA</Link></li>
-              <li><a href="#" className="hover:text-white transition-colors">Natick, MA</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Wellesley, MA</a></li>
+              {towns.map((town) => (
+                <li key={town.slug}>
+                  <Link 
+                    to={`/${town.slug}-ma-ai-home-renovations`} 
+                    className="hover:text-white transition-colors"
+                  >
+                    {town.name}, {town.state}
+                  </Link>
+                </li>
+              ))}
               <li><a href="#" className="hover:text-white transition-colors">Newton, MA</a></li>
               <li><a href="#" className="hover:text-white transition-colors">Waltham, MA</a></li>
               <li><a href="#" className="hover:text-white transition-colors">Wayland, MA</a></li>
