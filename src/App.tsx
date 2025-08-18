@@ -12,6 +12,7 @@ import Footer from './components/Footer';
 import TownLandingPage from './pages/TownLandingPage';
 import AdminPanel from './components/AdminPanel';
 import AdminDashboard from './components/AdminDashboard';
+import ContractorDashboard from './pages/ContractorDashboard';
 import { supabase } from './lib/supabase';
 import { AnalyticsService } from './services/analyticsService';
 import type { User } from '@supabase/supabase-js';
@@ -80,6 +81,12 @@ function App() {
           path="/admin" 
           element={
             <AdminDashboard />
+          } 
+        />
+        <Route 
+          path="/contractor-dashboard" 
+          element={
+            <ContractorDashboard />
           } 
         />
         <Route 
