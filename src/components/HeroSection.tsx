@@ -53,14 +53,14 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onUploadClick, user, onSignOu
             <div className="text-white/90 text-sm">
               Welcome, {user.user_metadata?.name || user.email}
             </div>
-            {userRole === 'contractor' && (
-              <Link
-                to="/contractor-dashboard"
-                className="flex items-center gap-2 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white px-4 py-2 rounded-full transition-colors"
-              >
-                Contractor Dashboard
-              </Link>
-            )}
+            { (userRole === 'contractor' || userRole === 'admin') && (
+  <Link
+    to="/contractor-dashboard"
+    className="flex items-center gap-2 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white px-4 py-2 rounded-full transition-colors"
+  >
+    Contractor Dashboard
+  </Link>
+)}
             <button
               onClick={onSignOut}
               className="flex items-center gap-2 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white px-4 py-2 rounded-full transition-colors"
