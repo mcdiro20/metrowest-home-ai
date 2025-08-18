@@ -18,7 +18,10 @@ import {
   Star,
   Home,
   Zap,
-  ArrowLeft
+  ArrowLeft,
+  Trash2,
+  Shield,
+  AlertTriangle
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Lead, Profile, UserEvent } from '../lib/supabase';
@@ -43,6 +46,10 @@ const AdminDashboard: React.FC = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState<'overview' | 'leads' | 'users' | 'activity'>('overview');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<Profile | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdatingRole, setIsUpdatingRole] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -152,6 +159,124 @@ const AdminDashboard: React.FC = () => {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (user: Profile) => {
+    setUserToDelete(user);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete || !supabase) return;
+
+    setIsDeleting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch('/api/admin/delete-user', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          userId: userToDelete.id
+        })
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to delete user');
+      }
+
+      // Remove user from local state
+      setProfiles(prev => prev.filter(p => p.id !== userToDelete.id));
+      
+      // Show success message
+      alert('User deleted successfully');
+      
+    } catch (error) {
+      console.error('Delete user error:', error);
+      alert(`Failed to delete user: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+    }
+  };
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    if (!supabase) return;
+
+    setIsUpdatingRole(userId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch('/api/admin/update-user-role', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          userId,
+          newRole
+        })
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update user role');
+      }
+
+      // Update user in local state
+      setProfiles(prev => prev.map(p => 
+        p.id === userId ? { ...p, role: newRole as 'admin' | 'contractor' | 'homeowner' } : p
+      ));
+      
+      // Show success message
+      alert('User role updated successfully');
+      
+    } catch (error) {
+      console.error('Update role error:', error);
+      alert(`Failed to update user role: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsUpdatingRole(null);
+    }
+  };
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-red-100 text-red-800';
+      case 'contractor':
+        return 'bg-blue-100 text-blue-800';
+      case 'homeowner':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return <Shield className="w-3 h-3" />;
+      case 'contractor':
+        return <Users className="w-3 h-3" />;
+      case 'homeowner':
+        return <Home className="w-3 h-3" />;
+      default:
+        return null;
     }
   };
 
@@ -516,6 +641,9 @@ const AdminDashboard: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Last Login
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -527,13 +655,21 @@ const AdminDashboard: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          profile.role === 'admin' ? 'bg-red-100 text-red-800' :
-                          profile.role === 'contractor' ? 'bg-blue-100 text-blue-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {profile.role}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={profile.role}
+                            onChange={(e) => handleRoleChange(profile.id, e.target.value)}
+                            disabled={isUpdatingRole === profile.id}
+                            className={`text-xs font-semibold rounded-full px-2 py-1 border-0 focus:ring-2 focus:ring-blue-500 ${getRoleColor(profile.role)}`}
+                          >
+                            <option value="homeowner">homeowner</option>
+                            <option value="contractor">contractor</option>
+                            <option value="admin">admin</option>
+                          </select>
+                          {isUpdatingRole === profile.id && (
+                            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-1">
@@ -573,6 +709,17 @@ const AdminDashboard: React.FC = () => {
                           new Date(profile.last_login_at).toLocaleDateString() : 
                           'Never'
                         }
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleDeleteUser(profile)}
+                            className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
+                            title="Delete User"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -622,6 +769,56 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Delete User Confirmation Modal */}
+      {showDeleteModal && userToDelete && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 relative">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Delete User Account
+              </h3>
+              <p className="text-gray-600">
+                Are you sure you want to delete the account for{' '}
+                <span className="font-semibold">{userToDelete.email}</span>?
+              </p>
+              <p className="text-sm text-red-600 mt-2">
+                This action cannot be undone. All user data, leads, and activity will be permanently deleted.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setUserToDelete(null);
+                }}
+                disabled={isDeleting}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteUser}
+                disabled={isDeleting}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeleting ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Deleting...
+                  </div>
+                ) : (
+                  'Delete User'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
