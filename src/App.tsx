@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import HeroSection from './components/HeroSection';
 import UploadSection from './components/UploadSection';
 import AIWorkflowManager from './components/AIWorkflowManager';
@@ -55,6 +56,7 @@ function App() {
 
   return (
     <Router>
+      <Analytics />
       <Routes>
         <Route 
           path="/:townSlug-ma-ai-home-renovations" 
