@@ -43,7 +43,13 @@ export interface Lead {
   is_repeat_visitor: boolean;
   lead_score: number;
   created_at: string;
-  user_id?: string; // Added user_id
+  user_id?: string;
+  status: 'new' | 'assigned' | 'contacted' | 'quoted' | 'converted' | 'dead' | 'unqualified';
+  assigned_contractor_id?: string;
+  sent_at?: string;
+  contractor_notes?: string;
+  conversion_value?: number;
+  last_contacted_at?: string;
 }
 
 // New interfaces for dashboard tables
@@ -65,6 +71,26 @@ export interface Contractor {
   name: string;
   email: string;
   assigned_zip_codes: string[];
+  created_at: string;
+  is_active_subscriber: boolean;
+  subscription_tier: 'basic' | 'premium' | 'enterprise';
+  leads_received_count: number;
+  leads_converted_count: number;
+  conversion_rate: number;
+}
+
+export interface LeadAssignment {
+  id: string;
+  lead_id: string;
+  contractor_id: string;
+  assigned_at: string;
+  assignment_method: 'automatic' | 'manual';
+  email_sent: boolean;
+  email_opened: boolean;
+  email_clicked: boolean;
+  contractor_responded: boolean;
+  response_time_hours?: number;
+  notes?: string;
   created_at: string;
 }
 

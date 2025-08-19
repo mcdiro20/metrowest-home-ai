@@ -17,9 +17,14 @@ import {
   Home,
   Zap,
   Award,
-  AlertCircle
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  MessageSquare,
+  DollarSign
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { LeadManagementService } from '../services/leadManagementService';
 import type { Lead } from '../lib/supabase';
 
 interface ContractorStats {
@@ -48,6 +53,8 @@ const ContractorDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'high-value' | 'recent'>('all');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState<string | null>(null);
+  const [contractorNotes, setContractorNotes] = useState<{ [leadId: string]: string }>({});
 
   useEffect(() => {
     fetchContractorLeads();
@@ -94,6 +101,45 @@ const ContractorDashboard: React.FC = () => {
     }
   };
 
+  const handleStatusUpdate = async (leadId: string, newStatus: string, notes?: string) => {
+    setIsUpdatingStatus(leadId);
+    try {
+      await LeadManagementService.updateLeadStatus({
+        leadId,
+        newStatus: newStatus as any,
+        contractorNotes: notes
+      });
+
+      // Update local state
+      setData(prev => prev ? {
+        ...prev,
+        leads: prev.leads.map(lead => 
+          lead.id === leadId 
+            ? { ...lead, status: newStatus as any, contractor_notes: notes }
+            : lead
+        )
+      } : null);
+
+      alert('Lead status updated successfully');
+    } catch (error) {
+      console.error('Status update error:', error);
+      alert(`Failed to update status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsUpdatingStatus(null);
+    }
+  };
+
+  const handleNotesUpdate = (leadId: string, notes: string) => {
+    setContractorNotes(prev => ({ ...prev, [leadId]: notes }));
+  };
+
+  const saveNotes = async (leadId: string) => {
+    const notes = contractorNotes[leadId];
+    if (notes !== undefined) {
+      await handleStatusUpdate(leadId, data?.leads.find(l => l.id === leadId)?.status || 'new', notes);
+    }
+  };
+
   const getLeadPriorityColor = (score: number) => {
     if (score >= 70) return 'bg-red-100 text-red-800';
     if (score >= 50) return 'bg-yellow-100 text-yellow-800';
@@ -104,6 +150,42 @@ const ContractorDashboard: React.FC = () => {
     if (score >= 70) return 'High Priority';
     if (score >= 50) return 'Medium Priority';
     return 'Low Priority';
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'new':
+        return 'bg-blue-100 text-blue-800';
+      case 'assigned':
+        return 'bg-purple-100 text-purple-800';
+      case 'contacted':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'quoted':
+        return 'bg-orange-100 text-orange-800';
+      case 'converted':
+        return 'bg-green-100 text-green-800';
+      case 'dead':
+        return 'bg-red-100 text-red-800';
+      case 'unqualified':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'converted':
+        return <CheckCircle className="w-3 h-3" />;
+      case 'dead':
+      case 'unqualified':
+        return <XCircle className="w-3 h-3" />;
+      case 'contacted':
+      case 'quoted':
+        return <MessageSquare className="w-3 h-3" />;
+      default:
+        return null;
+    }
   };
 
   const filteredLeads = data?.leads.filter(lead => {
@@ -338,7 +420,13 @@ const ContractorDashboard: React.FC = () => {
                       Project
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Priority
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Assigned
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Created
@@ -391,6 +479,28 @@ const ContractorDashboard: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
+                          <select
+                            value={lead.status}
+                            onChange={(e) => handleStatusUpdate(lead.id, e.target.value)}
+                            disabled={isUpdatingStatus === lead.id}
+                            className={`text-xs font-semibold rounded-full px-2 py-1 border-0 focus:ring-2 focus:ring-blue-500 ${getStatusColor(lead.status)}`}
+                          >
+                            <option value="new">New</option>
+                            <option value="assigned">Assigned</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="quoted">Quoted</option>
+                            <option value="converted">Converted</option>
+                            <option value="dead">Dead</option>
+                            <option value="unqualified">Unqualified</option>
+                          </select>
+                          {getStatusIcon(lead.status)}
+                          {isUpdatingStatus === lead.id && (
+                            <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getLeadPriorityColor(lead.lead_score || 0)}`}>
                             {getLeadPriorityLabel(lead.lead_score || 0)}
                           </span>
@@ -398,6 +508,12 @@ const ContractorDashboard: React.FC = () => {
                             <Star className="w-3 h-3 text-yellow-400" />
                             <span className="text-xs text-gray-600">{lead.lead_score}</span>
                           </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-1 text-sm text-gray-500">
+                          <Clock className="w-3 h-3" />
+                          {lead.sent_at ? new Date(lead.sent_at).toLocaleDateString() : 'Not sent'}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -487,7 +603,99 @@ const ContractorDashboard: React.FC = () => {
                       <label className="text-sm font-medium text-gray-500">Wants Quote</label>
                       <p className="text-gray-900">{selectedLead.wants_quote ? 'Yes' : 'No'}</p>
                     </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Lead Status</label>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedLead.status)}`}>
+                          {getStatusIcon(selectedLead.status)}
+                          {selectedLead.status.charAt(0).toUpperCase() + selectedLead.status.slice(1)}
+                        </span>
+                      </div>
+                    </div>
+                    {selectedLead.conversion_value && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">Conversion Value</label>
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="w-4 h-4 text-green-500" />
+                          <span className="text-gray-900">${selectedLead.conversion_value.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    )}
+                    {selectedLead.last_contacted_at && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">Last Contacted</label>
+                        <p className="text-gray-900">{new Date(selectedLead.last_contacted_at).toLocaleDateString()}</p>
+                      </div>
+                    )}
                   </div>
+                </div>
+              </div>
+
+              {/* Contractor Notes Section */}
+              <div className="mt-6">
+                <h4 className="font-semibold text-gray-900 mb-4">Contractor Notes</h4>
+                <div className="space-y-4">
+                  <textarea
+                    value={contractorNotes[selectedLead.id] ?? selectedLead.contractor_notes ?? ''}
+                    onChange={(e) => handleNotesUpdate(selectedLead.id, e.target.value)}
+                    placeholder="Add notes about your interaction with this lead..."
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                  />
+                  <button
+                    onClick={() => saveNotes(selectedLead.id)}
+                    disabled={isUpdatingStatus === selectedLead.id}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {isUpdatingStatus === selectedLead.id ? 'Saving...' : 'Save Notes'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Status Actions */}
+              <div className="mt-6">
+                <h4 className="font-semibold text-gray-900 mb-4">Quick Actions</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedLead.status === 'assigned' && (
+                    <button
+                      onClick={() => handleStatusUpdate(selectedLead.id, 'contacted')}
+                      disabled={isUpdatingStatus === selectedLead.id}
+                      className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
+                    >
+                      Mark as Contacted
+                    </button>
+                  )}
+                  {(selectedLead.status === 'contacted' || selectedLead.status === 'assigned') && (
+                    <button
+                      onClick={() => handleStatusUpdate(selectedLead.id, 'quoted')}
+                      disabled={isUpdatingStatus === selectedLead.id}
+                      className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
+                    >
+                      Mark as Quoted
+                    </button>
+                  )}
+                  {['contacted', 'quoted'].includes(selectedLead.status) && (
+                    <button
+                      onClick={() => {
+                        const value = prompt('Enter conversion value (optional):');
+                        const conversionValue = value ? parseFloat(value) : undefined;
+                        handleStatusUpdate(selectedLead.id, 'converted', contractorNotes[selectedLead.id]);
+                      }}
+                      disabled={isUpdatingStatus === selectedLead.id}
+                      className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
+                    >
+                      Mark as Converted
+                    </button>
+                  )}
+                  {!['converted', 'dead'].includes(selectedLead.status) && (
+                    <button
+                      onClick={() => handleStatusUpdate(selectedLead.id, 'dead')}
+                      disabled={isUpdatingStatus === selectedLead.id}
+                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
+                    >
+                      Mark as Dead
+                    </button>
+                  )}
                 </div>
               </div>
 
