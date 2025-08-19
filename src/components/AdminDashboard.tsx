@@ -21,7 +21,8 @@ import {
   ArrowLeft,
   Trash2,
   Shield,
-  AlertTriangle
+  AlertTriangle,
+  X
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Lead, Profile, UserEvent } from '../lib/supabase';
@@ -42,6 +43,10 @@ const AdminDashboard: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [events, setEvents] = useState<UserEvent[]>([]);
+  const [showAddContractorModal, setShowAddContractorModal] = useState(false);
+  const [selectedContractor, setSelectedContractor] = useState<Contractor | null>(null);
+  const [showContractorDetailsModal, setShowContractorDetailsModal] = useState(false);
+  const [isUpdatingContractor, setIsUpdatingContractor] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
   const [searchTerm, setSearchTerm] = useState('');
@@ -281,7 +286,37 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleAddContractor = () => {
+    console.log('🏗️ Opening add contractor modal');
+    setShowAddContractorModal(true);
+  };
+
+  const handleEditContractor = (contractor: Contractor) => {
+    console.log('✏️ Opening contractor details for:', contractor.name);
+    setSelectedContractor(contractor);
+    setShowContractorDetailsModal(true);
+  };
+
+  const handleAddContractorSuccess = async () => {
+    console.log('✅ Contractor added successfully, refreshing data');
+    setShowAddContractorModal(false);
+    await fetchDashboardData();
+  };
+
+  const handleUpdateContractorSuccess = async () => {
+    console.log('✅ Contractor updated successfully, refreshing data');
+    setShowContractorDetailsModal(false);
+    setSelectedContractor(null);
+    await fetchDashboardData();
+  };
+
   const updateContractorField = async (contractorId: string, field: string, value: any) => {
+    if (isUpdatingContractor === contractorId) {
+      console.log('⏳ Update already in progress for contractor:', contractorId);
+      return;
+    }
+
+    setIsUpdatingContractor(contractorId);
     if (!supabase) return;
 
     setIsUpdatingContractor(contractorId);
@@ -323,6 +358,8 @@ const AdminDashboard: React.FC = () => {
     } catch (error) {
       console.error('Update contractor field error:', error);
       alert(`Failed to update ${field}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsUpdatingContractor(null);
     } finally {
       setIsUpdatingContractor(null);
     }
@@ -734,13 +771,21 @@ const AdminDashboard: React.FC = () => {
                               {lead.lead_score}
                             </span>
                           </div>
+                            disabled={isUpdatingContractor === contractor.id}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {new Date(lead.created_at).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
                           <button className="text-blue-600 hover:text-blue-900 text-sm font-medium">
+                            {isUpdatingContractor === contractor.id ? (
+                              <div className="flex items-center gap-1">
+                                <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"></div>
+                                Updating...
+                              </div>
+                            ) : (
                             View Details
+                            )}
                           </button>
                         </td>
                       </tr>
@@ -837,7 +882,7 @@ const AdminDashboard: React.FC = () => {
                                 <button
                                   onClick={() => toggleContractorSubscription(contractor.id, !contractor.is_active_subscriber)}
                                   disabled={isUpdatingContractor === contractor.id}
-                                  className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full transition-colors ${
+                                  className={\`inline-flex px-2 py-1 text-xs font-semibold rounded-full transition-colors ${
                                     contractor.is_active_subscriber
                                       ? 'bg-green-100 text-green-800 hover:bg-green-200'
                                       : 'bg-red-100 text-red-800 hover:bg-red-200'
@@ -990,7 +1035,7 @@ const AdminDashboard: React.FC = () => {
                               value={profile.role}
                               onChange={(e) => handleRoleChange(profile.id, e.target.value)}
                               disabled={isUpdatingRole === profile.id}
-                              className={`text-xs font-semibold rounded-full px-2 py-1 border-0 focus:ring-2 focus:ring-blue-500 ${getRoleColor(profile.role)}`}
+                              className={\`text-xs font-semibold rounded-full px-2 py-1 border-0 focus:ring-2 focus:ring-blue-500 ${getRoleColor(profile.role)}`}
                             >
                               <option value="homeowner">homeowner</option>
                               <option value="contractor">contractor</option>
@@ -1022,7 +1067,7 @@ const AdminDashboard: React.FC = () => {
                             <Clock className="w-4 h-4 text-emerald-500" />
                             <span className="text-sm font-medium text-gray-900">
                               {profile.total_time_on_site_ms ? 
-                                `${Math.round(profile.total_time_on_site_ms / 60000)}m` : 
+                                \`${Math.round(profile.total_time_on_site_ms / 60000)}m` : 
                                 '0m'
                               }
                             </span>
@@ -1104,6 +1149,257 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Add Contractor Modal */}
+      {showAddContractorModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowAddContractorModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+            >
+              <X className="w-4 h-4 text-gray-600" />
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="w-8 h-8 text-blue-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Add New Contractor
+              </h3>
+              <p className="text-gray-600">
+                Set up a new contractor with service areas and pricing
+              </p>
+            </div>
+
+            <form onSubmit={handleAddContractor} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Contractor Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newContractorData.name}
+                    onChange={(e) => setNewContractorData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={newContractorData.email}
+                    onChange={(e) => setNewContractorData(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 cursor-pointer mb-3">
+                  <input
+                    type="checkbox"
+                    checked={newContractorData.servesAllZipcodes}
+                    onChange={(e) => setNewContractorData(prev => ({ ...prev, servesAllZipcodes: e.target.checked }))}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Serves All MetroWest ZIP Codes</span>
+                </label>
+                
+                {!newContractorData.servesAllZipcodes && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Assigned ZIP Codes
+                    </label>
+                    <input
+                      type="text"
+                      value={newContractorData.assignedZipCodes}
+                      onChange={(e) => setNewContractorData(prev => ({ ...prev, assignedZipCodes: e.target.value }))}
+                      placeholder="01701, 01702, 01720, 01730..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Enter comma-separated ZIP codes (e.g., 01701, 01702, 01720)
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Price Per Lead ($)
+                  </label>
+                  <input
+                    type="number"
+                    value={newContractorData.pricePerLead}
+                    onChange={(e) => setNewContractorData(prev => ({ ...prev, pricePerLead: parseFloat(e.target.value) }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Monthly Fee ($)
+                  </label>
+                  <input
+                    type="number"
+                    value={newContractorData.monthlySubscriptionFee}
+                    onChange={(e) => setNewContractorData(prev => ({ ...prev, monthlySubscriptionFee: parseFloat(e.target.value) }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Subscription Tier
+                  </label>
+                  <select
+                    value={newContractorData.subscriptionTier}
+                    onChange={(e) => setNewContractorData(prev => ({ ...prev, subscriptionTier: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+                  >
+                    <option value="basic">Basic</option>
+                    <option value="premium">Premium</option>
+                    <option value="enterprise">Enterprise</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="flex items-center gap-2 cursor-pointer mt-6">
+                    <input
+                      type="checkbox"
+                      checked={newContractorData.isActiveSubscriber}
+                      onChange={(e) => setNewContractorData(prev => ({ ...prev, isActiveSubscriber: e.target.checked }))}
+                      className="w-4 h-4 text-blue-600 rounded"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Active Subscriber</span>
+                  </label>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isAddingContractor}
+                className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isAddingContractor ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Adding Contractor...
+                  </div>
+                ) : (
+                  'Add Contractor'
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Contractor Details Modal */}
+      {selectedContractor && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setSelectedContractor(null)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+            >
+              <X className="w-4 h-4 text-gray-600" />
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="w-8 h-8 text-blue-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                {selectedContractor.name}
+              </h3>
+              <p className="text-gray-600">{selectedContractor.email}</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-4">Subscription Details</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Status</label>
+                    <div className="flex items-center gap-2">
+                      <span className={\`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        selectedContractor.is_active_subscriber
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {selectedContractor.is_active_subscriber ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Tier</label>
+                    <p className="text-gray-900 capitalize">{selectedContractor.subscription_tier}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Monthly Fee</label>
+                    <p className="text-gray-900">${selectedContractor.monthly_subscription_fee}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Price Per Lead</label>
+                    <p className="text-gray-900">${selectedContractor.price_per_lead}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-4">Performance</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Leads Received</label>
+                    <p className="text-gray-900">{selectedContractor.leads_received_count || 0}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Leads Converted</label>
+                    <p className="text-gray-900">{selectedContractor.leads_converted_count || 0}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Conversion Rate</label>
+                    <p className="text-gray-900">{(selectedContractor.conversion_rate || 0).toFixed(1)}%</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Service Area</label>
+                    <p className="text-gray-900">
+                      {selectedContractor.serves_all_zipcodes 
+                        ? 'All MetroWest ZIP Codes' 
+                        : selectedContractor.assigned_zip_codes?.join(', ') || 'No ZIP codes assigned'
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => setSelectedContractor(null)}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-6 rounded-lg transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete User Confirmation Modal */}
       {showDeleteModal && userToDelete && (
