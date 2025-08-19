@@ -13,6 +13,7 @@ import TownLandingPage from './pages/TownLandingPage';
 import AdminPanel from './components/AdminPanel';
 import AdminDashboard from './components/AdminDashboard';
 import ContractorDashboard from './pages/ContractorDashboard';
+import LeadDossierDemo from './components/LeadDossierDemo';
 import { supabase } from './lib/supabase';
 import { AnalyticsService } from './services/analyticsService';
 import type { User } from '@supabase/supabase-js';
@@ -88,6 +89,10 @@ function App() {
           element={
             <ContractorDashboard />
           } 
+        />
+        <Route 
+          path="/lead-dossier-demo" 
+          element={<LeadDossierDemo />} 
         />
         <Route 
           path="/:townSlug-ma-ai-home-renovations" 
