@@ -135,84 +135,97 @@ export default async function handler(req, res) {
 
       // Step 2: Find eligible contractors for this ZIP code
       console.log('🔍 Finding eligible contractors for ZIP:', zip);
-      const { data: eligibleContractors, error: contractorError } = await supabase
+      
+      // Find contractors who either serve all ZIP codes OR have this specific ZIP in their assigned list
+      const { data: allActiveContractors, error: contractorError } = await supabase
         .from('contractors')
-        .select('id, name, email, assigned_zip_codes, subscription_tier')
-        .eq('is_active_subscriber', true)
-        .contains('assigned_zip_codes', [zip]);
+        .select('id, name, email, assigned_zip_codes, subscription_tier, serves_all_zipcodes, price_per_lead')
+        .eq('is_active_subscriber', true);
 
       if (contractorError) {
         console.error('❌ Error finding contractors:', contractorError);
       } else {
-        console.log('✅ Found eligible contractors:', eligibleContractors?.length || 0);
-      }
-
-      // Step 3: Determine if lead should be assigned based on score and wants_quote
-      const MINIMUM_SCORE_FOR_AUTO_ASSIGNMENT = wants_quote ? 30 : 50;
-      const shouldAssignLead = lead_score >= MINIMUM_SCORE_FOR_AUTO_ASSIGNMENT;
-
-      if (shouldAssignLead && eligibleContractors && eligibleContractors.length > 0) {
-        console.log('🚨 High-value lead detected! Auto-assigning to contractors...');
+        // Filter contractors who serve this ZIP code
+        const eligibleContractors = allActiveContractors?.filter(contractor => {
+          return contractor.serves_all_zipcodes || 
+                 (contractor.assigned_zip_codes && contractor.assigned_zip_codes.includes(zip));
+        }) || [];
         
-        // Step 4: Assign lead to contractor(s)
-        const assignmentPromises = eligibleContractors.map(async (contractor) => {
-          try {
-            // Create lead assignment record
-            const { data: assignment, error: assignmentError } = await supabase
-              .from('lead_assignments')
-              .insert({
-                lead_id: leadId,
-                contractor_id: contractor.id,
-                assignment_method: 'automatic',
-                email_sent: false
-              })
-              .select()
-              .single();
+        console.log('✅ Found eligible contractors:', eligibleContractors.length);
+        console.log('🏗️ Contractors serving ZIP', zip, ':', eligibleContractors.map(c => c.name));
+        
+        if (eligibleContractors.length > 0) {
+          // Step 3: Determine if lead should be assigned based on score and wants_quote
+          const MINIMUM_SCORE_FOR_AUTO_ASSIGNMENT = wants_quote ? 30 : 50;
+          const shouldAssignLead = lead_score >= MINIMUM_SCORE_FOR_AUTO_ASSIGNMENT;
 
-            if (assignmentError) {
-              console.error('❌ Failed to create assignment:', assignmentError);
-              return null;
-            }
+          if (shouldAssignLead) {
+            console.log('🚨 High-value lead detected! Auto-assigning to contractors...');
+            
+            // Step 4: Assign lead to contractor(s)
+            const assignmentPromises = eligibleContractors.map(async (contractor) => {
+              try {
+                // Create lead assignment record
+                const { data: assignment, error: assignmentError } = await supabase
+                  .from('lead_assignments')
+                  .insert({
+                    lead_id: leadId,
+                    contractor_id: contractor.id,
+                    assignment_method: 'automatic',
+                    email_sent: false
+                  })
+                  .select()
+                  .single();
 
-            // Update lead status to assigned
-            await supabase
-              .from('leads')
-              .update({
-                status: 'assigned',
-                assigned_contractor_id: contractor.id,
-                sent_at: new Date().toISOString()
-              })
-              .eq('id', leadId);
+                if (assignmentError) {
+                  console.error('❌ Failed to create assignment:', assignmentError);
+                  return null;
+                }
 
-            // Step 5: Send email notification to contractor
-            await sendContractorNotification(contractor, lead, assignment.id);
+                // Update lead status to assigned
+                await supabase
+                  .from('leads')
+                  .update({
+                    status: 'assigned',
+                    assigned_contractor_id: contractor.id,
+                    sent_at: new Date().toISOString()
+                  })
+                  .eq('id', leadId);
 
-            // Update assignment to mark email as sent
-            await supabase
-              .from('lead_assignments')
-              .update({ email_sent: true })
-              .eq('id', assignment.id);
+                // Step 5: Send email notification to contractor
+                await sendContractorNotification(contractor, lead, assignment.id);
 
-            console.log('✅ Lead assigned to contractor:', contractor.name);
-            return {
-              contractorId: contractor.id,
-              contractorName: contractor.name,
-              assignmentId: assignment.id
-            };
+                // Update assignment to mark email as sent
+                await supabase
+                  .from('lead_assignments')
+                  .update({ email_sent: true })
+                  .eq('id', assignment.id);
 
-          } catch (assignmentError) {
-            console.error('❌ Assignment failed for contractor:', contractor.name, assignmentError);
-            return null;
+                console.log('✅ Lead assigned to contractor:', contractor.name);
+                return {
+                  contractorId: contractor.id,
+                  contractorName: contractor.name,
+                  assignmentId: assignment.id,
+                  pricePerLead: contractor.price_per_lead
+                };
+
+              } catch (assignmentError) {
+                console.error('❌ Assignment failed for contractor:', contractor.name, assignmentError);
+                return null;
+              }
+            });
+
+            // Wait for all assignments to complete
+            const assignmentResults = await Promise.all(assignmentPromises);
+            assignedContractors = assignmentResults.filter(result => result !== null);
+
+            console.log('✅ Lead assignment complete. Assigned to:', assignedContractors.length, 'contractors');
+          } else {
+            console.log('📝 Lead score too low for auto-assignment:', lead_score, 'minimum:', MINIMUM_SCORE_FOR_AUTO_ASSIGNMENT);
           }
-        });
-
-        // Wait for all assignments to complete
-        const assignmentResults = await Promise.all(assignmentPromises);
-        assignedContractors = assignmentResults.filter(result => result !== null);
-
-        console.log('✅ Lead assignment complete. Assigned to:', assignedContractors.length, 'contractors');
-      } else {
-        console.log('📝 Lead score too low for auto-assignment or no eligible contractors');
+        } else {
+          console.log('📝 No eligible contractors found for ZIP code:', zip);
+        }
       }
 
     } catch (dbError) {

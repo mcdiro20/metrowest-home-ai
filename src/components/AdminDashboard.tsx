@@ -50,6 +50,10 @@ const AdminDashboard: React.FC = () => {
   const [userToDelete, setUserToDelete] = useState<Profile | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdatingRole, setIsUpdatingRole] = useState<string | null>(null);
+  const [contractors, setContractors] = useState<any[]>([]);
+  const [showAddContractorModal, setShowAddContractorModal] = useState(false);
+  const [selectedContractor, setSelectedContractor] = useState<any>(null);
+  const [isUpdatingContractor, setIsUpdatingContractor] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -95,6 +99,18 @@ const AdminDashboard: React.FC = () => {
         console.error('Error fetching profiles:', profilesError);
       } else {
         setProfiles(profilesData || []);
+      }
+
+      // Fetch contractors
+      const { data: contractorsData, error: contractorsError } = await supabase
+        .from('contractors')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (contractorsError) {
+        console.error('Error fetching contractors:', contractorsError);
+      } else {
+        setContractors(contractorsData || []);
       }
 
       // Fetch user events
@@ -277,6 +293,63 @@ const AdminDashboard: React.FC = () => {
         return <Home className="w-3 h-3" />;
       default:
         return null;
+    }
+  };
+
+  const handleAddContractor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) return;
+
+    setIsAddingContractor(true);
+    try {
+      const zipCodesArray = newContractor.serves_all_zipcodes 
+        ? [] // Empty array means serves all
+        : newContractor.assigned_zip_codes.split(',').map(zip => zip.trim()).filter(zip => zip);
+
+      const { data: contractor, error } = await supabase
+        .from('contractors')
+        .insert({
+          name: newContractor.name,
+          email: newContractor.email,
+          assigned_zip_codes: zipCodesArray,
+          serves_all_zipcodes: newContractor.serves_all_zipcodes,
+          price_per_lead: newContractor.price_per_lead,
+          monthly_subscription_fee: newContractor.monthly_subscription_fee,
+          is_active_subscriber: newContractor.is_active_subscriber,
+          subscription_tier: 'basic',
+          last_payment_date: newContractor.is_active_subscriber ? new Date().toISOString() : null,
+          subscription_expires_at: newContractor.is_active_subscriber ? 
+            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : null
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      // Add to local state
+      setContractors(prev => [contractor, ...prev]);
+      
+      // Reset form
+      setNewContractor({
+        name: '',
+        email: '',
+        assigned_zip_codes: '',
+        serves_all_zipcodes: false,
+        price_per_lead: 25.00,
+        monthly_subscription_fee: 99.00,
+        is_active_subscriber: true
+      });
+      
+      setShowAddContractorModal(false);
+      alert('Contractor added successfully!');
+
+    } catch (error) {
+      console.error('Add contractor error:', error);
+      alert(`Failed to add contractor: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsAddingContractor(false);
     }
   };
 
@@ -609,122 +682,154 @@ const AdminDashboard: React.FC = () => {
 
         {/* Users Tab */}
         {selectedTab === 'users' && (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">User Profiles</h3>
+          <div className="space-y-6">
+            {/* Contractor Management Header */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Contractor Management</h3>
+                  <p className="text-gray-600">Manage contractor subscriptions, ZIP codes, and pricing</p>
+                </div>
+                <button
+                  onClick={() => setShowAddContractorModal(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  Add Contractor
+                </button>
+              </div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      User
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      AI Renderings
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Logins
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Time on Site
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Lead Score
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      ZIP Code
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Last Login
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {profiles.map((profile) => (
-                    <tr key={profile.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {profile.email}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={profile.role}
-                            onChange={(e) => handleRoleChange(profile.id, e.target.value)}
-                            disabled={isUpdatingRole === profile.id}
-                            className={`text-xs font-semibold rounded-full px-2 py-1 border-0 focus:ring-2 focus:ring-blue-500 ${getRoleColor(profile.role)}`}
-                          >
-                            <option value="homeowner">homeowner</option>
-                            <option value="contractor">contractor</option>
-                            <option value="admin">admin</option>
-                          </select>
-                          {isUpdatingRole === profile.id && (
-                            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-1">
-                          <Zap className="w-4 h-4 text-purple-500" />
-                          <span className="text-sm font-medium text-gray-900">
-                            {profile.ai_renderings_count || 0}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-1">
-                          <Activity className="w-4 h-4 text-blue-500" />
-                          <span className="text-sm font-medium text-gray-900">
-                            {profile.login_count || 0}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4 text-emerald-500" />
-                          <span className="text-sm font-medium text-gray-900">
-                            {profile.total_time_on_site_ms ? 
-                              `${Math.round(profile.total_time_on_site_ms / 60000)}m` : 
-                              '0m'
-                            }
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {profile.lead_score}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {profile.primary_zip_code || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {profile.last_login_at ? 
-                          new Date(profile.last_login_at).toLocaleDateString() : 
-                          'Never'
-                        }
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleDeleteUser(profile)}
-                            className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
-                            title="Delete User"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
+
+            {/* Contractors Table */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Contractor
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Subscription
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Service Area
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Pricing
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Performance
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {contractors.map((contractor) => (
+                      <tr key={contractor.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {contractor.name}
+                            </div>
+                            <div className="text-sm text-gray-500">{contractor.email}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => toggleContractorSubscription(contractor.id, !contractor.is_active_subscriber)}
+                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                  contractor.is_active_subscriber
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}
+                              >
+                                {contractor.is_active_subscriber ? 'Active' : 'Inactive'}
+                              </button>
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {contractor.subscription_tier}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={contractor.serves_all_zipcodes}
+                                onChange={(e) => updateContractorField(contractor.id, 'serves_all_zipcodes', e.target.checked)}
+                                className="w-4 h-4 text-blue-600 rounded"
+                              />
+                              <span className="text-sm text-gray-700">All MetroWest</span>
+                            </div>
+                            {!contractor.serves_all_zipcodes && (
+                              <div>
+                                <input
+                                  type="text"
+                                  value={contractor.assigned_zip_codes?.join(', ') || ''}
+                                  onChange={(e) => {
+                                    const zipCodes = e.target.value.split(',').map(zip => zip.trim()).filter(zip => zip);
+                                    updateContractorField(contractor.id, 'assigned_zip_codes', zipCodes);
+                                  }}
+                                  placeholder="01701, 01702, 01720..."
+                                  className="w-full text-xs px-2 py-1 border border-gray-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Comma-separated ZIP codes
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-gray-500">Per Lead:</span>
+                              <input
+                                type="number"
+                                value={contractor.price_per_lead || 25}
+                                onChange={(e) => updateContractorField(contractor.id, 'price_per_lead', parseFloat(e.target.value))}
+                                className="w-16 text-xs px-1 py-1 border border-gray-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                min="0"
+                                step="0.01"
+                              />
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-gray-500">Monthly:</span>
+                              <input
+                                type="number"
+                                value={contractor.monthly_subscription_fee || 99}
+                                onChange={(e) => updateContractorField(contractor.id, 'monthly_subscription_fee', parseFloat(e.target.value))}
+                                className="w-16 text-xs px-1 py-1 border border-gray-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                min="0"
+                                step="0.01"
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm">
+                            <div className="text-gray-900">{contractor.leads_received_count || 0} leads</div>
+                            <div className="text-gray-500">{contractor.conversion_rate || 0}% conversion</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <button
+                            onClick={() => setSelectedContractor(contractor)}
+                            className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                          >
+                            Edit Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

@@ -77,6 +77,11 @@ export interface Contractor {
   leads_received_count: number;
   leads_converted_count: number;
   conversion_rate: number;
+  price_per_lead: number;
+  serves_all_zipcodes: boolean;
+  monthly_subscription_fee: number;
+  last_payment_date?: string;
+  subscription_expires_at?: string;
 }
 
 export interface LeadAssignment {
