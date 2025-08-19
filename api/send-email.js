@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { calculateAdvancedScores } from './utils/scoringLogic.js';
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -41,29 +42,66 @@ export default async function handler(req, res) {
       if (supabaseUrl && supabaseServiceKey) {
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
         
-        // Calculate lead score
-        let leadScore = 10; // Base score for completing AI render
-        if (email) leadScore += 15;
-        if (name) leadScore += 10;
-        if (phone) leadScore += 20;
-        if (subscribe) leadScore += 30;
-        
-        // MetroWest ZIP codes for bonus scoring
-        const metroWestZips = [
-          '01701', '01702', '01718', '01719', '01720', '01721', '01730', '01731',
-          '01740', '01741', '01742', '01746', '01747', '01748', '01749', '01752',
-          '01754', '01757', '01760', '01770', '01772', '01773', '01776', '01778',
-          '01784', '01801', '01803', '01890', '02030', '02032', '02052', '02054',
-          '02056', '02090', '02093', '02421', '02451', '02452', '02453', '02454',
-          '02458', '02459', '02460', '02461', '02462', '02464', '02465', '02466',
-          '02467', '02468', '02472', '02474', '02475', '02476', '02477', '02478',
-          '02479', '02481', '02482', '02492', '02493', '02494', '02495'
-        ];
-        
-        if (zipCode && metroWestZips.includes(zipCode)) {
-          leadScore += 25;
+        // Fetch existing lead and profile data for scoring
+        let existingLead = null;
+        let profileData = null;
+
+        if (userId) {
+          // Get profile data for scoring
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('login_count, total_time_on_site_ms, ai_renderings_count')
+            .eq('id', userId)
+            .single();
+          profileData = profile;
+
+          // Check for existing lead from this user
+          const { data: userLead } = await supabase
+            .from('leads')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          existingLead = userLead;
+        } else if (email) {
+          // Check for existing lead by email
+          const { data: emailLead } = await supabase
+            .from('leads')
+            .select('*')
+            .eq('email', email)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          existingLead = emailLead;
         }
         
+        // Prepare data for scoring calculations
+        const leadDataForScoring = {
+          email: email,
+          phone: phone,
+          name: name,
+          zip: zipCode,
+          room_type: roomType,
+          style: selectedStyle,
+          render_count: (existingLead?.render_count || 0) + 1,
+          wants_quote: subscribe || false,
+          social_engaged: existingLead?.social_engaged || false,
+          is_repeat_visitor: !!existingLead,
+          status: existingLead?.status || 'new',
+          created_at: existingLead?.created_at || new Date().toISOString()
+        };
+
+        const profileDataForScoring = profileData || {
+          login_count: 0,
+          total_time_on_site_ms: 0,
+          ai_renderings_count: 0
+        };
+
+        // Calculate advanced scores using the scoring logic
+        const scores = calculateAdvancedScores(profileDataForScoring, leadDataForScoring);
+        console.log('📊 Calculated scores:', scores);
+
         const leadData = {
           user_id: userId || null,
           name: name || null,
@@ -74,20 +112,55 @@ export default async function handler(req, res) {
           style: selectedStyle,
           image_url: beforeImage,
           ai_url: afterImage,
-          render_count: 1,
+          render_count: leadDataForScoring.render_count,
           wants_quote: subscribe || false,
-          social_engaged: false,
-          is_repeat_visitor: false,
-          lead_score: leadScore
+          social_engaged: leadDataForScoring.social_engaged,
+          is_repeat_visitor: leadDataForScoring.is_repeat_visitor,
+          lead_score: scores.overall_score, // Keep legacy score for compatibility
+          // Add new intelligence scores
+          engagement_score: scores.engagement_score,
+          intent_score: scores.intent_score,
+          lead_quality_score: scores.lead_quality_score,
+          probability_to_close_score: scores.probability_to_close_score
         };
         
-        const { error: leadError } = await supabase
-          .from('leads')
-          .insert(leadData);
-        
-        if (leadError) {
-          console.error('Failed to save lead:', leadError);
+        let leadResult;
+        if (existingLead) {
+          // Update existing lead
+          const { data, error: updateError } = await supabase
+            .from('leads')
+            .update(leadData)
+            .eq('id', existingLead.id)
+            .select()
+            .single();
+          if (updateError) {
+            console.error('Failed to update existing lead:', updateError);
+          } else {
+            leadResult = data;
+            console.log('✅ Updated existing lead with new scores');
+          }
+        } else {
+          // Insert new lead
+          const { data, error: insertError } = await supabase
+            .from('leads')
+            .insert(leadData)
+            .select()
+            .single();
+          if (insertError) {
+            console.error('Failed to insert new lead:', insertError);
+          } else {
+            leadResult = data;
+            console.log('✅ Created new lead with calculated scores');
+          }
         }
+        
+        console.log('📊 Lead scores:', {
+          engagement: scores.engagement_score,
+          intent: scores.intent_score,
+          quality: scores.lead_quality_score,
+          probability: scores.probability_to_close_score,
+          overall: scores.overall_score
+        });
       }
     } catch (dbError) {
       console.error('Database error:', dbError);
