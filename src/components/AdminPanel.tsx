@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { AlertCircle, ArrowLeft, Users, Briefcase, LayoutDashboard, Mail, Phone, MapPin, Calendar, DollarSign, TrendingUp, Star, Trash2, Edit, RefreshCcw } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Users, Briefcase, LayoutDashboard, Mail, Phone, MapPin, Calendar, DollarSign, TrendingUp, Star, Trash2, Edit, RefreshCcw, UserPlus } from 'lucide-react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import type { Lead, Profile, Contractor, LeadAssignment } from '../lib/supabase';
 import AddContractorModal from './AddContractorModal';
 import EditContractorModal from './EditContractorModal';
+import AssignLeadModal from './AssignLeadModal';
 
 const AdminPanel: React.FC = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -19,6 +20,17 @@ const AdminPanel: React.FC = () => {
   const [showAddContractorModal, setShowAddContractorModal] = useState(false);
   const [showEditContractorModal, setShowEditContractorModal] = useState(false);
   const [selectedContractor, setSelectedContractor] = useState<Contractor | null>(null);
+
+  // State for lead assignment modal
+  const [showAssignLeadModal, setShowAssignLeadModal] = useState(false);
+  const [selectedLeadForAssignment, setSelectedLeadForAssignment] = useState<Lead | null>(null);
+
+  // State for dashboard summary data
+  const [dashboardSummary, setDashboardSummary] = useState({
+    leads: { totalLeads: 0, newLeads: 0, convertedLeads: 0, assignedLeads: 0, quotedLeads: 0, avgProbabilityScore: 0 },
+    users: { totalUsers: 0, homeowners: 0, contractors: 0, admins: 0 },
+    contractors: { totalContractors: 0, activeSubscribers: 0, avgConversionRate: 0 },
+  });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -59,6 +71,14 @@ const AdminPanel: React.FC = () => {
       let response;
       switch (tab) {
         case 'dashboard':
+          // Fetch optimized summary data for dashboard
+          response = await fetch('/api/admin/get-dashboard-summary', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const summaryResult = await response.json();
+          if (!summaryResult.success) throw new Error(summaryResult.error);
+          setDashboardSummary(summaryResult.data);
+          break;
         case 'leads':
           response = await fetch('/api/admin/get-all-leads', {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -198,6 +218,16 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  const handleOpenAssignLeadModal = (lead: Lead) => {
+    setSelectedLeadForAssignment(lead);
+    setShowAssignLeadModal(true);
+  };
+
+  const handleAssignLeadSuccess = () => {
+    setShowAssignLeadModal(false);
+    fetchData('leads'); // Refresh leads data after assignment
+  };
+
   const renderLeadsTable = () => (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
@@ -227,6 +257,7 @@ const AdminPanel: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -263,6 +294,15 @@ const AdminPanel: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(lead.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => handleOpenAssignLeadModal(lead)}
+                      className="text-blue-600 hover:text-blue-900 transition-colors"
+                      title="Assign Lead to Contractors"
+                    >
+                      <UserPlus className="w-5 h-5" />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -487,35 +527,6 @@ const AdminPanel: React.FC = () => {
   );
 
   const renderDashboard = () => {
-    const totalLeads = leads.length;
-    const totalUsers = usersData.length;
-    const totalContractors = contractors.length;
-
-    const leadsByStatus = leads.reduce((acc, lead) => {
-      acc[lead.status] = (acc[lead.status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const leadStats = {
-      totalLeads: totalLeads,
-      newLeads: leadsByStatus['new'] || 0,
-      convertedLeads: leadsByStatus['converted'] || 0,
-      avgProbabilityScore: totalLeads > 0 ? (leads.reduce((sum, l) => sum + (l.probability_to_close_score || 0), 0) / totalLeads).toFixed(0) : 0,
-    };
-
-    const userStats = {
-      totalUsers: totalUsers,
-      homeowners: usersData.filter(u => u.role === 'homeowner').length,
-      contractors: usersData.filter(u => u.role === 'contractor').length,
-      admins: usersData.filter(u => u.role === 'admin').length,
-    };
-
-    const contractorStats = {
-      totalContractors: totalContractors,
-      activeSubscribers: contractors.filter(c => c.is_active_subscriber).length,
-      avgConversionRate: totalContractors > 0 ? (contractors.reduce((sum, c) => sum + (c.conversion_rate || 0), 0) / totalContractors).toFixed(2) : 0,
-    };
-
     return (
       <div className="space-y-8">
         <h2 className="text-2xl font-bold text-gray-900">Admin Dashboard Overview</h2>
@@ -526,63 +537,66 @@ const AdminPanel: React.FC = () => {
           <div className="p-6 text-center text-red-600">{error}</div>
         ) : (
           <>
+            {/* Leads Overview */}
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Leads Overview</h3>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="border p-4 rounded-lg text-center">
-                  <p className="text-3xl font-bold text-blue-600">{leadStats.totalLeads}</p>
+                  <p className="text-3xl font-bold text-blue-600">{dashboardSummary.leads.totalLeads}</p>
                   <p className="text-gray-500">Total Leads</p>
                 </div>
                 <div className="border p-4 rounded-lg text-center">
-                  <p className="text-3xl font-bold text-yellow-600">{leadStats.newLeads}</p>
+                  <p className="text-3xl font-bold text-yellow-600">{dashboardSummary.leads.newLeads}</p>
                   <p className="text-gray-500">New Leads</p>
                 </div>
                 <div className="border p-4 rounded-lg text-center">
-                  <p className="text-3xl font-bold text-green-600">{leadStats.convertedLeads}</p>
+                  <p className="text-3xl font-bold text-green-600">{dashboardSummary.leads.convertedLeads}</p>
                   <p className="text-gray-500">Converted Leads</p>
                 </div>
                 <div className="border p-4 rounded-lg text-center">
-                  <p className="text-3xl font-bold text-purple-600">{leadStats.avgProbabilityScore}%</p>
+                  <p className="text-3xl font-bold text-purple-600">{dashboardSummary.leads.avgProbabilityScore}%</p>
                   <p className="text-gray-500">Avg. Prob. to Close</p>
                 </div>
               </div>
             </div>
 
+            {/* Users Overview */}
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Users Overview</h3>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="border p-4 rounded-lg text-center">
-                  <p className="text-3xl font-bold text-blue-600">{userStats.totalUsers}</p>
+                  <p className="text-3xl font-bold text-blue-600">{dashboardSummary.users.totalUsers}</p>
                   <p className="text-gray-500">Total Users</p>
                 </div>
                 <div className="border p-4 rounded-lg text-center">
-                  <p className="text-3xl font-bold text-emerald-600">{userStats.homeowners}</p>
+                  <p className="text-3xl font-bold text-emerald-600">{dashboardSummary.users.homeowners}</p>
                   <p className="text-gray-500">Homeowners</p>
                 </div>
                 <div className="border p-4 rounded-lg text-center">
-                  <p className="text-3xl font-bold text-orange-600">{userStats.contractors}</p>
+                  <p className="text-3xl font-bold text-orange-600">{dashboardSummary.users.contractors}</p>
                   <p className="text-gray-500">Contractors</p>
                 </div>
                 <div className="border p-4 rounded-lg text-center">
-                  <p className="text-3xl font-bold text-red-600">{userStats.admins}</p>
+                  <p className="text-3xl font-bold text-red-600">{dashboardSummary.users.admins}</p>
                   <p className="text-gray-500">Admins</p>
                 </div>
               </div>
             </div>
 
+            {/* Contractors Overview */}
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Contractors Overview</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="border p-4 rounded-lg text-center">
-                  <p className="text-3xl font-bold text-blue-600">{contractorStats.totalContractors}</p>
+                  <p className="text-3xl font-bold text-blue-600">{dashboardSummary.contractors.totalContractors}</p>
                   <p className="text-gray-500">Total Contractors</p>
                 </div>
                 <div className="border p-4 rounded-lg text-center">
-                  <p className="text-3xl font-bold text-green-600">{contractorStats.activeSubscribers}</p>
+                  <p className="text-3xl font-bold text-green-600">{dashboardSummary.contractors.activeSubscribers}</p>
                   <p className="text-gray-500">Active Subscribers</p>
                 </div>
                 <div className="border p-4 rounded-lg text-center">
-                  <p className="text-3xl font-bold text-purple-600">{contractorStats.avgConversionRate}%</p>
+                  <p className="text-3xl font-bold text-purple-600">{dashboardSummary.contractors.avgConversionRate}%</p>
                   <p className="text-gray-500">Avg. Conversion Rate</p>
                 </div>
               </div>
@@ -719,6 +733,12 @@ const AdminPanel: React.FC = () => {
           contractor={selectedContractor}
         />
       )}
+      <AssignLeadModal
+        isOpen={showAssignLeadModal}
+        onClose={() => setShowAssignLeadModal(false)}
+        lead={selectedLeadForAssignment}
+        onAssignSuccess={handleAssignLeadSuccess}
+      />
     </div>
   );
 };
