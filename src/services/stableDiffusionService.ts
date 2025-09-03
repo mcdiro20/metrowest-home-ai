@@ -96,11 +96,62 @@ export class StableDiffusionService {
     return styleNames[styleId as keyof typeof styleNames] || 'Custom Style';
   }
 
-  private static async fileToBase64(file: File): Promise<string> {
+  private static fileToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
+      // Check if the file is an image
+      if (!file.type.startsWith('image/')) {
+        reject(new Error('File must be an image'));
+        return;
+      }
+
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            // Create canvas to convert image to JPEG format
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            if (!ctx) {
+              reject(new Error('Could not get canvas context'));
+              return;
+            }
+
+            // Set canvas dimensions to match image
+            canvas.width = img.width;
+            canvas.height = img.height;
+
+            // Draw image on canvas
+            ctx.drawImage(img, 0, 0);
+
+            // Convert to JPEG with high quality for better AI processing
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+            
+            console.log('✅ Image converted to JPEG format for AI processing');
+            console.log('📸 Original format:', file.type);
+            console.log('📸 Converted size:', dataUrl.length);
+            
+            resolve(dataUrl);
+          } catch (canvasError) {
+            console.error('❌ Canvas conversion failed:', canvasError);
+            reject(canvasError);
+          }
+        };
+        
+        img.onerror = (imgError) => {
+          console.error('❌ Image load failed:', imgError);
+          reject(new Error('Failed to load image'));
+        };
+        
+        img.src = event.target?.result as string;
+      };
+      
+      reader.onerror = (readerError) => {
+        console.error('❌ FileReader failed:', readerError);
+        reject(new Error('Failed to read file'));
+      };
+      
       reader.readAsDataURL(file);
     });
   }

@@ -403,7 +403,7 @@ const AssignLeadModal: React.FC<AssignLeadModalProps> = ({ isOpen, onClose, lead
         <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
           <p className="text-xs text-blue-700">
             💡 <strong>Assignment Process:</strong> Selected contractors will receive email notifications with lead details and project images. 
-            Lead status will be updated to "assigned" and tracking metrics will begin.
+            Lead status will be updated to "assigned\" and tracking metrics will begin.
           </p>
         </div>
       </div>
