@@ -7,6 +7,7 @@ import ZipCodeModal from './ZipCodeModal';
 import QuoteRequestModal from './QuoteRequestModal';
 import AuthModal from './AuthModal';
 import type { User } from '@supabase/supabase-js';
+import { resizeImageForEmail } from '../utils/imageUtils';
 
 interface AIWorkflowManagerProps {
   user: User | null;
@@ -31,7 +32,7 @@ const AIWorkflowManager = forwardRef<AIWorkflowHandle, AIWorkflowManagerProps>(
     const [showEmailModal, setShowEmailModal] = useState(false);
     const [showQuoteModal, setShowQuoteModal] = useState(false);
     const [uploadedImage, setUploadedImage] = useState<string | undefined>();
-    const [aiResult, setAiResult] = useState<{ originalImage: string; originalImageBase64?: string; generatedImage: string; prompt: string } | undefined>();
+    const [aiResult, setAiResult] = useState<{ originalImage: string; originalImageBase64?: string; resizedOriginalImageBase64?: string; generatedImage: string; prompt: string } | undefined>();
     const [uploadedFile, setUploadedFile] = useState<File | undefined>();
     const [selectedStyle, setSelectedStyle] = useState<{ id: string; name: string; prompt: string } | undefined>();
     const [customPrompt, setCustomPrompt] = useState<string>('');
@@ -97,8 +98,25 @@ const AIWorkflowManager = forwardRef<AIWorkflowHandle, AIWorkflowManagerProps>(
       setShowAIProcessingModal(true);
     };
 
-    const handleAIProcessingComplete = (result: { originalImage: string; generatedImage: string; prompt: string }) => {
-      setAiResult(result);
+    const handleAIProcessingComplete = async (result: { originalImage: string; originalImageBase64?: string; generatedImage: string; prompt: string }) => {
+      // Resize the original image for email sending to avoid payload too large errors
+      let resizedOriginalImageBase64: string | undefined;
+      if (result.originalImageBase64) {
+        try {
+          console.log('📏 Resizing original image for email to avoid 413 error...');
+          resizedOriginalImageBase64 = await resizeImageForEmail(result.originalImageBase64);
+          console.log('✅ Image resized successfully for email');
+        } catch (error) {
+          console.error('❌ Error resizing original image for email:', error);
+          // If resizing fails, we'll use the original (might still cause 413 but better than nothing)
+          resizedOriginalImageBase64 = result.originalImageBase64;
+        }
+      }
+      
+      setAiResult({
+        ...result,
+        resizedOriginalImageBase64
+      });
       setUploadedImage(result.generatedImage);
       setShowAIProcessingModal(false);
       setTimeout(() => setShowEmailModal(true), 500);
@@ -159,7 +177,7 @@ const AIWorkflowManager = forwardRef<AIWorkflowHandle, AIWorkflowManagerProps>(
         <RoomTypeModal isOpen={showRoomTypeModal} onClose={() => setShowRoomTypeModal(false)} onRoomTypeSelected={handleRoomTypeSelected} />
         <StyleSelectionModal isOpen={showStyleSelectionModal} onClose={() => setShowStyleSelectionModal(false)} onStyleSelected={handleStyleSelected} onCustomStyleSelected={handleCustomStyleSelected} roomType={roomType} />
         <AIProcessingModal isOpen={showAIProcessingModal} onClose={() => setShowAIProcessingModal(false)} onComplete={handleAIProcessingComplete} uploadedFile={uploadedFile} selectedStyle={selectedStyle} roomType={roomType} customPrompt={customPrompt} />
-        <EmailModal isOpen={showEmailModal} onClose={closeEmailModal} uploadedImage={aiResult?.generatedImage} beforeImage={aiResult?.originalImageBase64 || aiResult?.originalImage} selectedStyle={selectedStyle?.name} roomType={roomType} zipCode={userZipCode} designRequestId={currentDesignRequestId} onEmailSubmitted={handleEmailSubmitted} user={user} />
+        <EmailModal isOpen={showEmailModal} onClose={closeEmailModal} uploadedImage={aiResult?.generatedImage} beforeImage={aiResult?.resizedOriginalImageBase64 || aiResult?.originalImage} selectedStyle={selectedStyle?.name} roomType={roomType} zipCode={userZipCode} designRequestId={currentDesignRequestId} onEmailSubmitted={handleEmailSubmitted} user={user} />
         <QuoteRequestModal isOpen={showQuoteModal} onClose={closeQuoteModal} zipCode={userZipCode} />
       </>
     );
