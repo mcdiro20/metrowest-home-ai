@@ -241,30 +241,28 @@ export default async function handler(req, res) {
 function createLayoutPreservingPrompt(selectedStyle, roomType) {
   const basePrompt = `professional architectural renovation of this exact ${roomType} maintaining identical layout, room dimensions, island placement, window positions, cabinet arrangement, and camera perspective`;
 
-  // High-end appliance specifications
-  const luxuryAppliances = {
-    range: `professional Wolf or Thermador dual-fuel range (36-48 inches) with stainless steel or matte black finish, brass accent knobs`,
-    refrigerator: `integrated Sub-Zero or Thermador refrigerator with custom cabinet panels, seamlessly built into cabinetry`,
-    dishwasher: `panel-ready Miele or Bosch Benchmark dishwasher with hidden controls, blended into cabinetry`,
-    hood: `architectural statement range hood by Vent-A-Hood or custom-wrapped hood with brass, stainless, or matching cabinet finish`,
-    coffee: `built-in Miele or Gaggenau coffee system integrated into cabinet wall with sleek touch panel`,
-    ovens: `stacked Wolf or Gaggenau wall ovens with flush-mount installation and mirror glass or matte black finish`,
-    wine: `undercounter Sub-Zero or Liebherr wine refrigerator with LED lighting and UV glass doors`,
-    extras: `pot filler over range, Quooker boiling water tap, touchless faucets, integrated appliance garage`
-  };
+  // High-end appliance specifications - Fixed: Moved into individual variables
+  const luxuryRange = "professional Wolf or Thermador dual-fuel range (36-48 inches) with stainless steel or matte black finish, brass accent knobs";
+  const luxuryRefrigerator = "integrated Sub-Zero or Thermador refrigerator with custom cabinet panels, seamlessly built into cabinetry";
+  const luxuryDishwasher = "panel-ready Miele or Bosch Benchmark dishwasher with hidden controls, blended into cabinetry";
+  const luxuryHood = "architectural statement range hood by Vent-A-Hood or custom-wrapped hood with brass, stainless, or matching cabinet finish";
+  const luxuryCoffee = "built-in Miele or Gaggenau coffee system integrated into cabinet wall with sleek touch panel";
+  const luxuryOvens = "stacked Wolf or Gaggenau wall ovens with flush-mount installation and mirror glass or matte black finish";
+  const luxuryWine = "undercounter Sub-Zero or Liebherr wine refrigerator with LED lighting and UV glass doors";
+  const luxuryExtras = "pot filler over range, Quooker boiling water tap, touchless faucets, integrated appliance garage";
 
   const stylePrompts = {
-    'modern-minimalist': `Transform ONLY the cabinet finishes to sleek white lacquer with handleless design, update countertops to white quartz, add LED under-cabinet lighting. Upgrade appliances to: ${luxuryAppliances.range}, ${luxuryAppliances.refrigerator}, ${luxuryAppliances.dishwasher}, minimalist hidden ${luxuryAppliances.hood}, ${luxuryAppliances.coffee}, ${luxuryAppliances.extras}. Keep everything else identical including layout, island size, window placement, and room dimensions.`,
+    'modern-minimalist': `Transform ONLY the cabinet finishes to sleek white lacquer with handleless design, update countertops to white quartz, add LED under-cabinet lighting. Upgrade appliances to: ${luxuryRange}, ${luxuryRefrigerator}, ${luxuryDishwasher}, minimalist hidden ${luxuryHood}, ${luxuryCoffee}, ${luxuryExtras}. Keep everything else identical including layout, island size, window placement, and room dimensions.`,
     
-    'farmhouse-chic': `Transform ONLY the cabinet finishes to white shaker style with traditional brass hardware, update countertops to marble with farmhouse sink. Upgrade appliances to: professional ${luxuryAppliances.range} with brass accents, ${luxuryAppliances.refrigerator}, ${luxuryAppliances.dishwasher}, custom wood-clad or brass ${luxuryAppliances.hood}, ${luxuryAppliances.ovens}, ${luxuryAppliances.extras}. Keep everything else identical including layout, island size, window placement, and room dimensions.`,
+    'farmhouse-chic': `Transform ONLY the cabinet finishes to white shaker style with traditional brass hardware, update countertops to marble with farmhouse sink. Upgrade appliances to: professional ${luxuryRange} with brass accents, ${luxuryRefrigerator}, ${luxuryDishwasher}, custom wood-clad or brass ${luxuryHood}, ${luxuryOvens}, ${luxuryExtras}. Keep everything else identical including layout, island size, window placement, and room dimensions.`,
     
-    'transitional': `Transform ONLY the cabinet finishes to warm neutral raised panels with brushed nickel hardware, update countertops to granite. Upgrade appliances to: ${luxuryAppliances.range}, ${luxuryAppliances.refrigerator}, ${luxuryAppliances.dishwasher}, architectural ${luxuryAppliances.hood}, ${luxuryAppliances.ovens}, ${luxuryAppliances.wine}, ${luxuryAppliances.extras}. Keep everything else identical including layout, island size, window placement, and room dimensions.`,
+    'transitional': `Transform ONLY the cabinet finishes to warm neutral raised panels with brushed nickel hardware, update countertops to granite. Upgrade appliances to: ${luxuryRange}, ${luxuryRefrigerator}, ${luxuryDishwasher}, architectural ${luxuryHood}, ${luxuryOvens}, ${luxuryWine}, ${luxuryExtras}. Keep everything else identical including layout, island size, window placement, and room dimensions.`,
     
-    'coastal-new-england': `Transform ONLY the cabinet finishes to white with beadboard details and chrome hardware, update countertops to white marble. Upgrade appliances to: ${luxuryAppliances.range} with chrome accents, ${luxuryAppliances.refrigerator}, ${luxuryAppliances.dishwasher}, white or stainless ${luxuryAppliances.hood}, ${luxuryAppliances.coffee}, ${luxuryAppliances.extras}. Keep everything else identical including layout, island size, window placement, and room dimensions.`,
+    'coastal-new-england': `Transform ONLY the cabinet finishes to white with beadboard details and chrome hardware, update countertops to white marble. Upgrade appliances to: ${luxuryRange} with chrome accents, ${luxuryRefrigerator}, ${luxuryDishwasher}, white or stainless ${luxuryHood}, ${luxuryCoffee}, ${luxuryExtras}. Keep everything else identical including layout, island size, window placement, and room dimensions.`,
     
-    'contemporary-luxe': `Transform ONLY the cabinet finishes to high-gloss dark lacquer with gold hardware, update countertops to dramatic marble. Upgrade appliances to: matte black ${luxuryAppliances.range} with gold accents, ${luxuryAppliances.refrigerator}, ${luxuryAppliances.dishwasher}, statement black or brass ${luxuryAppliances.hood}, ${luxuryAppliances.coffee}, ${luxuryAppliances.ovens}, ${luxuryAppliances.wine}, ${luxuryAppliances.extras}. Keep everything else identical including layout, island size, window placement, and room dimensions.`,
+    'contemporary-luxe': `Transform ONLY the cabinet finishes to high-gloss dark lacquer with gold hardware, update countertops to dramatic marble. Upgrade appliances to: matte black ${luxuryRange} with gold accents, ${luxuryRefrigerator}, ${luxuryDishwasher}, statement black or brass ${luxuryHood}, ${luxuryCoffee}, ${luxuryOvens}, ${luxuryWine}, ${luxuryExtras}. Keep everything else identical including layout, island size, window placement, and room dimensions.`,
     
-    'eclectic-bohemian': `Transform ONLY the cabinet finishes to mixed colorful cabinets with brass hardware, add patterned backsplash. Upgrade appliances to: colorful La Cornue or BlueStar range with custom enamel finish, ${luxuryAppliances.refrigerator}, ${luxuryAppliances.dishwasher}, artistic custom ${luxuryAppliances.hood}, ${luxuryAppliances.coffee}, ${luxuryAppliances.extras}. Keep everything else identical including layout, island size, window placement, and room dimensions.`
+    'eclectic-bohemian': `Transform ONLY the cabinet finishes to mixed colorful cabinets with brass hardware, add patterned backsplash. Upgrade appliances to: colorful La Cornue or BlueStar range with custom enamel finish, ${luxuryRefrigerator}, ${luxuryDishwasher}, artistic custom ${luxuryHood}, ${luxuryCoffee}, ${luxuryExtras}. Keep everything else identical including layout, island size, window placement, and room dimensions.`
   };
 
   const selectedStylePrompt = stylePrompts[selectedStyle?.id] || stylePrompts['modern-minimalist'];
