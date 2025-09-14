@@ -127,19 +127,40 @@ export class AIImageService {
               return;
             }
 
-            // Set canvas dimensions to match image
-            canvas.width = img.width;
-            canvas.height = img.height;
-
-            // Draw image on canvas
-            ctx.drawImage(img, 0, 0);
-
-            // Convert to JPEG with high quality for better AI processing
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+            // Calculate optimal dimensions for AI processing (max 1024px on longest side)
+            const maxDimension = 1024;
+            let { width, height } = img;
             
-            console.log('✅ Image converted to JPEG format for AI processing');
+            // Resize if image is too large
+            if (width > maxDimension || height > maxDimension) {
+              const aspectRatio = width / height;
+              
+              if (width > height) {
+                width = maxDimension;
+                height = Math.round(maxDimension / aspectRatio);
+              } else {
+                height = maxDimension;
+                width = Math.round(maxDimension * aspectRatio);
+              }
+              
+              console.log(`📏 Resizing image from ${img.width}x${img.height} to ${width}x${height} for AI processing`);
+            }
+            
+            // Set canvas dimensions to optimized size
+            canvas.width = width;
+            canvas.height = height;
+
+            // Draw image on canvas with optimized dimensions
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Convert to JPEG with optimized quality for AI processing
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            
+            console.log('✅ Image optimized and converted to JPEG format for AI processing');
             console.log('📸 Original format:', file.type);
-            console.log('📸 Converted size:', dataUrl.length);
+            console.log('📸 Original dimensions:', `${img.width}x${img.height}`);
+            console.log('📸 Optimized dimensions:', `${width}x${height}`);
+            console.log('📸 Optimized size:', dataUrl.length);
             
             resolve(dataUrl);
           } catch (canvasError) {

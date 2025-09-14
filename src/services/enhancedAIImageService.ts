@@ -64,10 +64,9 @@ export class EnhancedAIImageService {
     const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
     
     if (!openaiKey) {
-      console.log('⚠️ No OpenAI API key - using demo image');
-      return this.getDemoImage();
+      throw new Error('OpenAI API key not configured');
     }
-
+    
     const { default: OpenAI } = await import('openai');
     const openai = new OpenAI({
       apiKey: openaiKey,
