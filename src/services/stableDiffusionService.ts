@@ -1,5 +1,5 @@
 export interface StableDiffusionRequest {
-  imageFile: File;
+  imageBase64: string;
   styleChoice: string;
   roomType: string;
   customPrompt?: string;
@@ -21,11 +21,8 @@ export class StableDiffusionService {
       console.log('🏠 Room type:', request.roomType);
       console.log('🎨 Style:', request.styleChoice);
       console.log('🎨 Custom prompt:', request.customPrompt);
+      console.log('📱 Using pre-processed image data');
 
-      // Convert file to base64 first
-      const imageBase64 = await this.fileToBase64(request.imageFile);
-      console.log('📸 Image converted to base64, length:', imageBase64.length);
-      
       // Call backend API for Stable Diffusion
       console.log('🏗️ Calling Stable Diffusion API...');
       const response = await fetch('/api/generate-stable-diffusion', {
@@ -34,7 +31,7 @@ export class StableDiffusionService {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          imageData: imageBase64,
+          imageData: request.imageBase64,
           roomType: request.roomType,
           selectedStyle: { 
             id: request.styleChoice,
@@ -96,86 +93,6 @@ export class StableDiffusionService {
     return styleNames[styleId as keyof typeof styleNames] || 'Custom Style';
   }
 
-  private static fileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      // Check if the file is an image
-      if (!file.type.startsWith('image/')) {
-        reject(new Error('File must be an image'));
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          try {
-            // Create canvas to convert image to JPEG format
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            if (!ctx) {
-              reject(new Error('Could not get canvas context'));
-              return;
-            }
-
-            // Calculate optimal dimensions for AI processing (max 1024px on longest side)
-            const maxDimension = 1024;
-            let { width, height } = img;
-            
-            // Resize if image is too large
-            if (width > maxDimension || height > maxDimension) {
-              const aspectRatio = width / height;
-              
-              if (width > height) {
-                width = maxDimension;
-                height = Math.round(maxDimension / aspectRatio);
-              } else {
-                height = maxDimension;
-                width = Math.round(maxDimension * aspectRatio);
-              }
-              
-              console.log(`📏 Resizing image from ${img.width}x${img.height} to ${width}x${height} for AI processing`);
-            }
-            
-            // Set canvas dimensions to optimized size
-            canvas.width = width;
-            canvas.height = height;
-
-            // Draw image on canvas with optimized dimensions
-            ctx.drawImage(img, 0, 0, width, height);
-
-            // Convert to JPEG with optimized quality for AI processing
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-            
-            console.log('✅ Image optimized and converted to JPEG format for AI processing');
-            console.log('📸 Original format:', file.type);
-            console.log('📸 Original dimensions:', `${img.width}x${img.height}`);
-            console.log('📸 Optimized dimensions:', `${width}x${height}`);
-            console.log('📸 Optimized size:', dataUrl.length);
-            
-            resolve(dataUrl);
-          } catch (canvasError) {
-            console.error('❌ Canvas conversion failed:', canvasError);
-            reject(canvasError);
-          }
-        };
-        
-        img.onerror = (imgError) => {
-          console.error('❌ Image load failed:', imgError);
-          reject(new Error('Failed to load image'));
-        };
-        
-        img.src = event.target?.result as string;
-      };
-      
-      reader.onerror = (readerError) => {
-        console.error('❌ FileReader failed:', readerError);
-        reject(new Error('Failed to read file'));
-      };
-      
-      reader.readAsDataURL(file);
-    });
-  }
 
   // Generate professional architectural prompts for SDXL
   static generateProfessionalPrompt(styleChoice: string, roomType: string): string {

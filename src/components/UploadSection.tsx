@@ -1,17 +1,26 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Camera, QrCode, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Upload, Camera, QrCode, Image as ImageIcon, Sparkles, Loader2, AlertCircle, CheckCircle, Smartphone } from 'lucide-react';
+import { getFileSizeDisplay } from '../utils/imageUtils';
 
 interface UploadSectionProps {
   onFileUpload: (file: File) => void;
   isZipCodeApproved: boolean;
+  isFileProcessing?: boolean;
+  fileProcessingError?: string | null;
 }
 
-const UploadSection: React.FC<UploadSectionProps> = ({ onFileUpload, isZipCodeApproved }) => {
+const UploadSection: React.FC<UploadSectionProps> = ({ 
+  onFileUpload, 
+  isZipCodeApproved, 
+  isFileProcessing = false,
+  fileProcessingError = null 
+}) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    if (!isZipCodeApproved || isFileProcessing) return;
     setIsDragging(true);
   };
 
@@ -23,6 +32,8 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onFileUpload, isZipCodeAp
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
+    
+    if (!isZipCodeApproved || isFileProcessing) return;
 
     const files = e.dataTransfer.files;
     if (files.length > 0) {
@@ -31,6 +42,8 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onFileUpload, isZipCodeAp
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isZipCodeApproved || isFileProcessing) return;
+    
     if (e.target.files && e.target.files.length > 0) {
       onFileUpload(e.target.files[0]);
     }
@@ -54,53 +67,107 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onFileUpload, isZipCodeAp
           </p>
         </div>
 
+        {/* Mobile-Specific Guidance */}
+        {isZipCodeApproved && (
+          <div className="mb-8 p-4 bg-blue-50 rounded-xl border border-blue-200 md:hidden">
+            <div className="flex items-start gap-3">
+              <Smartphone className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <h4 className="font-semibold text-blue-900 mb-1">📱 iPhone Users</h4>
+                <p className="text-sm text-blue-800">
+                  For best results, take photos in good lighting. Large images will be automatically optimized for AI processing.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* File Processing Status */}
+        {isFileProcessing && (
+          <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+            <div className="flex items-center gap-3">
+              <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+              <div>
+                <h4 className="font-semibold text-blue-900">Processing Your Image</h4>
+                <p className="text-sm text-blue-800">Optimizing image for AI processing... This may take a moment for large files.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* File Processing Error */}
+        {fileProcessingError && (
+          <div className="mb-6 p-4 bg-red-50 rounded-xl border border-red-200">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <h4 className="font-semibold text-red-900 mb-1">Upload Error</h4>
+                <p className="text-sm text-red-800">{fileProcessingError}</p>
+                <button
+                  onClick={() => setFileProcessingError(null)}
+                  className="text-xs text-red-600 hover:text-red-800 underline mt-2"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Drag & Drop Upload */}
           <div
             className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${
-              isZipCodeApproved
+              isZipCodeApproved && !isFileProcessing
                 ? isDragging
                   ? 'border-blue-500 bg-blue-50 cursor-pointer'
                   : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50/50 cursor-pointer'
                 : 'border-gray-200 bg-gray-50 opacity-60'
             }`}
-            onDragOver={isZipCodeApproved ? handleDragOver : undefined}
-            onDragLeave={isZipCodeApproved ? handleDragLeave : undefined}
-            onDrop={isZipCodeApproved ? handleDrop : undefined}
+            onDragOver={isZipCodeApproved && !isFileProcessing ? handleDragOver : undefined}
+            onDragLeave={isZipCodeApproved && !isFileProcessing ? handleDragLeave : undefined}
+            onDrop={isZipCodeApproved && !isFileProcessing ? handleDrop : undefined}
           >
             <div className="flex flex-col items-center">
               <div
                 className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
-                  isZipCodeApproved ? 'bg-blue-100' : 'bg-gray-200'
+                  isZipCodeApproved && !isFileProcessing ? 'bg-blue-100' : 'bg-gray-200'
                 }`}
               >
-                <Upload
-                  className={`w-8 h-8 ${
-                    isZipCodeApproved ? 'text-blue-600' : 'text-gray-400'
-                  }`}
-                />
+                {isFileProcessing ? (
+                  <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                ) : (
+                  <Upload
+                    className={`w-8 h-8 ${
+                      isZipCodeApproved ? 'text-blue-600' : 'text-gray-400'
+                    }`}
+                  />
+                )}
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {isZipCodeApproved
-                  ? 'Drag & Drop Your Photo'
-                  : 'ZIP Code Required'}
+                {isFileProcessing
+                  ? 'Processing Image...'
+                  : isZipCodeApproved
+                    ? 'Drag & Drop Your Photo'
+                    : 'ZIP Code Required'}
               </h3>
               <p className="text-gray-600 mb-6">
-                {isZipCodeApproved
-                  ? 'Or click to browse your files'
-                  : 'Confirm your MetroWest location first'}
+                {isFileProcessing
+                  ? 'Optimizing for AI processing...'
+                  : isZipCodeApproved
+                    ? 'Or click to browse your files'
+                    : 'Confirm your MetroWest location first'}
               </p>
               <button
                 type="button"
                 className={`font-medium px-6 py-3 rounded-lg transition-colors ${
-                  isZipCodeApproved
+                  isZipCodeApproved && !isFileProcessing
                     ? 'bg-blue-600 hover:bg-blue-700 text-white'
                     : 'bg-gray-300 text-gray-500'
                 }`}
-                onClick={isZipCodeApproved ? () => fileInputRef.current?.click() : undefined}
-                disabled={!isZipCodeApproved}
+                onClick={isZipCodeApproved && !isFileProcessing ? () => fileInputRef.current?.click() : undefined}
+                disabled={!isZipCodeApproved || isFileProcessing}
               >
-                Choose File
+                {isFileProcessing ? 'Processing...' : 'Choose File'}
               </button>
             </div>
           </div>
@@ -109,31 +176,39 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onFileUpload, isZipCodeAp
           <div className="space-y-6">
             {/* File Upload */}
             <button
-              onClick={isZipCodeApproved ? () => fileInputRef.current?.click() : undefined}
-              disabled={!isZipCodeApproved}
+              onClick={isZipCodeApproved && !isFileProcessing ? () => fileInputRef.current?.click() : undefined}
+              disabled={!isZipCodeApproved || isFileProcessing}
               className={`w-full bg-white rounded-xl p-6 shadow-sm border border-gray-200 text-left transition-all duration-200 ${
-                isZipCodeApproved
+                isZipCodeApproved && !isFileProcessing
                   ? 'hover:shadow-md hover:border-emerald-300 cursor-pointer'
                   : 'opacity-60'
               }`}
             >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
-                  <ImageIcon className="w-6 h-6 text-emerald-600" />
+                  {isFileProcessing ? (
+                    <Loader2 className="w-6 h-6 text-emerald-600 animate-spin" />
+                  ) : (
+                    <ImageIcon className="w-6 h-6 text-emerald-600" />
+                  )}
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900">File Upload</h4>
-                  <p className="text-sm text-gray-600">JPG, PNG, or HEIC files</p>
+                  <h4 className="font-semibold text-gray-900">
+                    {isFileProcessing ? 'Processing Image...' : 'File Upload'}
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    {isFileProcessing ? 'Optimizing for mobile...' : 'JPG, PNG, WebP, or HEIC files (max 5MB)'}
+                  </p>
                 </div>
               </div>
             </button>
 
             {/* Mobile Upload */}
             <button
-              onClick={isZipCodeApproved ? () => fileInputRef.current?.click() : undefined}
-              disabled={!isZipCodeApproved}
+              onClick={isZipCodeApproved && !isFileProcessing ? () => fileInputRef.current?.click() : undefined}
+              disabled={!isZipCodeApproved || isFileProcessing}
               className={`w-full bg-white rounded-xl p-6 shadow-sm border border-gray-200 text-left transition-all duration-200 ${
-                isZipCodeApproved
+                isZipCodeApproved && !isFileProcessing
                   ? 'hover:shadow-md hover:border-purple-300 cursor-pointer'
                   : 'opacity-60'
               }`}
@@ -144,17 +219,19 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onFileUpload, isZipCodeAp
                 </div>
                 <div>
                   <h4 className="font-semibold text-gray-900">Mobile Upload</h4>
-                  <p className="text-sm text-gray-600">Take a photo directly</p>
+                  <p className="text-sm text-gray-600">
+                    {isFileProcessing ? 'Processing...' : 'Take a photo directly'}
+                  </p>
                 </div>
               </div>
             </button>
 
             {/* QR Code Upload */}
             <button
-              onClick={isZipCodeApproved ? () => fileInputRef.current?.click() : undefined}
-              disabled={!isZipCodeApproved}
+              onClick={isZipCodeApproved && !isFileProcessing ? () => fileInputRef.current?.click() : undefined}
+              disabled={!isZipCodeApproved || isFileProcessing}
               className={`w-full bg-white rounded-xl p-6 shadow-sm border border-gray-200 text-left transition-all duration-200 ${
-                isZipCodeApproved
+                isZipCodeApproved && !isFileProcessing
                   ? 'hover:shadow-md hover:border-orange-300 cursor-pointer'
                   : 'opacity-60'
               }`}
@@ -189,6 +266,10 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onFileUpload, isZipCodeAp
                 version of your space. The preview will be blurred—enter your
                 email to receive the full high-resolution image.
               </p>
+              <div className="mt-3 text-xs text-blue-700">
+                <p>📱 <strong>Mobile users:</strong> Large images are automatically optimized for faster processing</p>
+                <p>📏 <strong>Supported formats:</strong> JPEG, PNG, WebP, HEIC (max 5MB)</p>
+              </div>
             </div>
           </div>
         </div>
@@ -196,7 +277,7 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onFileUpload, isZipCodeAp
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif"
           onChange={handleFileSelect}
           className="hidden"
         />

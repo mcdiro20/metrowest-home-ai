@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, Zap, Clock, CheckCircle, Eye, Cpu, Award, Sparkles } from 'lucide-react';
 import { AnalyticsService } from '../services/analyticsService';
+import type { ProcessedImage } from '../utils/imageUtils';
 
 interface AIProcessingModalProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: (result: { originalImage: string; generatedImage: string; prompt: string }) => void;
-  uploadedFile?: File;
+  processedImageData?: ProcessedImage | null;
   selectedStyle?: {id: string; name: string; prompt: string};
   roomType?: string;
   customPrompt?: string;
@@ -16,7 +17,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
   isOpen, 
   onClose, 
   onComplete, 
-  uploadedFile,
+  processedImageData,
   selectedStyle,
   roomType = 'kitchen',
   customPrompt
@@ -27,7 +28,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
   const [currentStep, setCurrentStep] = useState<'analysis' | 'architecture' | 'generation' | 'enhancement' | 'complete'>('analysis');
 
   useEffect(() => {
-    if (!isOpen || !uploadedFile) return;
+    if (!isOpen || !processedImageData) return;
 
     const timer = setInterval(() => {
       setTimeElapsed(prev => prev + 1);
@@ -57,23 +58,25 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         console.log('🏛️ Starting premium architectural rendering...');
         
         let generatedImageUrl: string;
-        const originalImageUrl = URL.createObjectURL(uploadedFile);
         
-        const originalImageBase64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(uploadedFile);
+        // Create blob URL from processed base64 for display
+        const base64Data = processedImageData.base64.split(',')[1];
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'image/jpeg' });
+        const originalImageUrl = URL.createObjectURL(blob);
+        
+        console.log('📱 Using pre-processed image data:', {
+          originalSize: `${(processedImageData.originalSize / (1024 * 1024)).toFixed(2)}MB`,
+          processedSize: `${(processedImageData.processedSize / (1024 * 1024)).toFixed(2)}MB`,
+          dimensions: `${processedImageData.processedDimensions.width}x${processedImageData.processedDimensions.height}`
         });
         
         try {
-          const imageBase64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(uploadedFile);
-          });
-          
           // Generate a premium seed for consistency
           const premiumSeed = Math.floor(Math.random() * 1000000);
           
@@ -81,7 +84,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              imageData: imageBase64,
+              imageData: processedImageData.base64,
               roomType: roomType,
               selectedStyle: selectedStyle,
               customPrompt: customPrompt,
@@ -137,7 +140,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
 
         const result = {
           originalImage: originalImageUrl,
-          originalImageBase64: originalImageBase64,
+          originalImageBase64: processedImageData.base64,
           generatedImage: generatedImageUrl,
           prompt: selectedStyle?.prompt || 'Premium architectural transformation'
         };
@@ -177,7 +180,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
       setTimeElapsed(0);
       setStage('analyzing');
     };
-  }, [isOpen, uploadedFile, selectedStyle, roomType, onComplete]);
+  }, [isOpen, processedImageData, selectedStyle, roomType, onComplete]);
 
   if (!isOpen) return null;
 

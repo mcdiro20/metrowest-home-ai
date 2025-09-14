@@ -7,7 +7,7 @@ import ZipCodeModal from './ZipCodeModal';
 import QuoteRequestModal from './QuoteRequestModal';
 import AuthModal from './AuthModal';
 import type { User } from '@supabase/supabase-js';
-import { resizeImageForEmail } from '../utils/imageUtils';
+import { resizeImageForEmail, processImageForUpload, type ProcessedImage, type ImageValidationError } from '../utils/imageUtils';
 
 interface AIWorkflowManagerProps {
   user: User | null;
@@ -31,6 +31,9 @@ const AIWorkflowManager = forwardRef<AIWorkflowHandle, AIWorkflowManagerProps>(
     const [showAIProcessingModal, setShowAIProcessingModal] = useState(false);
     const [showEmailModal, setShowEmailModal] = useState(false);
     const [showQuoteModal, setShowQuoteModal] = useState(false);
+    const [isFileProcessing, setIsFileProcessing] = useState(false);
+    const [fileProcessingError, setFileProcessingError] = useState<string | null>(null);
+    const [processedImageData, setProcessedImageData] = useState<ProcessedImage | null>(null);
     const [uploadedImage, setUploadedImage] = useState<string | undefined>();
     const [aiResult, setAiResult] = useState<{ originalImage: string; originalImageBase64?: string; resizedOriginalImageBase64?: string; generatedImage: string; prompt: string } | undefined>();
     const [uploadedFile, setUploadedFile] = useState<File | undefined>();
@@ -65,9 +68,54 @@ const AIWorkflowManager = forwardRef<AIWorkflowHandle, AIWorkflowManagerProps>(
       }, 200);
     };
 
-    const handleFileUpload = (file: File) => {
-      setUploadedFile(file);
-      setShowRoomTypeModal(true);
+    const handleFileUpload = async (file: File) => {
+      console.log('📱 Processing file upload for mobile optimization...');
+      setIsFileProcessing(true);
+      setFileProcessingError(null);
+      setProcessedImageData(null);
+      
+      try {
+        // Process the image for optimal mobile performance
+        const processedImage = await processImageForUpload(file);
+        
+        console.log('✅ Image processing successful:', {
+          originalSize: `${(processedImage.originalSize / (1024 * 1024)).toFixed(2)}MB`,
+          processedSize: `${(processedImage.processedSize / (1024 * 1024)).toFixed(2)}MB`,
+          compressionRatio: `${((1 - processedImage.processedSize / processedImage.originalSize) * 100).toFixed(1)}%`
+        });
+        
+        setProcessedImageData(processedImage);
+        setUploadedFile(file); // Keep original file for reference
+        setIsFileProcessing(false);
+        setShowRoomTypeModal(true);
+        
+      } catch (error) {
+        console.error('❌ Image processing failed:', error);
+        setIsFileProcessing(false);
+        
+        // Handle different types of errors with user-friendly messages
+        if (error instanceof Error && 'code' in error) {
+          const validationError = error as ImageValidationError;
+          switch (validationError.code) {
+            case 'FILE_TOO_LARGE':
+              setFileProcessingError('Image file is too large. Please choose an image smaller than 5MB or try taking a new photo with lower resolution.');
+              break;
+            case 'INVALID_FORMAT':
+              setFileProcessingError('Invalid image format. Please use JPEG, PNG, WebP, or HEIC images.');
+              break;
+            case 'LOAD_FAILED':
+              setFileProcessingError('Failed to load image. The file may be corrupted. Please try a different image.');
+              break;
+            case 'PROCESSING_FAILED':
+              setFileProcessingError('Image processing failed. Please try a different image or contact support.');
+              break;
+            default:
+              setFileProcessingError('An unexpected error occurred while processing your image. Please try again.');
+          }
+        } else {
+          setFileProcessingError('An unexpected error occurred while processing your image. Please try again.');
+        }
+      }
     };
 
     const handleMobileUpload = () => {
@@ -140,6 +188,9 @@ const AIWorkflowManager = forwardRef<AIWorkflowHandle, AIWorkflowManagerProps>(
 
     const resetState = () => {
       if (aiResult?.originalImage) URL.revokeObjectURL(aiResult.originalImage);
+      setIsFileProcessing(false);
+      setFileProcessingError(null);
+      setProcessedImageData(null);
       setUploadedImage(undefined);
       setAiResult(undefined);
       setUploadedFile(undefined);
@@ -176,7 +227,15 @@ const AIWorkflowManager = forwardRef<AIWorkflowHandle, AIWorkflowManagerProps>(
         <ZipCodeModal isOpen={showZipCodeModal} onClose={() => setShowZipCodeModal(false)} onZipCodeApproved={handleZipCodeApproved} />
         <RoomTypeModal isOpen={showRoomTypeModal} onClose={() => setShowRoomTypeModal(false)} onRoomTypeSelected={handleRoomTypeSelected} />
         <StyleSelectionModal isOpen={showStyleSelectionModal} onClose={() => setShowStyleSelectionModal(false)} onStyleSelected={handleStyleSelected} onCustomStyleSelected={handleCustomStyleSelected} roomType={roomType} />
-        <AIProcessingModal isOpen={showAIProcessingModal} onClose={() => setShowAIProcessingModal(false)} onComplete={handleAIProcessingComplete} uploadedFile={uploadedFile} selectedStyle={selectedStyle} roomType={roomType} customPrompt={customPrompt} />
+        <AIProcessingModal 
+          isOpen={showAIProcessingModal} 
+          onClose={() => setShowAIProcessingModal(false)} 
+          onComplete={handleAIProcessingComplete} 
+          processedImageData={processedImageData}
+          selectedStyle={selectedStyle} 
+          roomType={roomType} 
+          customPrompt={customPrompt} 
+        />
         <EmailModal isOpen={showEmailModal} onClose={closeEmailModal} uploadedImage={aiResult?.generatedImage} beforeImage={aiResult?.resizedOriginalImageBase64 || aiResult?.originalImage} selectedStyle={selectedStyle?.name} roomType={roomType} zipCode={userZipCode} designRequestId={currentDesignRequestId} onEmailSubmitted={handleEmailSubmitted} user={user} />
         <QuoteRequestModal isOpen={showQuoteModal} onClose={closeQuoteModal} zipCode={userZipCode} />
       </>
