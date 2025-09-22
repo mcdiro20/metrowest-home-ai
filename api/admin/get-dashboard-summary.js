@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+mport { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -104,13 +104,13 @@ export default async function handler(req, res) {
     const leadsByStatus = leads.reduce((acc, lead) => {
       acc[lead.status] = (acc[lead.status] || 0) + 1;
       return acc;
-    }, {} as Record<string, number>);
+    }, {});
 
     const totalUsers = users.length;
     const usersByRole = users.reduce((acc, userItem) => {
       acc[userItem.role] = (acc[userItem.role] || 0) + 1;
       return acc;
-    }, {} as Record<string, number>);
+    }, {});
 
     const totalContractors = contractors.length;
     const activeSubscribers = contractors.filter(c => c.is_active_subscriber).length;
