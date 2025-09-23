@@ -1,6 +1,7 @@
 import React, { useState, useRef, forwardRef, useImperativeHandle } from 'react';
 import RoomTypeModal from './RoomTypeModal';
 import StyleSelectionModal from './StyleSelectionModal';
+import AIModelSelectionModal from './AIModelSelectionModal';
 import AIProcessingModal from './AIProcessingModal';
 import EmailModal from './EmailModal';
 import ZipCodeModal from './ZipCodeModal';
@@ -27,6 +28,7 @@ const AIWorkflowManager = forwardRef<AIWorkflowHandle, AIWorkflowManagerProps>(
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [showZipCodeModal, setShowZipCodeModal] = useState(false);
     const [showRoomTypeModal, setShowRoomTypeModal] = useState(false);
+    const [showAIModelSelectionModal, setShowAIModelSelectionModal] = useState(false);
     const [showStyleSelectionModal, setShowStyleSelectionModal] = useState(false);
     const [showAIProcessingModal, setShowAIProcessingModal] = useState(false);
     const [showEmailModal, setShowEmailModal] = useState(false);
@@ -38,6 +40,7 @@ const AIWorkflowManager = forwardRef<AIWorkflowHandle, AIWorkflowManagerProps>(
     const [aiResult, setAiResult] = useState<{ originalImage: string; originalImageBase64?: string; resizedOriginalImageBase64?: string; generatedImage: string; prompt: string } | undefined>();
     const [uploadedFile, setUploadedFile] = useState<File | undefined>();
     const [selectedStyle, setSelectedStyle] = useState<{ id: string; name: string; prompt: string } | undefined>();
+    const [selectedAIEngine, setSelectedAIEngine] = useState<string>('structural-design-ai');
     const [customPrompt, setCustomPrompt] = useState<string>('');
     const [roomType, setRoomType] = useState<string>('');
     const [emailSubmitted, setEmailSubmitted] = useState(false);
@@ -129,6 +132,12 @@ const AIWorkflowManager = forwardRef<AIWorkflowHandle, AIWorkflowManagerProps>(
     const handleRoomTypeSelected = (selectedRoomType: string) => {
       setRoomType(selectedRoomType);
       setShowRoomTypeModal(false);
+      setShowAIModelSelectionModal(true);
+    };
+
+    const handleAIModelSelected = (aiEngine: string) => {
+      setSelectedAIEngine(aiEngine);
+      setShowAIModelSelectionModal(false);
       setShowStyleSelectionModal(true);
     };
 
@@ -226,13 +235,15 @@ const AIWorkflowManager = forwardRef<AIWorkflowHandle, AIWorkflowManagerProps>(
         <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onAuthSuccess={handleAuthSuccess} />
         <ZipCodeModal isOpen={showZipCodeModal} onClose={() => setShowZipCodeModal(false)} onZipCodeApproved={handleZipCodeApproved} />
         <RoomTypeModal isOpen={showRoomTypeModal} onClose={() => setShowRoomTypeModal(false)} onRoomTypeSelected={handleRoomTypeSelected} />
-        <StyleSelectionModal isOpen={showStyleSelectionModal} onClose={() => setShowStyleSelectionModal(false)} onStyleSelected={handleStyleSelected} onCustomStyleSelected={handleCustomStyleSelected} roomType={roomType} />
+        <AIModelSelectionModal isOpen={showAIModelSelectionModal} onClose={() => setShowAIModelSelectionModal(false)} onModelSelected={handleAIModelSelected} roomType={roomType} />
+        <StyleSelectionModal isOpen={showStyleSelectionModal} onClose={() => setShowStyleSelectionModal(false)} onStyleSelected={handleStyleSelected} onCustomStyleSelected={handleCustomStyleSelected} roomType={roomType} selectedAIEngine={selectedAIEngine} />
         <AIProcessingModal 
           isOpen={showAIProcessingModal} 
           onClose={() => setShowAIProcessingModal(false)} 
           onComplete={handleAIProcessingComplete} 
           processedImageData={processedImageData}
           selectedStyle={selectedStyle} 
+          selectedAIEngine={selectedAIEngine}
           roomType={roomType} 
           customPrompt={customPrompt} 
         />

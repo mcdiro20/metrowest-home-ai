@@ -9,6 +9,7 @@ interface AIProcessingModalProps {
   onComplete: (result: { originalImage: string; generatedImage: string; prompt: string }) => void;
   processedImageData?: ProcessedImage | null;
   selectedStyle?: {id: string; name: string; prompt: string};
+  selectedAIEngine?: string;
   roomType?: string;
   customPrompt?: string;
 }
@@ -19,6 +20,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
   onComplete, 
   processedImageData,
   selectedStyle,
+  selectedAIEngine = 'stable-diffusion',
   roomType = 'kitchen',
   customPrompt
 }) => {
@@ -80,7 +82,20 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
           // Generate a premium seed for consistency
           const premiumSeed = Math.floor(Math.random() * 1000000);
           
-          const response = await fetch('/api/generate-stable-diffusion', {
+          let apiEndpoint;
+          switch (selectedAIEngine) {
+            case 'architectural-vision-engine':
+              apiEndpoint = '/api/generate-architectural-vision';
+              break;
+            case 'structural-design-ai':
+            default:
+              apiEndpoint = '/api/generate-stable-diffusion';
+              break;
+          }
+          
+          console.log(`🏛️ Using ${selectedAIEngine} engine via ${apiEndpoint}`);
+          
+          const response = await fetch(apiEndpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -88,7 +103,8 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
               roomType: roomType,
               selectedStyle: selectedStyle,
               customPrompt: customPrompt,
-              seed: premiumSeed
+              seed: premiumSeed,
+              aiEngine: selectedAIEngine
             })
           });
           
@@ -185,39 +201,41 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
   if (!isOpen) return null;
 
   const getStageInfo = () => {
+    const engineName = selectedAIEngine === 'architectural-vision-engine' ? 'Architectural Vision Engine' : 'StructuralDesign AI';
+    
     switch (stage) {
       case 'analyzing':
         if (currentStep === 'analysis') {
           return {
-            title: 'Premium Architectural Analysis',
-            description: 'AI architects analyzing spatial relationships and structural integrity with museum-quality precision.',
+            title: `${engineName} Analysis`,
+            description: `${engineName} analyzing spatial relationships and structural integrity with professional precision.`,
             icon: <Eye className="w-6 h-6" />
           };
         } else {
           return {
             title: 'Preserving Room Architecture',
-            description: 'Mapping structural elements to maintain authentic proportions and spatial harmony.',
+            description: `${engineName} mapping structural elements to maintain authentic proportions and spatial harmony.`,
             icon: <Award className="w-6 h-6" />
           };
         }
       case 'generating':
         if (currentStep === 'generation') {
           return {
-            title: 'Premium Design Synthesis',
-            description: 'Generating luxury finishes with photorealistic materials and professional lighting design.',
+            title: `${engineName} Design Synthesis`,
+            description: `${engineName} generating luxury finishes with photorealistic materials and professional lighting design.`,
             icon: <Zap className="w-6 h-6 animate-pulse" />
           };
         } else {
           return {
             title: 'Architectural Enhancement',
-            description: 'Applying museum-quality finishing touches and optimizing visual composition.',
+            description: `${engineName} applying premium finishing touches and optimizing visual composition.`,
             icon: <Sparkles className="w-6 h-6 animate-pulse" />
           };
         }
       case 'complete':
         return {
-          title: 'Architectural Masterpiece Complete!',
-          description: 'Your museum-quality renovation visualization is ready for presentation.',
+          title: `${engineName} Rendering Complete!`,
+          description: `Your professional renovation visualization is ready for presentation.`,
           icon: <CheckCircle className="w-6 h-6" />
         };
     }
@@ -250,7 +268,7 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         {/* Premium Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between text-sm font-medium text-gray-600 mb-3">
-            <span>Premium Rendering Progress</span>
+            <span>{selectedAIEngine === 'architectural-vision-engine' ? 'Architectural Vision Engine' : 'StructuralDesign AI'} Progress</span>
             <span>{progress}%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-4 shadow-inner">

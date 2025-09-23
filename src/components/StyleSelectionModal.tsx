@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Check } from 'lucide-react';
+import { aiEngines } from '../utils/aiEngines.tsx';
 
 interface StyleOption {
   id: string;
@@ -15,6 +16,7 @@ interface StyleSelectionModalProps {
   onStyleSelected: (style: StyleOption) => void;
   onCustomStyleSelected: (customPrompt: string, baseStyle?: string) => void;
   roomType: string;
+  selectedAIEngine: string;
 }
 
 const StyleSelectionModal: React.FC<StyleSelectionModalProps> = ({ 
@@ -22,7 +24,8 @@ const StyleSelectionModal: React.FC<StyleSelectionModalProps> = ({
   onClose, 
   onStyleSelected,
   onCustomStyleSelected,
-  roomType 
+  roomType,
+  selectedAIEngine
 }) => {
   const [selectedStyle, setSelectedStyle] = useState<StyleOption | null>(null);
   const [showCustomPrompt, setShowCustomPrompt] = useState(false);
@@ -130,10 +133,11 @@ const StyleSelectionModal: React.FC<StyleSelectionModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-4xl w-full p-6 relative max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl max-w-4xl w-full relative max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors z-10"
+          className="absolute top-6 right-6 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors z-10"
         >
           <X className="w-4 h-4 text-gray-600" />
         </button>
@@ -143,8 +147,25 @@ const StyleSelectionModal: React.FC<StyleSelectionModalProps> = ({
             Choose a Design Style
           </h3>
           <p className="text-xl text-gray-600">
-            Select the style you'd like to see in your reimagined {roomType}
+            Select the style for your {selectedAIEngine === 'architectural-vision-engine' ? 'Architectural Vision Engine' : 'StructuralDesign AI'} {roomType} transformation
           </p>
+        </div>
+
+        {/* Selected AI Engine Display */}
+        <div className="mb-6 p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 bg-gradient-to-br ${aiEngines.find(e => e.id === selectedAIEngine)?.color} rounded-full flex items-center justify-center text-white`}>
+              {aiEngines.find(e => e.id === selectedAIEngine)?.icon}
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900">
+                Using: {aiEngines.find(e => e.id === selectedAIEngine)?.name}
+              </h4>
+              <p className="text-sm text-gray-600">
+                {aiEngines.find(e => e.id === selectedAIEngine)?.description}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Style Grid */}
@@ -256,7 +277,7 @@ const StyleSelectionModal: React.FC<StyleSelectionModalProps> = ({
         )}
 
         {/* Continue Button */}
-        <div className="flex justify-center">
+        <div className="flex justify-center pt-4 pb-2">
           <button
             onClick={handleContinue}
             disabled={!selectedStyle && (!showCustomPrompt || !customPrompt.trim())}
@@ -272,10 +293,11 @@ const StyleSelectionModal: React.FC<StyleSelectionModalProps> = ({
         </div>
 
         {/* Popular Styles Indicator */}
-        <div className="mt-6 text-center">
+        <div className="mt-4 text-center pb-2">
           <p className="text-sm text-gray-500">
             💡 Most popular in MetroWest: {roomType === 'kitchen' ? 'Modern Minimalist & Farmhouse Chic' : 'Modern Zen & Mediterranean Oasis'}
           </p>
+        </div>
         </div>
       </div>
     </div>
