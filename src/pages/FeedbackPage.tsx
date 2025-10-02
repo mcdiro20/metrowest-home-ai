@@ -17,17 +17,12 @@ const FeedbackPage: React.FC = () => {
 
   useEffect(() => {
     if (!leadId) {
-      setError('Invalid feedback link');
+      console.warn('No lead_id provided - feedback will be submitted anonymously');
     }
   }, [leadId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!leadId) {
-      setError('Invalid feedback link');
-      return;
-    }
 
     if (rating === 0) {
       setError('Please select a rating');
@@ -55,7 +50,9 @@ const FeedbackPage: React.FC = () => {
       const result = await response.json();
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to submit feedback');
+        const errorMsg = result.error || result.details || 'Failed to submit feedback';
+        console.error('Feedback submission failed:', result);
+        throw new Error(errorMsg);
       }
 
       setIsSubmitted(true);

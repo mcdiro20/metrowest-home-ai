@@ -16,10 +16,12 @@ export default async function handler(req, res) {
 
     const { lead_id, rating, comment, source, page_location } = req.body;
 
-    if (!lead_id || !rating) {
+    console.log('📊 Feedback data:', { lead_id, rating, hasComment: !!comment, source });
+
+    if (!rating) {
       return res.status(400).json({
         success: false,
-        error: 'lead_id and rating are required'
+        error: 'Rating is required'
       });
     }
 
@@ -75,7 +77,9 @@ export default async function handler(req, res) {
       console.error('❌ Failed to insert feedback:', feedbackError);
       return res.status(500).json({
         success: false,
-        error: `Failed to submit feedback: ${feedbackError.message}`
+        error: feedbackError.message || feedbackError.hint || 'Failed to submit feedback. The feedback table may not exist yet.',
+        details: feedbackError.details,
+        code: feedbackError.code
       });
     }
 
