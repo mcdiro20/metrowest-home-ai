@@ -133,12 +133,12 @@ export default async function handler(req, res) {
         {
           input: {
             control_image: processedImageData,
-            prompt: `architectural renovation: ${layoutPreservingPrompt}`,
-            guidance: 7.5,
-            steps: 30,
-            safety_tolerance: 2,
+            prompt: `stunning architectural renovation: ${layoutPreservingPrompt}, high-end renovation, dramatic transformation, luxury finishes, professional architectural photography, magazine quality`,
+            guidance: 15,
+            steps: 35,
+            safety_tolerance: 5,
             output_format: "jpg",
-            output_quality: 90
+            output_quality: 95
           }
         }
       );
@@ -239,9 +239,9 @@ export default async function handler(req, res) {
 
 // Create layout-preserving prompt focused on preserving structure with luxury appliances
 function createLayoutPreservingPrompt(selectedStyle, roomType) {
-  const basePrompt = `professional architectural renovation of this exact ${roomType} maintaining identical layout, room dimensions, island placement, window positions, cabinet arrangement, and camera perspective`;
+  const basePrompt = `complete luxury renovation of this ${roomType} - dramatically upgrade all surfaces, appliances, and finishes while maintaining the room's basic layout and proportions`;
 
-  // High-end appliance specifications - Fixed: Moved into individual variables
+  // High-end appliance specifications
   const luxuryRange = "professional Wolf or Thermador dual-fuel range (36-48 inches) with stainless steel or matte black finish, brass accent knobs";
   const luxuryRefrigerator = "integrated Sub-Zero or Thermador refrigerator with custom cabinet panels, seamlessly built into cabinetry";
   const luxuryDishwasher = "panel-ready Miele or Bosch Benchmark dishwasher with hidden controls, blended into cabinetry";
@@ -252,22 +252,22 @@ function createLayoutPreservingPrompt(selectedStyle, roomType) {
   const luxuryExtras = "pot filler over range, Quooker boiling water tap, touchless faucets, integrated appliance garage";
 
   const stylePrompts = {
-    'modern-minimalist': `Transform ONLY the cabinet finishes to sleek white lacquer with handleless design, update countertops to white quartz, add LED under-cabinet lighting. Upgrade appliances to: ${luxuryRange}, ${luxuryRefrigerator}, ${luxuryDishwasher}, minimalist hidden ${luxuryHood}, ${luxuryCoffee}, ${luxuryExtras}. Keep everything else identical including layout, island size, window placement, and room dimensions.`,
-    
-    'farmhouse-chic': `Transform ONLY the cabinet finishes to white shaker style with traditional brass hardware, update countertops to marble with farmhouse sink. Upgrade appliances to: professional ${luxuryRange} with brass accents, ${luxuryRefrigerator}, ${luxuryDishwasher}, custom wood-clad or brass ${luxuryHood}, ${luxuryOvens}, ${luxuryExtras}. Keep everything else identical including layout, island size, window placement, and room dimensions.`,
-    
-    'transitional': `Transform ONLY the cabinet finishes to warm neutral raised panels with brushed nickel hardware, update countertops to granite. Upgrade appliances to: ${luxuryRange}, ${luxuryRefrigerator}, ${luxuryDishwasher}, architectural ${luxuryHood}, ${luxuryOvens}, ${luxuryWine}, ${luxuryExtras}. Keep everything else identical including layout, island size, window placement, and room dimensions.`,
-    
-    'coastal-new-england': `Transform ONLY the cabinet finishes to white with beadboard details and chrome hardware, update countertops to white marble. Upgrade appliances to: ${luxuryRange} with chrome accents, ${luxuryRefrigerator}, ${luxuryDishwasher}, white or stainless ${luxuryHood}, ${luxuryCoffee}, ${luxuryExtras}. Keep everything else identical including layout, island size, window placement, and room dimensions.`,
-    
-    'contemporary-luxe': `Transform ONLY the cabinet finishes to high-gloss dark lacquer with gold hardware, update countertops to dramatic marble. Upgrade appliances to: matte black ${luxuryRange} with gold accents, ${luxuryRefrigerator}, ${luxuryDishwasher}, statement black or brass ${luxuryHood}, ${luxuryCoffee}, ${luxuryOvens}, ${luxuryWine}, ${luxuryExtras}. Keep everything else identical including layout, island size, window placement, and room dimensions.`,
-    
-    'eclectic-bohemian': `Transform ONLY the cabinet finishes to mixed colorful cabinets with brass hardware, add patterned backsplash. Upgrade appliances to: colorful La Cornue or BlueStar range with custom enamel finish, ${luxuryRefrigerator}, ${luxuryDishwasher}, artistic custom ${luxuryHood}, ${luxuryCoffee}, ${luxuryExtras}. Keep everything else identical including layout, island size, window placement, and room dimensions.`
+    'modern-minimalist': `Replace ALL cabinets with sleek white lacquer handleless cabinets, install dramatic white quartz waterfall countertops, add stunning geometric tile backsplash, recessed LED lighting throughout. Install: ${luxuryRange}, ${luxuryRefrigerator}, ${luxuryDishwasher}, minimalist hidden ${luxuryHood}, ${luxuryCoffee}, ${luxuryExtras}. Add large format tile flooring, pendant lights, and luxury fixtures.`,
+
+    'farmhouse-chic': `Replace ALL cabinets with white shaker style cabinets with traditional brass hardware, install beautiful marble countertops and farmhouse sink, add subway tile or decorative backsplash. Install: professional ${luxuryRange} with brass accents, ${luxuryRefrigerator}, ${luxuryDishwasher}, custom wood-clad or brass ${luxuryHood}, ${luxuryOvens}, ${luxuryExtras}. Add wood or tile flooring, pendant lights.`,
+
+    'transitional': `Replace ALL cabinets with warm neutral raised panel cabinets with brushed nickel hardware, install rich granite or quartz countertops, add designer tile backsplash. Install: ${luxuryRange}, ${luxuryRefrigerator}, ${luxuryDishwasher}, architectural ${luxuryHood}, ${luxuryOvens}, ${luxuryWine}, ${luxuryExtras}. Add luxury vinyl or hardwood flooring, modern fixtures.`,
+
+    'coastal-new-england': `Replace ALL cabinets with crisp white cabinets with beadboard details and chrome hardware, install pristine white marble countertops, add classic subway tile backsplash. Install: ${luxuryRange} with chrome accents, ${luxuryRefrigerator}, ${luxuryDishwasher}, white or stainless ${luxuryHood}, ${luxuryCoffee}, ${luxuryExtras}. Add light oak or white flooring, nautical pendant lights.`,
+
+    'contemporary-luxe': `Replace ALL cabinets with high-gloss dark lacquer or walnut cabinets with gold hardware, install dramatic veined marble countertops, add stunning large-format tile backsplash. Install: matte black ${luxuryRange} with gold accents, ${luxuryRefrigerator}, ${luxuryDishwasher}, statement black or brass ${luxuryHood}, ${luxuryCoffee}, ${luxuryOvens}, ${luxuryWine}, ${luxuryExtras}. Add large format tile, designer pendant lights.`,
+
+    'eclectic-bohemian': `Replace cabinets with mixed colorful or two-tone cabinets with brass hardware, add vibrant patterned backsplash tile. Install: colorful La Cornue or BlueStar range with custom enamel finish, ${luxuryRefrigerator}, ${luxuryDishwasher}, artistic custom ${luxuryHood}, ${luxuryCoffee}, ${luxuryExtras}. Add patterned tile flooring, unique pendant lights, plants.`
   };
 
   const selectedStylePrompt = stylePrompts[selectedStyle?.id] || stylePrompts['modern-minimalist'];
-  
-  return `${basePrompt}. ${selectedStylePrompt} CRITICAL: This must look like the same kitchen with only surface finishes and appliances upgraded to luxury brands. All appliances should have flush-mount installation, LED lighting details, and premium finishes.`;
+
+  return `${basePrompt}. ${selectedStylePrompt} Make this a DRAMATIC, magazine-worthy transformation with all new surfaces, luxury appliances, and high-end finishes. The space should look completely renovated and upgraded to luxury standards.`;
 }
 
 // Enhanced demo images for fallback
