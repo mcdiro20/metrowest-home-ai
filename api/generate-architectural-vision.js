@@ -50,7 +50,7 @@ export default async function handler(req, res) {
     const architecturalQuality = '(architectural photography:1.4), (professional interior design:1.3), (luxury renovation:1.2), photorealistic, sharp focus, perfect lighting, premium materials, high-end finishes, museum quality rendering, crystal clear details, architectural digest photography';
 
     // STRUCTURE PRESERVATION FOR ARCHITECTURAL VISION ENGINE
-    const structuralPreservation = 'maintain exact room dimensions, preserve original room size, keep same ceiling height, maintain wall positions, preserve window locations and sizes, keep door placements, same room footprint, identical spatial layout';
+    const structuralPreservation = 'Edit this kitchen image: Keep the EXACT same room size, ceiling height, and wall layout. Do NOT add an island, do NOT enlarge the window, do NOT expand the space. Only update';
 
     // ARCHITECTURAL VISION ENGINE NEGATIVE PROMPTS
     const architecturalNegatives = 'cartoon, 3d render, sketch, drawing, amateur photography, phone camera, instagram filter, oversaturated, distorted architecture, impossible geometry, floating elements, structural damage, unrealistic proportions, cheap materials, builder grade finishes, enlarged room, expanded space, added windows, new walls, different room size, loft conversion, open concept, removed walls, bigger kitchen, added island, expanded ceiling height, warehouse space, commercial space';
@@ -58,30 +58,22 @@ export default async function handler(req, res) {
     const selectedStylePrompt = architecturalPrompts[selectedStyle.name] || architecturalPrompts['Modern Minimalist'];
     
     // ARCHITECTURAL VISION ENGINE PROMPT CONSTRUCTION
-    const customAddition = customPrompt ? `, ${customPrompt}` : '';
-    const fullPrompt = `${structuralPreservation}, ${selectedStylePrompt}${customAddition}, ${architecturalQuality}`;
+    const customAddition = customPrompt ? ` ${customPrompt}` : '';
+    const fullPrompt = `${structuralPreservation} the cabinet style to ${selectedStyle.name.toLowerCase()}, update countertops and backsplash.${customAddition} Maintain all original architectural elements and room proportions.`;
 
     console.log('🏛️ Using Architectural Vision Engine pipeline...');
     console.log('📏 Prompt optimized for architectural quality');
 
-    // ARCHITECTURAL VISION ENGINE PARAMETERS
+    // ARCHITECTURAL VISION ENGINE PARAMETERS FOR NANO BANANA
     const architecturalParams = {
-      image: imageData,
       prompt: fullPrompt,
-      negative_prompt: architecturalNegatives,
-      strength: 0.25, // Very low strength to preserve original room structure
-      guidance_scale: 7.5, // Balanced to maintain structure while applying style
-      num_inference_steps: 40, // More steps for architectural quality
-      scheduler: "DPMSolverMultistep",
-      width: 1024,
-      height: 768,
-      ...(seed && { seed: parseInt(seed) })
+      image_input: [imageData],
+      output_format: "jpg"
     };
     
     console.log('🎯 Architectural Vision Engine parameters:');
-    console.log('- Strength (structure preservation):', architecturalParams.strength);
-    console.log('- Guidance scale:', architecturalParams.guidance_scale);
-    console.log('- Steps:', architecturalParams.num_inference_steps);
+    console.log('- Model: Google Nano Banana (Gemini 2.5 Flash)');
+    console.log('- Prompt:', fullPrompt);
 
     let generationResponse;
     
