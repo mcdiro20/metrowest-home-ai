@@ -90,26 +90,26 @@ export default async function handler(req, res) {
       console.log('🏛️ Attempting Architectural Vision Engine rendering...');
       
       try {
-        // Primary: Use a high-quality architectural model
+        // Primary: Use Google Nano Banana (Gemini 2.5 Flash Image) for architectural quality
         generationResponse = await replicate.run(
-          "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+          "google/nano-banana:1b7b945e8f7edf7a034eba6cb2c20f2ab5dc7d090eea1c616e96da947be76aee",
           { input: architecturalParams }
         );
         console.log('✅ Architectural Vision Engine rendering successful');
         
       } catch (primaryError) {
-        console.log('🔄 Trying SDXL for Architectural Vision Engine...');
-        console.log('❌ Primary architectural model error:', primaryError.message);
-        
+        console.log('🔄 Trying fallback model for Architectural Vision Engine...');
+        console.log('❌ Nano Banana error:', primaryError.message);
+
         // Fallback: SDXL with architectural focus
         const sdxlArchitecturalParams = {
           ...architecturalParams,
           prompt: `architectural interior photography, luxury ${selectedStyle.name.toLowerCase()} renovation, ${architecturalQuality}`,
           scheduler: "K_EULER"
         };
-        
+
         generationResponse = await replicate.run(
-          "stability-ai/stable-diffusion:ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4",
+          "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
           { input: sdxlArchitecturalParams }
         );
         console.log('✅ SDXL Architectural Vision Engine successful');
