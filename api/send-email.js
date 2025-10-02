@@ -134,10 +134,10 @@ export default async function handler(req, res) {
             .select()
             .single();
           if (updateError) {
-            console.error('Failed to update existing lead:', updateError);
+            console.error('❌ Failed to update existing lead:', updateError);
           } else {
             leadResult = data;
-            console.log('✅ Updated existing lead with new scores');
+            console.log('✅ Updated existing lead:', data.id);
           }
         } else {
           // Insert new lead
@@ -147,15 +147,22 @@ export default async function handler(req, res) {
             .select()
             .single();
           if (insertError) {
-            console.error('Failed to insert new lead:', insertError);
+            console.error('❌ Failed to insert new lead:', insertError);
+            console.error('   Details:', insertError.details);
+            console.error('   Hint:', insertError.hint);
           } else {
             leadResult = data;
-            console.log('✅ Created new lead with calculated scores');
+            console.log('✅ Created new lead:', data.id);
           }
         }
 
         // Store lead ID for feedback link
-        req.leadId = leadResult?.id;
+        if (leadResult?.id) {
+          req.leadId = leadResult.id;
+          console.log('📝 Lead ID stored for email:', req.leadId);
+        } else {
+          console.error('⚠️ No lead ID available - lead creation may have failed');
+        }
         
         console.log('📊 Lead scores:', {
           engagement: scores.engagement_score,
@@ -219,7 +226,11 @@ export default async function handler(req, res) {
       ? `https://${process.env.VERCEL_URL}`
       : process.env.BASE_URL || 'http://localhost:5173';
 
-    const leadId = req.leadId || 'unknown';
+    const leadId = req.leadId;
+
+    if (!leadId) {
+      console.error('⚠️ WARNING: No lead ID available for email. Feedback links will not work properly!');
+    }
 
     const emailResult = await resend.emails.send({
       from: 'MetroWest Home AI <onboarding@resend.dev>',
@@ -249,6 +260,7 @@ export default async function handler(req, res) {
             </ul>
           </div>
 
+          ${leadId ? `
           <div style="background: #fff; border: 2px solid #e5e7eb; padding: 20px; border-radius: 10px; margin: 30px 0; text-align: center;">
             <h3 style="color: #333; margin-top: 0; margin-bottom: 15px;">How was your experience?</h3>
             <p style="color: #666; margin-bottom: 20px;">Your feedback helps us improve!</p>
@@ -268,6 +280,7 @@ export default async function handler(req, res) {
               <a href="${baseUrl}/feedback?lead_id=${leadId}&rating=1" style="text-decoration: none; font-size: 32px; padding: 8px;">⭐</a>
             </div>
           </div>
+          ` : ''}
 
           <div style="text-align: center; margin-top: 30px;">
             <p style="color: #666;">Thanks for using MetroWest Home AI!</p>
