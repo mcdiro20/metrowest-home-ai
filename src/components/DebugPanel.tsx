@@ -445,6 +445,37 @@ const DebugPanel: React.FC = () => {
     setIsLoading(false);
   };
 
+  const fixFeedbackRLS = async () => {
+    setIsLoading(true);
+    try {
+      console.log('🔧 Fixing feedback RLS policies...');
+
+      const response = await fetch('/api/apply-feedback-migration', {
+        method: 'POST'
+      });
+
+      const result = await response.json();
+      console.log('📋 RLS fix result:', result);
+
+      setDebugResults({
+        success: result.success,
+        message: result.message || 'RLS policies need manual update',
+        type: 'feedback-rls-fix',
+        details: result
+      });
+
+    } catch (error) {
+      console.error('💥 RLS fix error:', error);
+      setDebugResults({
+        success: false,
+        message: `RLS fix failed: ${error.message}`,
+        type: 'feedback-rls-fix',
+        error: error.message
+      });
+    }
+    setIsLoading(false);
+  };
+
   const testDirectSupabase = async () => {
     setIsLoading(true);
     try {
@@ -612,7 +643,16 @@ const DebugPanel: React.FC = () => {
             <CheckCircle className="w-4 h-4" />
             {isLoading ? 'Checking...' : 'Setup Feedback Table'}
           </button>
-          
+
+          <button
+            onClick={fixFeedbackRLS}
+            disabled={isLoading}
+            className="w-full flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded text-sm transition-colors disabled:opacity-50"
+          >
+            <AlertCircle className="w-4 h-4" />
+            {isLoading ? 'Fixing...' : 'Fix Feedback Permissions (RLS)'}
+          </button>
+
           <button
             onClick={testDirectSupabase}
             disabled={isLoading}
@@ -759,6 +799,57 @@ const DebugPanel: React.FC = () => {
                     </div>
                     <div className="text-gray-600 mt-1">
                       Your feedback system is fully set up and working.
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {debugResults.type === 'feedback-rls-fix' && debugResults.details && (
+              <div className="text-xs text-gray-500 space-y-2 mt-3">
+                {debugResults.details.needsManualSetup && debugResults.details.sql && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+                    <div className="font-semibold text-gray-900 mb-2">🔒 Fix RLS Permissions:</div>
+                    {debugResults.details.instructions && (
+                      <div className="space-y-1 mb-3 text-gray-700">
+                        <div>1. {debugResults.details.instructions.step1}</div>
+                        <div>2. {debugResults.details.instructions.step2}</div>
+                        <div>3. {debugResults.details.instructions.step3}</div>
+                        <div>4. {debugResults.details.instructions.step4}</div>
+                      </div>
+                    )}
+                    <div className="mt-3">
+                      <div className="font-semibold mb-1">SQL to run:</div>
+                      <textarea
+                        readOnly
+                        value={debugResults.details.sql}
+                        className="w-full h-32 p-2 text-xs font-mono bg-gray-900 text-green-400 rounded overflow-auto"
+                        onClick={(e) => {
+                          e.currentTarget.select();
+                          navigator.clipboard.writeText(debugResults.details.sql);
+                        }}
+                      />
+                      <div className="text-xs text-gray-600 mt-1">👆 Click to select and copy</div>
+                    </div>
+                    {debugResults.details.dashboardUrl && (
+                      <a
+                        href={debugResults.details.dashboardUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block mt-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                      >
+                        Open Supabase SQL Editor
+                      </a>
+                    )}
+                  </div>
+                )}
+                {debugResults.success === true && (
+                  <div className="bg-green-50 border border-green-200 rounded p-3">
+                    <div className="text-green-700 font-semibold">
+                      ✅ RLS policies fixed!
+                    </div>
+                    <div className="text-gray-600 mt-1">
+                      Feedback submissions should now work properly.
                     </div>
                   </div>
                 )}
