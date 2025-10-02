@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { CircleAlert as AlertCircle, ArrowLeft, Users, Briefcase, LayoutDashboard, Mail, Phone, MapPin, Calendar, DollarSign, TrendingUp, Star, Trash2, CreditCard as Edit, RefreshCcw, UserPlus, Filter } from 'lucide-react';
+import { CircleAlert as AlertCircle, ArrowLeft, Users, Briefcase, LayoutDashboard, Mail, Phone, MapPin, Calendar, DollarSign, TrendingUp, Star, Trash2, CreditCard as Edit, RefreshCcw, UserPlus, ListFilter as Filter } from 'lucide-react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import type { Lead, Profile, Contractor, LeadAssignment } from '../lib/supabase';
 import AddContractorModal from './AddContractorModal';
