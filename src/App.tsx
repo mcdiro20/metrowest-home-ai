@@ -32,17 +32,15 @@ function App() {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
-        AnalyticsService.trackEvent('login');
-      }
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
+      // Only track actual sign-in events, not token refreshes or initial sessions
+      if (event === 'SIGNED_IN' && session?.user) {
         AnalyticsService.trackEvent('login');
       }
     });
