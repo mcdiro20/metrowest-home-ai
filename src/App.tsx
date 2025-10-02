@@ -9,6 +9,7 @@ import InspirationFeed from './components/InspirationFeed';
 import HowItWorksSection from './components/HowItWorksSection';
 import WhyChooseUsSection from './components/WhyChooseUsSection';
 import Footer from './components/Footer';
+import DebugPanel from './components/DebugPanel';
 import TownLandingPage from './pages/TownLandingPage';
 import AdminPanel from './components/AdminPanel';
 import AdminDashboard from './components/AdminDashboard';
@@ -140,7 +141,9 @@ function App() {
             <div id="why-choose-us">
               <WhyChooseUsSection />
             </div>
-            
+
+            <DebugPanel />
+
             <Footer />
           </div>
         } />
