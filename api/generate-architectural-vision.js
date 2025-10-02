@@ -92,7 +92,7 @@ export default async function handler(req, res) {
       try {
         // Primary: Use a high-quality architectural model
         generationResponse = await replicate.run(
-          "google/nano-banana",
+          "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
           { input: architecturalParams }
         );
         console.log('✅ Architectural Vision Engine rendering successful');
@@ -109,7 +109,7 @@ export default async function handler(req, res) {
         };
         
         generationResponse = await replicate.run(
-          "google/nano-banana",
+          "stability-ai/stable-diffusion:ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4",
           { input: sdxlArchitecturalParams }
         );
         console.log('✅ SDXL Architectural Vision Engine successful');
