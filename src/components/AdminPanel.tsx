@@ -355,7 +355,7 @@ const AdminPanel: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div>Logins: {userItem.login_count}</div>
-                    <div>AI Renders: {userItem.ai_renderings_count}</div>
+                    <div>Images Created: {userItem.ai_renderings_count}</div>
                     <div>Time on Site: {Math.round((userItem.total_time_on_site_ms || 0) / 60000)} min</div>
                     <div>Last Login: {userItem.last_login_at ? new Date(userItem.last_login_at).toLocaleDateString() : 'N/A'}</div>
                   </td>
