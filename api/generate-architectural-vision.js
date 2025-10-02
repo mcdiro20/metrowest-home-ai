@@ -50,10 +50,10 @@ export default async function handler(req, res) {
     const architecturalQuality = '(architectural photography:1.4), (professional interior design:1.3), (luxury renovation:1.2), photorealistic, sharp focus, perfect lighting, premium materials, high-end finishes, museum quality rendering, crystal clear details, architectural digest photography';
 
     // STRUCTURE PRESERVATION FOR ARCHITECTURAL VISION ENGINE
-    const structuralPreservation = '(preserve room layout:1.3), (maintain architectural integrity:1.2), (keep window placement:1.1), (preserve spatial proportions:1.1)';
+    const structuralPreservation = 'maintain exact room dimensions, preserve original room size, keep same ceiling height, maintain wall positions, preserve window locations and sizes, keep door placements, same room footprint, identical spatial layout';
 
     // ARCHITECTURAL VISION ENGINE NEGATIVE PROMPTS
-    const architecturalNegatives = 'cartoon, 3d render, sketch, drawing, amateur photography, phone camera, instagram filter, oversaturated, distorted architecture, impossible geometry, floating elements, structural damage, unrealistic proportions, cheap materials, builder grade finishes';
+    const architecturalNegatives = 'cartoon, 3d render, sketch, drawing, amateur photography, phone camera, instagram filter, oversaturated, distorted architecture, impossible geometry, floating elements, structural damage, unrealistic proportions, cheap materials, builder grade finishes, enlarged room, expanded space, added windows, new walls, different room size, loft conversion, open concept, removed walls, bigger kitchen, added island, expanded ceiling height, warehouse space, commercial space';
 
     const selectedStylePrompt = architecturalPrompts[selectedStyle.name] || architecturalPrompts['Modern Minimalist'];
     
@@ -69,8 +69,8 @@ export default async function handler(req, res) {
       image: imageData,
       prompt: fullPrompt,
       negative_prompt: architecturalNegatives,
-      strength: 0.35, // Lower strength for better structure preservation
-      guidance_scale: 10.0, // Higher for better architectural prompt adherence
+      strength: 0.25, // Very low strength to preserve original room structure
+      guidance_scale: 7.5, // Balanced to maintain structure while applying style
       num_inference_steps: 40, // More steps for architectural quality
       scheduler: "DPMSolverMultistep",
       width: 1024,
