@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { CircleAlert as AlertCircle, ArrowLeft, Users, Briefcase, LayoutDashboard, Mail, Phone, MapPin, Calendar, DollarSign, TrendingUp, Star, Trash2, CreditCard as Edit, RefreshCcw, UserPlus, ListFilter as Filter } from 'lucide-react';
+import { CircleAlert as AlertCircle, ArrowLeft, Users, Briefcase, LayoutDashboard, Mail, Phone, MapPin, Calendar, DollarSign, TrendingUp, Star, Trash2, CreditCard as Edit, RefreshCcw, UserPlus, ListFilter as Filter, MessageSquare } from 'lucide-react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import type { Lead, Profile, Contractor, LeadAssignment } from '../lib/supabase';
 import AddContractorModal from './AddContractorModal';
@@ -15,6 +15,8 @@ const AdminPanel: React.FC = () => {
   const [usersData, setUsersData] = useState<Profile[]>([]);
   const [contractors, setContractors] = useState<Contractor[]>([]);
   const [assignments, setAssignments] = useState<LeadAssignment[]>([]);
+  const [feedback, setFeedback] = useState<any[]>([]);
+  const [feedbackStats, setFeedbackStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddContractorModal, setShowAddContractorModal] = useState(false);
@@ -126,6 +128,15 @@ const AdminPanel: React.FC = () => {
           const assignmentsResult = await response.json();
           if (!assignmentsResult.success) throw new Error(assignmentsResult.error);
           setAssignments(assignmentsResult.assignments);
+          break;
+        case 'feedback':
+          response = await fetch(`/api/admin/get-all-feedback?${dateParams}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const feedbackResult = await response.json();
+          if (!feedbackResult.success) throw new Error(feedbackResult.error);
+          setFeedback(feedbackResult.feedback);
+          setFeedbackStats(feedbackResult.stats);
           break;
         default:
           break;
@@ -542,6 +553,122 @@ const AdminPanel: React.FC = () => {
     </div>
   );
 
+  const renderFeedbackTable = () => (
+    <div className="space-y-6">
+      {feedbackStats && (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h3 className="text-xl font-semibold text-gray-900 mb-4">Feedback Overview</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="border p-4 rounded-lg text-center">
+              <p className="text-3xl font-bold text-blue-600">{feedbackStats.totalFeedback}</p>
+              <p className="text-gray-500">Total Feedback</p>
+            </div>
+            <div className="border p-4 rounded-lg text-center">
+              <p className="text-3xl font-bold text-yellow-600">{feedbackStats.avgRating}</p>
+              <p className="text-gray-500">Average Rating</p>
+            </div>
+            <div className="border p-4 rounded-lg text-center">
+              <p className="text-3xl font-bold text-green-600">{feedbackStats.withComments}</p>
+              <p className="text-gray-500">With Comments</p>
+            </div>
+            <div className="border p-4 rounded-lg text-center">
+              <div className="flex justify-center gap-1 mb-2">
+                {[5, 4, 3, 2, 1].map(rating => (
+                  <div key={rating} className="text-center">
+                    <Star className={`w-4 h-4 ${rating <= Math.round(feedbackStats.avgRating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-gray-500">Rating Breakdown</p>
+            </div>
+          </div>
+          <div className="mt-6 grid grid-cols-5 gap-2">
+            {[5, 4, 3, 2, 1].map(rating => (
+              <div key={rating} className="text-center">
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <span className="text-sm font-medium">{rating}</span>
+                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                </div>
+                <div className="text-2xl font-bold text-gray-900">{feedbackStats.ratings[rating] || 0}</div>
+                <div className="text-xs text-gray-500">responses</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Customer Feedback ({feedback.length})</h3>
+        </div>
+        {isLoading ? (
+          <div className="p-6 text-center">Loading feedback...</div>
+        ) : error ? (
+          <div className="p-6 text-center text-red-600">{error}</div>
+        ) : feedback.length === 0 ? (
+          <div className="p-6 text-center text-gray-600">No feedback received yet.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comment</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {feedback.map((item) => (
+                  <tr key={item.id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{(item as any).leads?.name || 'N/A'}</div>
+                      <div className="text-sm text-gray-500">{(item as any).leads?.email || 'N/A'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{(item as any).leads?.room_type || 'N/A'}</div>
+                      <div className="text-sm text-gray-500">{(item as any).leads?.style || 'N/A'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-4 h-4 ${
+                              star <= item.rating
+                                ? 'fill-yellow-400 text-yellow-400'
+                                : 'text-gray-300'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">{item.rating}/5</div>
+                    </td>
+                    <td className="px-6 py-4 max-w-xs">
+                      <div className="text-sm text-gray-900 line-clamp-3">
+                        {item.comment || <span className="text-gray-400 italic">No comment</span>}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                        {item.source}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(item.created_at).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   const renderDashboard = () => {
     return (
       <div className="space-y-8">
@@ -725,11 +852,22 @@ const AdminPanel: React.FC = () => {
                 <TrendingUp className="w-5 h-5" />
                 Assignments
               </button>
+              <button
+                onClick={() => setActiveTab('feedback')}
+                className={`${
+                  activeTab === 'feedback'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+              >
+                <MessageSquare className="w-5 h-5" />
+                Feedback
+              </button>
             </nav>
           </div>
         </div>
 
-        {(activeTab === 'dashboard' || activeTab === 'leads' || activeTab === 'users' || activeTab === 'assignments') && (
+        {(activeTab === 'dashboard' || activeTab === 'leads' || activeTab === 'users' || activeTab === 'assignments' || activeTab === 'feedback') && (
           <div className="mt-6 mb-4 bg-white rounded-lg shadow-sm p-4 flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-gray-500" />
@@ -820,6 +958,7 @@ const AdminPanel: React.FC = () => {
         {activeTab === 'users' && renderUsersTable()}
         {activeTab === 'contractors' && renderContractorsTable()}
         {activeTab === 'assignments' && renderAssignmentsTable()}
+        {activeTab === 'feedback' && renderFeedbackTable()}
       </div>
 
       <AddContractorModal

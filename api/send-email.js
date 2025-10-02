@@ -153,6 +153,9 @@ export default async function handler(req, res) {
             console.log('✅ Created new lead with calculated scores');
           }
         }
+
+        // Store lead ID for feedback link
+        req.leadId = leadResult?.id;
         
         console.log('📊 Lead scores:', {
           engagement: scores.engagement_score,
@@ -212,6 +215,12 @@ export default async function handler(req, res) {
         console.log('Could not fetch after image for attachment');
       }
     }
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.BASE_URL || 'http://localhost:5173';
+
+    const leadId = req.leadId || 'unknown';
+
     const emailResult = await resend.emails.send({
       from: 'MetroWest Home AI <onboarding@resend.dev>',
       to: [email],
@@ -223,14 +232,14 @@ export default async function handler(req, res) {
             <h1 style="color: #2563eb; margin-bottom: 10px;">Your AI Design is Ready! 🎉</h1>
             <p style="color: #666; font-size: 18px;">Your ${roomType || 'space'} transformation with ${selectedStyle || 'custom'} style is complete!</p>
           </div>
-          
+
           ${attachments.length > 0 ? `
           <div style="margin: 30px 0;">
             <h2 style="color: #333; text-align: center;">Your Before & After Images</h2>
             <p style="color: #666; text-align: center;">See the attached high-resolution images of your transformation!</p>
           </div>
           ` : ''}
-          
+
           <div style="background: #f8fafc; padding: 20px; border-radius: 10px; margin: 20px 0;">
             <h3 style="color: #333; margin-top: 0;">What's Next?</h3>
             <ul style="color: #666; line-height: 1.6;">
@@ -239,7 +248,27 @@ export default async function handler(req, res) {
               <li>Ready to make it real? Connect with local MetroWest contractors</li>
             </ul>
           </div>
-          
+
+          <div style="background: #fff; border: 2px solid #e5e7eb; padding: 20px; border-radius: 10px; margin: 30px 0; text-align: center;">
+            <h3 style="color: #333; margin-top: 0; margin-bottom: 15px;">How was your experience?</h3>
+            <p style="color: #666; margin-bottom: 20px;">Your feedback helps us improve!</p>
+            <div style="display: flex; justify-content: center; gap: 10px;">
+              <a href="${baseUrl}/feedback?lead_id=${leadId}&rating=5" style="text-decoration: none; font-size: 32px; padding: 8px; transition: transform 0.2s;">⭐⭐⭐⭐⭐</a>
+            </div>
+            <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
+              <a href="${baseUrl}/feedback?lead_id=${leadId}&rating=4" style="text-decoration: none; font-size: 32px; padding: 8px;">⭐⭐⭐⭐</a>
+            </div>
+            <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
+              <a href="${baseUrl}/feedback?lead_id=${leadId}&rating=3" style="text-decoration: none; font-size: 32px; padding: 8px;">⭐⭐⭐</a>
+            </div>
+            <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
+              <a href="${baseUrl}/feedback?lead_id=${leadId}&rating=2" style="text-decoration: none; font-size: 32px; padding: 8px;">⭐⭐</a>
+            </div>
+            <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
+              <a href="${baseUrl}/feedback?lead_id=${leadId}&rating=1" style="text-decoration: none; font-size: 32px; padding: 8px;">⭐</a>
+            </div>
+          </div>
+
           <div style="text-align: center; margin-top: 30px;">
             <p style="color: #666;">Thanks for using MetroWest Home AI!</p>
             <p style="color: #999; font-size: 14px;">Exclusively serving MetroWest Massachusetts homeowners</p>

@@ -14,6 +14,7 @@ import AdminPanel from './components/AdminPanel';
 import AdminDashboard from './components/AdminDashboard';
 import ContractorDashboard from './pages/ContractorDashboard';
 import LeadDossierDemo from './components/LeadDossierDemo';
+import FeedbackPage from './pages/FeedbackPage';
 import { supabase } from './lib/supabase';
 import { AnalyticsService } from './services/analyticsService';
 import type { User } from '@supabase/supabase-js';
@@ -88,12 +89,16 @@ function App() {
             <ContractorDashboard />
           } 
         />
-        <Route 
-          path="/lead-dossier-demo" 
-          element={<LeadDossierDemo />} 
+        <Route
+          path="/lead-dossier-demo"
+          element={<LeadDossierDemo />}
         />
-        <Route 
-          path="/:townSlug-ma-ai-home-renovations" 
+        <Route
+          path="/feedback"
+          element={<FeedbackPage />}
+        />
+        <Route
+          path="/:townSlug-ma-ai-home-renovations"
           element={
             <TownLandingPage 
               user={user}
