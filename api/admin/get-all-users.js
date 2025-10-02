@@ -71,8 +71,23 @@ export default async function handler(req, res) {
 
     console.log('✅ Admin verification passed');
 
+    // Parse date filtering parameters
+    const { dateRange, startDate, endDate } = req.query;
+    let dateFilter = null;
+
+    if (dateRange && dateRange !== 'all') {
+      const now = new Date();
+      const daysAgo = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : dateRange === '90d' ? 90 : 0;
+      if (daysAgo > 0) {
+        const filterDate = new Date(now.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
+        dateFilter = filterDate.toISOString();
+      }
+    } else if (startDate || endDate) {
+      // Custom date range filtering will be applied after fetching
+    }
+
     // Fetch all user profiles with related lead data
-    const { data: users, error: usersError } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('profiles')
       .select(`
         *,
@@ -85,14 +100,32 @@ export default async function handler(req, res) {
           probability_to_close_score,
           created_at
         )
-      `)
-      .order('created_at', { ascending: false });
+      `);
+
+    if (dateFilter) {
+      query = query.gte('created_at', dateFilter);
+    }
+
+    query = query.order('created_at', { ascending: false });
+
+    const { data: usersData, error: usersError } = await query;
 
     if (usersError) {
       console.error('❌ Failed to fetch users:', usersError);
       return res.status(500).json({
         success: false,
         error: `Failed to fetch users: ${usersError.message}`
+      });
+    }
+
+    // Apply custom date range filtering if specified
+    let users = usersData || [];
+    if (startDate || endDate) {
+      users = users.filter(user => {
+        const userDate = new Date(user.created_at);
+        if (startDate && userDate < new Date(startDate)) return false;
+        if (endDate && userDate > new Date(endDate + 'T23:59:59')) return false;
+        return true;
       });
     }
 

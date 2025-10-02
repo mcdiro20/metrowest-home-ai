@@ -71,8 +71,23 @@ export default async function handler(req, res) {
 
     console.log('✅ Admin verification passed');
 
+    // Parse date filtering parameters
+    const { dateRange, startDate, endDate } = req.query;
+    let dateFilter = null;
+
+    if (dateRange && dateRange !== 'all') {
+      const now = new Date();
+      const daysAgo = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : dateRange === '90d' ? 90 : 0;
+      if (daysAgo > 0) {
+        const filterDate = new Date(now.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
+        dateFilter = filterDate.toISOString();
+      }
+    } else if (startDate || endDate) {
+      // Custom date range filtering will be applied after fetching
+    }
+
     // Fetch all leads with related data
-    const { data: leads, error: leadsError } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('leads')
       .select(`
         *,
@@ -90,14 +105,32 @@ export default async function handler(req, res) {
           name,
           email
         )
-      `)
-      .order('probability_to_close_score', { ascending: false, nullsLast: true });
+      `);
+
+    if (dateFilter) {
+      query = query.gte('created_at', dateFilter);
+    }
+
+    query = query.order('probability_to_close_score', { ascending: false, nullsLast: true });
+
+    const { data: leadsData, error: leadsError } = await query;
 
     if (leadsError) {
       console.error('❌ Failed to fetch leads:', leadsError);
       return res.status(500).json({
         success: false,
         error: `Failed to fetch leads: ${leadsError.message}`
+      });
+    }
+
+    // Apply custom date range filtering if specified
+    let leads = leadsData || [];
+    if (startDate || endDate) {
+      leads = leads.filter(lead => {
+        const leadDate = new Date(lead.created_at);
+        if (startDate && leadDate < new Date(startDate)) return false;
+        if (endDate && leadDate > new Date(endDate + 'T23:59:59')) return false;
+        return true;
       });
     }
 

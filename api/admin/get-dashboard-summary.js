@@ -71,31 +71,58 @@ export default async function handler(req, res) {
 
     console.log('✅ Admin verification passed, fetching dashboard summary data');
 
+    // Parse date filtering parameters
+    const { dateRange, startDate, endDate } = req.query;
+    let dateFilter = null;
+
+    if (dateRange && dateRange !== 'all') {
+      const now = new Date();
+      const daysAgo = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : dateRange === '90d' ? 90 : 0;
+      if (daysAgo > 0) {
+        const filterDate = new Date(now.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
+        dateFilter = filterDate.toISOString();
+      }
+    }
+
+    // Build queries with date filtering
+    let leadsQuery = supabaseAdmin.from('leads').select('status, probability_to_close_score, created_at');
+    let usersQuery = supabaseAdmin.from('profiles').select('role, created_at');
+
+    if (dateFilter) {
+      leadsQuery = leadsQuery.gte('created_at', dateFilter);
+      usersQuery = usersQuery.gte('created_at', dateFilter);
+    }
+
     // Fetch only the essential data for dashboard summary (not full records)
     const [leadsResponse, usersResponse, contractorsResponse] = await Promise.all([
-      // Fetch leads summary data
-      supabaseAdmin
-        .from('leads')
-        .select('status, probability_to_close_score'),
-      
-      // Fetch users summary data
-      supabaseAdmin
-        .from('profiles')
-        .select('role'),
-      
-      // Fetch contractors summary data
-      supabaseAdmin
-        .from('contractors')
-        .select('is_active_subscriber, conversion_rate')
+      leadsQuery,
+      usersQuery,
+      supabaseAdmin.from('contractors').select('is_active_subscriber, conversion_rate')
     ]);
 
     if (leadsResponse.error) throw leadsResponse.error;
     if (usersResponse.error) throw usersResponse.error;
     if (contractorsResponse.error) throw contractorsResponse.error;
 
-    const leads = leadsResponse.data || [];
-    const users = usersResponse.data || [];
+    let leads = leadsResponse.data || [];
+    let users = usersResponse.data || [];
     const contractors = contractorsResponse.data || [];
+
+    // Apply custom date range filtering if specified
+    if (startDate || endDate) {
+      leads = leads.filter(lead => {
+        const leadDate = new Date(lead.created_at);
+        if (startDate && leadDate < new Date(startDate)) return false;
+        if (endDate && leadDate > new Date(endDate + 'T23:59:59')) return false;
+        return true;
+      });
+      users = users.filter(user => {
+        const userDate = new Date(user.created_at);
+        if (startDate && userDate < new Date(startDate)) return false;
+        if (endDate && userDate > new Date(endDate + 'T23:59:59')) return false;
+        return true;
+      });
+    }
 
     // Calculate summary statistics
     const totalLeads = leads.length;

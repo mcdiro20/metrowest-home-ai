@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { CircleAlert as AlertCircle, ArrowLeft, Users, Briefcase, LayoutDashboard, Mail, Phone, MapPin, Calendar, DollarSign, TrendingUp, Star, Trash2, CreditCard as Edit, RefreshCcw, UserPlus } from 'lucide-react';
+import { CircleAlert as AlertCircle, ArrowLeft, Users, Briefcase, LayoutDashboard, Mail, Phone, MapPin, Calendar, DollarSign, TrendingUp, Star, Trash2, CreditCard as Edit, RefreshCcw, UserPlus, Filter } from 'lucide-react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import type { Lead, Profile, Contractor, LeadAssignment } from '../lib/supabase';
 import AddContractorModal from './AddContractorModal';
@@ -20,6 +20,11 @@ const AdminPanel: React.FC = () => {
   const [showAddContractorModal, setShowAddContractorModal] = useState(false);
   const [showEditContractorModal, setShowEditContractorModal] = useState(false);
   const [selectedContractor, setSelectedContractor] = useState<Contractor | null>(null);
+
+  // Date filtering state
+  const [dateRange, setDateRange] = useState<'all' | '7d' | '30d' | '90d'>('all');
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
 
   // State for lead assignment modal
   const [showAssignLeadModal, setShowAssignLeadModal] = useState(false);
@@ -49,7 +54,18 @@ const AdminPanel: React.FC = () => {
     if (user) {
       fetchData(activeTab);
     }
-  }, [user, activeTab]);
+  }, [user, activeTab, dateRange, customStartDate, customEndDate]);
+
+  const getDateFilterParams = () => {
+    const params = new URLSearchParams();
+    if (dateRange !== 'all') {
+      params.append('dateRange', dateRange);
+    } else if (customStartDate || customEndDate) {
+      if (customStartDate) params.append('startDate', customStartDate);
+      if (customEndDate) params.append('endDate', customEndDate);
+    }
+    return params.toString();
+  };
 
   const fetchData = async (tab: string) => {
     setIsLoading(true);
@@ -67,12 +83,12 @@ const AdminPanel: React.FC = () => {
       }
 
       const token = session.access_token;
+      const dateParams = getDateFilterParams();
 
       let response;
       switch (tab) {
         case 'dashboard':
-          // Fetch optimized summary data for dashboard
-          response = await fetch('/api/admin/get-dashboard-summary', {
+          response = await fetch(`/api/admin/get-dashboard-summary?${dateParams}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const summaryResult = await response.json();
@@ -80,7 +96,7 @@ const AdminPanel: React.FC = () => {
           setDashboardSummary(summaryResult.data);
           break;
         case 'leads':
-          response = await fetch('/api/admin/get-all-leads', {
+          response = await fetch(`/api/admin/get-all-leads?${dateParams}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const leadsResult = await response.json();
@@ -88,7 +104,7 @@ const AdminPanel: React.FC = () => {
           setLeads(leadsResult.leads);
           break;
         case 'users':
-          response = await fetch('/api/admin/get-all-users', {
+          response = await fetch(`/api/admin/get-all-users?${dateParams}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const usersResult = await response.json();
@@ -104,7 +120,7 @@ const AdminPanel: React.FC = () => {
           setContractors(contractorsResult.contractors);
           break;
         case 'assignments':
-          response = await fetch('/api/leads/get-assignments', {
+          response = await fetch(`/api/leads/get-assignments?${dateParams}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const assignmentsResult = await response.json();
@@ -712,6 +728,92 @@ const AdminPanel: React.FC = () => {
             </nav>
           </div>
         </div>
+
+        {(activeTab === 'dashboard' || activeTab === 'leads' || activeTab === 'users' || activeTab === 'assignments') && (
+          <div className="mt-6 mb-4 bg-white rounded-lg shadow-sm p-4 flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter className="w-5 h-5 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Date Range:</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setDateRange('all')}
+                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                  dateRange === 'all'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                All Time
+              </button>
+              <button
+                onClick={() => setDateRange('7d')}
+                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                  dateRange === '7d'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Last 7 Days
+              </button>
+              <button
+                onClick={() => setDateRange('30d')}
+                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                  dateRange === '30d'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Last 30 Days
+              </button>
+              <button
+                onClick={() => setDateRange('90d')}
+                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                  dateRange === '90d'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Last 90 Days
+              </button>
+            </div>
+            <div className="flex items-center gap-2 ml-auto">
+              <label className="text-sm text-gray-700">Custom:</label>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => {
+                  setCustomStartDate(e.target.value);
+                  setDateRange('all');
+                }}
+                className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Start Date"
+              />
+              <span className="text-gray-500">to</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => {
+                  setCustomEndDate(e.target.value);
+                  setDateRange('all');
+                }}
+                className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="End Date"
+              />
+              {(customStartDate || customEndDate) && (
+                <button
+                  onClick={() => {
+                    setCustomStartDate('');
+                    setCustomEndDate('');
+                  }}
+                  className="px-2 py-1 text-sm text-red-600 hover:text-red-700"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {activeTab === 'dashboard' && renderDashboard()}
         {activeTab === 'leads' && renderLeadsTable()}
