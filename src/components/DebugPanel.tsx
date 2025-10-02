@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bug, Database, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Bug, Database, CircleCheck as CheckCircle, Circle as XCircle, CircleAlert as AlertCircle } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 const DebugPanel: React.FC = () => {
@@ -414,6 +414,37 @@ const DebugPanel: React.FC = () => {
     setIsLoading(false);
   };
 
+  const setupFeedbackTable = async () => {
+    setIsLoading(true);
+    try {
+      console.log('🔧 Checking feedback table setup...');
+
+      const response = await fetch('/api/setup-feedback-table', {
+        method: 'POST'
+      });
+
+      const result = await response.json();
+      console.log('📋 Setup result:', result);
+
+      setDebugResults({
+        success: result.success || result.tableExists === false,
+        message: result.message,
+        type: 'feedback-setup',
+        details: result
+      });
+
+    } catch (error) {
+      console.error('💥 Feedback setup error:', error);
+      setDebugResults({
+        success: false,
+        message: `Feedback setup check failed: ${error.message}`,
+        type: 'feedback-setup',
+        error: error.message
+      });
+    }
+    setIsLoading(false);
+  };
+
   const testDirectSupabase = async () => {
     setIsLoading(true);
     try {
@@ -572,6 +603,15 @@ const DebugPanel: React.FC = () => {
             <Database className="w-4 h-4" />
             {isLoading ? 'Testing...' : 'Debug Replicate Models'}
           </button>
+
+          <button
+            onClick={setupFeedbackTable}
+            disabled={isLoading}
+            className="w-full flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm transition-colors disabled:opacity-50"
+          >
+            <CheckCircle className="w-4 h-4" />
+            {isLoading ? 'Checking...' : 'Setup Feedback Table'}
+          </button>
           
           <button
             onClick={testDirectSupabase}
@@ -673,7 +713,58 @@ const DebugPanel: React.FC = () => {
                 )}
               </div>
             )}
-            
+
+            {debugResults.type === 'feedback-setup' && debugResults.details && (
+              <div className="text-xs text-gray-500 space-y-2 mt-3">
+                {debugResults.details.tableExists === false && debugResults.details.sql && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+                    <div className="font-semibold text-gray-900 mb-2">📋 Setup Instructions:</div>
+                    {debugResults.details.instructions && (
+                      <div className="space-y-1 mb-3 text-gray-700">
+                        <div>1. {debugResults.details.instructions.step1}</div>
+                        <div>2. {debugResults.details.instructions.step2}</div>
+                        <div>3. {debugResults.details.instructions.step3}</div>
+                        <div>4. {debugResults.details.instructions.step4}</div>
+                      </div>
+                    )}
+                    <div className="mt-3">
+                      <div className="font-semibold mb-1">SQL to run:</div>
+                      <textarea
+                        readOnly
+                        value={debugResults.details.sql}
+                        className="w-full h-32 p-2 text-xs font-mono bg-gray-900 text-green-400 rounded overflow-auto"
+                        onClick={(e) => {
+                          e.currentTarget.select();
+                          navigator.clipboard.writeText(debugResults.details.sql);
+                        }}
+                      />
+                      <div className="text-xs text-gray-600 mt-1">👆 Click to select and copy</div>
+                    </div>
+                    {debugResults.details.dashboardUrl && (
+                      <a
+                        href={debugResults.details.dashboardUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block mt-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                      >
+                        Open Supabase SQL Editor
+                      </a>
+                    )}
+                  </div>
+                )}
+                {debugResults.details.tableExists === true && (
+                  <div className="bg-green-50 border border-green-200 rounded p-3">
+                    <div className="text-green-700 font-semibold">
+                      ✅ Feedback table is ready!
+                    </div>
+                    <div className="text-gray-600 mt-1">
+                      Your feedback system is fully set up and working.
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {debugResults.error && (
               <div className="text-xs text-red-600 mt-2 p-2 bg-red-50 rounded">
                 Error: {debugResults.error}
