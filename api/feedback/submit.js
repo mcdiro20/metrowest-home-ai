@@ -43,23 +43,26 @@ export default async function handler(req, res) {
     const { createClient } = await import('@supabase/supabase-js');
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    const { data: lead, error: leadError } = await supabase
-      .from('leads')
-      .select('id')
-      .eq('id', lead_id)
-      .single();
+    if (lead_id) {
+      const { data: lead, error: leadError } = await supabase
+        .from('leads')
+        .select('id')
+        .eq('id', lead_id)
+        .maybeSingle();
 
-    if (leadError || !lead) {
-      return res.status(404).json({
-        success: false,
-        error: 'Lead not found'
-      });
+      if (leadError) {
+        console.error('❌ Error checking lead:', leadError);
+      }
+
+      if (!lead) {
+        console.warn('⚠️ Lead not found, but allowing feedback submission anyway');
+      }
     }
 
     const { data: feedback, error: feedbackError } = await supabase
       .from('feedback')
       .insert({
-        lead_id,
+        lead_id: lead_id || null,
         rating,
         comment: comment || null,
         source: source || 'web',
