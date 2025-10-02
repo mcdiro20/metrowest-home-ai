@@ -35,10 +35,11 @@ CREATE TABLE IF NOT EXISTS feedback (
 
 ALTER TABLE feedback ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Anyone can submit feedback" ON feedback;
+
 CREATE POLICY "Anyone can submit feedback"
   ON feedback
   FOR INSERT
-  TO anon, authenticated
   WITH CHECK (true);
 
 CREATE POLICY "Admins can read all feedback"
