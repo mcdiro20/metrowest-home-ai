@@ -25,6 +25,7 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [userZipCode, setUserZipCode] = useState<string>('');
   const [pageStartTime] = useState(Date.now());
+  const [isAdmin, setIsAdmin] = useState(false);
   const aiWorkflowRef = React.useRef<any>(null);
 
   // Handle authentication state changes
@@ -49,6 +50,26 @@ function App() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      if (!supabase || !user) {
+        setIsAdmin(false);
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      setIsAdmin(profile?.role === 'admin');
+    };
+
+    checkAdminRole();
+  }, [user]);
 
   // Track page views and time spent
   useEffect(() => {
@@ -142,7 +163,7 @@ function App() {
               <WhyChooseUsSection />
             </div>
 
-            <DebugPanel />
+            {isAdmin && <DebugPanel />}
 
             <Footer />
           </div>
