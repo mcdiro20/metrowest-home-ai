@@ -181,35 +181,167 @@ export default async function handler(req, res) {
     // Send admin notification (do this regardless of whether user emails are sent)
     const sendAdminNotification = async () => {
       try {
-        const notificationData = {
-          event_type: subscribe ? 'contractor_form' : 'ai_rendering',
-          user_email: email,
-          user_name: name,
-          user_phone: phone,
-          zip_code: zipCode,
-          room_type: roomType,
-          style: selectedStyle,
-          lead_score: req.leadResult?.lead_score,
-          timestamp: new Date().toISOString()
-        };
+        const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
+        const resendApiKey = process.env.RESEND_API_KEY;
 
-        const baseUrl = process.env.VERCEL_URL
-          ? `https://${process.env.VERCEL_URL}`
-          : 'http://localhost:3000';
+        if (!adminEmail) {
+          console.log('⚠️ ADMIN_NOTIFICATION_EMAIL not configured, skipping notification');
+          return;
+        }
 
-        await fetch(`${baseUrl}/api/notify-admin`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(notificationData)
+        if (!resendApiKey) {
+          console.log('⚠️ RESEND_API_KEY not configured, skipping notification');
+          return;
+        }
+
+        const event_type = subscribe ? 'contractor_form' : 'ai_rendering';
+        const lead_score = req.leadResult?.lead_score;
+
+        console.log(`📬 Sending admin notification: ${event_type}`);
+
+        const { Resend } = await import('resend');
+        const resend = new Resend(resendApiKey);
+
+        let subject = '';
+        let htmlContent = '';
+
+        if (event_type === 'ai_rendering') {
+          subject = `🎨 New AI Rendering - ${name || email || 'Unknown User'}`;
+          htmlContent = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h1 style="color: #2563eb;">🎨 New AI Rendering Generated</h1>
+
+              <div style="background: #f8fafc; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                <h2 style="color: #333; margin-top: 0;">User Details</h2>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: bold;">Name:</td>
+                    <td style="padding: 8px 0; color: #333;">${name || 'Not provided'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: bold;">Email:</td>
+                    <td style="padding: 8px 0; color: #333;">${email || 'Not provided'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: bold;">Phone:</td>
+                    <td style="padding: 8px 0; color: #333;">${phone || 'Not provided'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: bold;">Zip Code:</td>
+                    <td style="padding: 8px 0; color: #333;">${zipCode || 'Not provided'}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <div style="background: #f0fdf4; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                <h2 style="color: #333; margin-top: 0;">Project Details</h2>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: bold;">Room Type:</td>
+                    <td style="padding: 8px 0; color: #333;">${roomType || 'Not specified'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: bold;">Style:</td>
+                    <td style="padding: 8px 0; color: #333;">${selectedStyle || 'Not specified'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: bold;">Lead Score:</td>
+                    <td style="padding: 8px 0; color: #333;">${lead_score ? `${lead_score}/100` : 'Not calculated'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: bold;">Time:</td>
+                    <td style="padding: 8px 0; color: #333;">${new Date().toLocaleString()}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <div style="text-align: center; margin-top: 30px;">
+                <a href="${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:5173'}/admin"
+                   style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                  View in Admin Dashboard
+                </a>
+              </div>
+            </div>
+          `;
+        } else if (event_type === 'contractor_form') {
+          subject = `📋 New Contractor Quote Request - ${name || email || 'Unknown User'}`;
+          htmlContent = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h1 style="color: #059669;">📋 New Contractor Quote Request</h1>
+
+              <div style="background: #fef3c7; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+                <h2 style="color: #92400e; margin-top: 0;">🔥 Hot Lead!</h2>
+                <p style="color: #78350f; margin: 0;">This user is actively seeking quotes from contractors.</p>
+              </div>
+
+              <div style="background: #f8fafc; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                <h2 style="color: #333; margin-top: 0;">Contact Information</h2>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: bold;">Name:</td>
+                    <td style="padding: 8px 0; color: #333;">${name || 'Not provided'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: bold;">Email:</td>
+                    <td style="padding: 8px 0; color: #333;">${email || 'Not provided'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: bold;">Phone:</td>
+                    <td style="padding: 8px 0; color: #333;">${phone || 'Not provided'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: bold;">Zip Code:</td>
+                    <td style="padding: 8px 0; color: #333;">${zipCode || 'Not provided'}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <div style="background: #f0fdf4; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                <h2 style="color: #333; margin-top: 0;">Project Details</h2>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: bold;">Room Type:</td>
+                    <td style="padding: 8px 0; color: #333;">${roomType || 'Not specified'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: bold;">Style:</td>
+                    <td style="padding: 8px 0; color: #333;">${selectedStyle || 'Not specified'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: bold;">Lead Score:</td>
+                    <td style="padding: 8px 0; color: #333;">${lead_score ? `${lead_score}/100` : 'Not calculated'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #666; font-weight: bold;">Time:</td>
+                    <td style="padding: 8px 0; color: #333;">${new Date().toLocaleString()}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <div style="text-align: center; margin-top: 30px;">
+                <a href="${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:5173'}/admin"
+                   style="background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                  Assign to Contractor
+                </a>
+              </div>
+            </div>
+          `;
+        }
+
+        const emailResult = await resend.emails.send({
+          from: 'MetroWest Home AI Notifications <onboarding@resend.dev>',
+          to: [adminEmail],
+          subject: subject,
+          html: htmlContent
         });
 
-        console.log('✅ Admin notification sent');
+        console.log(`✅ Admin notification sent successfully: ${event_type}`, emailResult.data?.id);
       } catch (notifyError) {
         console.error('❌ Failed to send admin notification:', notifyError);
       }
     };
 
-    // Send admin notification in background
+    // Send admin notification in background (don't await it)
     sendAdminNotification().catch(err => console.error('Admin notification error:', err));
 
     // Check for Resend API key
