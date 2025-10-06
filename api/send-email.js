@@ -335,9 +335,19 @@ export default async function handler(req, res) {
           html: htmlContent
         });
 
-        console.log(`✅ Admin notification sent successfully: ${event_type}`, emailResult.data?.id);
+        console.log(`✅ Admin notification sent successfully: ${event_type}`, {
+          emailId: emailResult.data?.id,
+          to: adminEmail,
+          subject: subject,
+          fullResponse: JSON.stringify(emailResult)
+        });
       } catch (notifyError) {
-        console.error('❌ Failed to send admin notification:', notifyError);
+        console.error('❌ Failed to send admin notification:', {
+          error: notifyError.message,
+          stack: notifyError.stack,
+          name: notifyError.name,
+          fullError: JSON.stringify(notifyError, Object.getOwnPropertyNames(notifyError))
+        });
       }
     };
 
