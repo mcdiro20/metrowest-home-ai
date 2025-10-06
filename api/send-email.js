@@ -178,9 +178,43 @@ export default async function handler(req, res) {
       // Continue with email sending even if DB fails
     }
 
+    // Send admin notification (do this regardless of whether user emails are sent)
+    const sendAdminNotification = async () => {
+      try {
+        const notificationData = {
+          event_type: subscribe ? 'contractor_form' : 'ai_rendering',
+          user_email: email,
+          user_name: name,
+          user_phone: phone,
+          zip_code: zipCode,
+          room_type: roomType,
+          style: selectedStyle,
+          lead_score: req.leadResult?.lead_score,
+          timestamp: new Date().toISOString()
+        };
+
+        const baseUrl = process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : 'http://localhost:3000';
+
+        await fetch(`${baseUrl}/api/notify-admin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(notificationData)
+        });
+
+        console.log('✅ Admin notification sent');
+      } catch (notifyError) {
+        console.error('❌ Failed to send admin notification:', notifyError);
+      }
+    };
+
+    // Send admin notification in background
+    sendAdminNotification().catch(err => console.error('Admin notification error:', err));
+
     // Check for Resend API key
     const resendApiKey = process.env.RESEND_API_KEY;
-    
+
     if (!resendApiKey) {
       return res.status(200).json({
         success: true,
@@ -290,34 +324,6 @@ export default async function handler(req, res) {
         </div>
       `
     });
-
-    // Send admin notification in background (don't wait for it)
-    try {
-      const notificationData = {
-        event_type: subscribe ? 'contractor_form' : 'ai_rendering',
-        user_email: email,
-        user_name: name,
-        user_phone: phone,
-        zip_code: zipCode,
-        room_type: roomType,
-        style: selectedStyle,
-        lead_score: req.leadResult?.lead_score,
-        timestamp: new Date().toISOString()
-      };
-
-      const baseUrl = process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : 'http://localhost:5173';
-
-      fetch(`${baseUrl}/api/notify-admin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(notificationData)
-      }).catch(err => console.error('Admin notification failed:', err));
-
-    } catch (notifyError) {
-      console.error('Failed to send admin notification:', notifyError);
-    }
 
     return res.status(200).json({
       success: true,

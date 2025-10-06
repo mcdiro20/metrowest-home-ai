@@ -24,8 +24,31 @@ export default async function handler(req, res) {
       timestamp
     } = req.body;
 
-    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@example.com';
+    console.log('📬 Admin notification request received:', {
+      event_type,
+      user_email,
+      has_name: !!user_name,
+      has_phone: !!user_phone,
+      zip_code
+    });
+
+    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
     const resendApiKey = process.env.RESEND_API_KEY;
+
+    console.log('🔑 Environment check:', {
+      hasAdminEmail: !!adminEmail,
+      hasResendKey: !!resendApiKey,
+      adminEmail: adminEmail || 'not set'
+    });
+
+    if (!adminEmail) {
+      console.log('⚠️ No ADMIN_NOTIFICATION_EMAIL configured');
+      return res.status(200).json({
+        success: true,
+        message: 'Notification skipped (no admin email configured)',
+        notificationId: `skipped_${Date.now()}`
+      });
+    }
 
     if (!resendApiKey) {
       console.log('⚠️ No Resend API key - notification simulated');
