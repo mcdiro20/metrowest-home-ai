@@ -180,9 +180,17 @@ export default async function handler(req, res) {
 
     // Send admin notification (do this regardless of whether user emails are sent)
     const sendAdminNotification = async () => {
+      console.log('🚀 sendAdminNotification function called');
       try {
         const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
         const resendApiKey = process.env.RESEND_API_KEY;
+
+        console.log('🔍 Checking environment variables:', {
+          hasAdminEmail: !!adminEmail,
+          adminEmail: adminEmail,
+          hasResendKey: !!resendApiKey,
+          resendKeyLength: resendApiKey?.length
+        });
 
         if (!adminEmail) {
           console.log('⚠️ ADMIN_NOTIFICATION_EMAIL not configured, skipping notification');
@@ -198,9 +206,13 @@ export default async function handler(req, res) {
         const lead_score = req.leadResult?.lead_score;
 
         console.log(`📬 Sending admin notification: ${event_type}`);
+        console.log('📥 Importing Resend library...');
 
         const { Resend } = await import('resend');
+        console.log('✓ Resend imported, creating instance...');
+
         const resend = new Resend(resendApiKey);
+        console.log('✓ Resend instance created');
 
         let subject = '';
         let htmlContent = '';
