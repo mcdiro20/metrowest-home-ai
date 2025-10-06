@@ -192,8 +192,14 @@ export default async function handler(req, res) {
           resendKeyLength: resendApiKey?.length
         });
 
-        if (!adminEmail) {
-          console.log('⚠️ ADMIN_NOTIFICATION_EMAIL not configured, skipping notification');
+        // Resend testing mode: can only send to verified email (mattdiro@gmail.com)
+        // Override to use verified email until domain is set up
+        const finalAdminEmail = 'mattdiro@gmail.com';
+
+        console.log(`📧 Using admin email: ${finalAdminEmail} (testing mode - domain not verified)`);
+
+        if (!resendApiKey) {
+          console.log('⚠️ RESEND_API_KEY not configured, skipping notification');
           return;
         }
 
@@ -340,11 +346,11 @@ export default async function handler(req, res) {
           `;
         }
 
-        console.log(`📤 Attempting to send to: ${adminEmail} with subject: ${subject}`);
+        console.log(`📤 Attempting to send to: ${finalAdminEmail} with subject: ${subject}`);
 
         const emailResult = await resend.emails.send({
           from: 'MetroWest Home AI Notifications <onboarding@resend.dev>',
-          to: [adminEmail],
+          to: [finalAdminEmail],
           subject: subject,
           html: htmlContent
         });
@@ -354,7 +360,7 @@ export default async function handler(req, res) {
           hasError: !!emailResult.error,
           emailId: emailResult.data?.id,
           error: emailResult.error,
-          to: adminEmail,
+          to: finalAdminEmail,
           subject: subject,
           fullResponse: JSON.stringify(emailResult)
         });
