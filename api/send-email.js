@@ -328,6 +328,8 @@ export default async function handler(req, res) {
           `;
         }
 
+        console.log(`📤 Attempting to send to: ${adminEmail} with subject: ${subject}`);
+
         const emailResult = await resend.emails.send({
           from: 'MetroWest Home AI Notifications <onboarding@resend.dev>',
           to: [adminEmail],
@@ -335,12 +337,25 @@ export default async function handler(req, res) {
           html: htmlContent
         });
 
-        console.log(`✅ Admin notification sent successfully: ${event_type}`, {
+        console.log(`📧 Resend API Response:`, {
+          success: !!emailResult.data,
+          hasError: !!emailResult.error,
           emailId: emailResult.data?.id,
+          error: emailResult.error,
           to: adminEmail,
           subject: subject,
           fullResponse: JSON.stringify(emailResult)
         });
+
+        if (emailResult.error) {
+          throw new Error(`Resend API error: ${JSON.stringify(emailResult.error)}`);
+        }
+
+        if (!emailResult.data?.id) {
+          console.warn('⚠️ No email ID returned from Resend, but no error either');
+        }
+
+        console.log(`✅ Admin notification sent successfully: ${event_type}`, emailResult.data?.id);
       } catch (notifyError) {
         console.error('❌ Failed to send admin notification:', {
           error: notifyError.message,
