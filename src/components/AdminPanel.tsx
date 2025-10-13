@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { CircleAlert as AlertCircle, ArrowLeft, Users, Briefcase, LayoutDashboard, Mail, Phone, MapPin, Calendar, DollarSign, TrendingUp, Star, Trash2, CreditCard as Edit, RefreshCcw, UserPlus, ListFilter as Filter, MessageSquare, Activity } from 'lucide-react';
+import { CircleAlert as AlertCircle, ArrowLeft, Users, Briefcase, LayoutDashboard, Mail, Phone, MapPin, Calendar, DollarSign, TrendingUp, Star, Trash2, CreditCard as Edit, RefreshCcw, UserPlus, ListFilter as Filter, MessageSquare, Activity, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import type { Lead, Profile, Contractor, LeadAssignment } from '../lib/supabase';
 import AddContractorModal from './AddContractorModal';
 import EditContractorModal from './EditContractorModal';
 import AssignLeadModal from './AssignLeadModal';
 import { ActivityDashboard } from './ActivityDashboard';
+
+type SortDirection = 'asc' | 'desc' | null;
 
 const AdminPanel: React.FC = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -23,6 +25,17 @@ const AdminPanel: React.FC = () => {
   const [showAddContractorModal, setShowAddContractorModal] = useState(false);
   const [showEditContractorModal, setShowEditContractorModal] = useState(false);
   const [selectedContractor, setSelectedContractor] = useState<Contractor | null>(null);
+
+  const [leadsSortField, setLeadsSortField] = useState<string>('created_at');
+  const [leadsSortDir, setLeadsSortDir] = useState<SortDirection>('desc');
+  const [usersSortField, setUsersSortField] = useState<string>('created_at');
+  const [usersSortDir, setUsersSortDir] = useState<SortDirection>('desc');
+  const [contractorsSortField, setContractorsSortField] = useState<string>('created_at');
+  const [contractorsSortDir, setContractorsSortDir] = useState<SortDirection>('desc');
+  const [assignmentsSortField, setAssignmentsSortField] = useState<string>('assigned_at');
+  const [assignmentsSortDir, setAssignmentsSortDir] = useState<SortDirection>('desc');
+  const [feedbackSortField, setFeedbackSortField] = useState<string>('created_at');
+  const [feedbackSortDir, setFeedbackSortDir] = useState<SortDirection>('desc');
 
   // Date filtering state
   const [dateRange, setDateRange] = useState<'all' | '7d' | '30d' | '90d'>('all');
@@ -251,45 +264,129 @@ const AdminPanel: React.FC = () => {
     setShowAssignLeadModal(true);
   };
 
+  const handleSort = (field: string, currentField: string, currentDir: SortDirection, setField: (f: string) => void, setDir: (d: SortDirection) => void) => {
+    if (field === currentField) {
+      setDir(currentDir === 'asc' ? 'desc' : currentDir === 'desc' ? null : 'asc');
+    } else {
+      setField(field);
+      setDir('asc');
+    }
+  };
+
+  const sortData = <T extends Record<string, any>>(data: T[], field: string, direction: SortDirection): T[] => {
+    if (!direction) return data;
+
+    return [...data].sort((a, b) => {
+      let aVal = a[field];
+      let bVal = b[field];
+
+      if (field.includes('.')) {
+        const parts = field.split('.');
+        aVal = parts.reduce((obj, key) => obj?.[key], a);
+        bVal = parts.reduce((obj, key) => obj?.[key], b);
+      }
+
+      if (aVal === null || aVal === undefined) return 1;
+      if (bVal === null || bVal === undefined) return -1;
+
+      if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+      if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+
+      if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
+  const SortableHeader: React.FC<{ field: string; label: string; currentField: string; currentDir: SortDirection; onSort: () => void }> = ({ field, label, currentField, currentDir, onSort }) => {
+    const isActive = field === currentField;
+    return (
+      <th
+        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+        onClick={onSort}
+      >
+        <div className="flex items-center gap-2">
+          <span>{label}</span>
+          {isActive && currentDir === 'asc' && <ArrowUp className="w-4 h-4" />}
+          {isActive && currentDir === 'desc' && <ArrowDown className="w-4 h-4" />}
+          {!isActive && <ArrowUpDown className="w-4 h-4 opacity-30" />}
+        </div>
+      </th>
+    );
+  };
+
   const handleAssignLeadSuccess = () => {
     setShowAssignLeadModal(false);
     fetchData('leads'); // Refresh leads data after assignment
   };
 
-  const renderLeadsTable = () => (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-gray-900">All Leads ({leads.length})</h3>
-        <button
-          onClick={handleRecalculateScores}
-          className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-        >
-          <RefreshCcw className="w-4 h-4" />
-          Recalculate Scores
-        </button>
-      </div>
-      {isLoading ? (
-        <div className="p-6 text-center">Loading leads...</div>
-      ) : error ? (
-        <div className="p-6 text-center text-red-600">{error}</div>
-      ) : leads.length === 0 ? (
-        <div className="p-6 text-center text-gray-600">No leads found.</div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scores</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {leads.map((lead) => (
+  const renderLeadsTable = () => {
+    const sortedLeads = sortData(leads, leadsSortField, leadsSortDir);
+
+    return (
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h3 className="text-lg font-semibold text-gray-900">All Leads ({leads.length})</h3>
+          <button
+            onClick={handleRecalculateScores}
+            className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+          >
+            <RefreshCcw className="w-4 h-4" />
+            Recalculate Scores
+          </button>
+        </div>
+        {isLoading ? (
+          <div className="p-6 text-center">Loading leads...</div>
+        ) : error ? (
+          <div className="p-6 text-center text-red-600">{error}</div>
+        ) : leads.length === 0 ? (
+          <div className="p-6 text-center text-gray-600">No leads found.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <SortableHeader
+                    field="email"
+                    label="Contact"
+                    currentField={leadsSortField}
+                    currentDir={leadsSortDir}
+                    onSort={() => handleSort('email', leadsSortField, leadsSortDir, setLeadsSortField, setLeadsSortDir)}
+                  />
+                  <SortableHeader
+                    field="room_type"
+                    label="Project"
+                    currentField={leadsSortField}
+                    currentDir={leadsSortDir}
+                    onSort={() => handleSort('room_type', leadsSortField, leadsSortDir, setLeadsSortField, setLeadsSortDir)}
+                  />
+                  <SortableHeader
+                    field="probability_to_close_score"
+                    label="Scores"
+                    currentField={leadsSortField}
+                    currentDir={leadsSortDir}
+                    onSort={() => handleSort('probability_to_close_score', leadsSortField, leadsSortDir, setLeadsSortField, setLeadsSortDir)}
+                  />
+                  <SortableHeader
+                    field="status"
+                    label="Status"
+                    currentField={leadsSortField}
+                    currentDir={leadsSortDir}
+                    onSort={() => handleSort('status', leadsSortField, leadsSortDir, setLeadsSortField, setLeadsSortDir)}
+                  />
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
+                  <SortableHeader
+                    field="created_at"
+                    label="Created At"
+                    currentField={leadsSortField}
+                    currentDir={leadsSortDir}
+                    onSort={() => handleSort('created_at', leadsSortField, leadsSortDir, setLeadsSortField, setLeadsSortDir)}
+                  />
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {sortedLeads.map((lead) => (
                 <tr key={lead.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{lead.name || 'N/A'}</div>
@@ -339,9 +436,13 @@ const AdminPanel: React.FC = () => {
         </div>
       )}
     </div>
-  );
+    );
+  };
 
-  const renderUsersTable = () => (
+  const renderUsersTable = () => {
+    const sortedUsers = sortData(usersData, usersSortField, usersSortDir);
+
+    return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200">
         <h3 className="text-lg font-semibold text-gray-900">All Users ({usersData.length})</h3>
@@ -357,15 +458,39 @@ const AdminPanel: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                <SortableHeader
+                  field="email"
+                  label="Email"
+                  currentField={usersSortField}
+                  currentDir={usersSortDir}
+                  onSort={() => handleSort('email', usersSortField, usersSortDir, setUsersSortField, setUsersSortDir)}
+                />
+                <SortableHeader
+                  field="role"
+                  label="Role"
+                  currentField={usersSortField}
+                  currentDir={usersSortDir}
+                  onSort={() => handleSort('role', usersSortField, usersSortDir, setUsersSortField, setUsersSortDir)}
+                />
+                <SortableHeader
+                  field="login_count"
+                  label="Activity"
+                  currentField={usersSortField}
+                  currentDir={usersSortDir}
+                  onSort={() => handleSort('login_count', usersSortField, usersSortDir, setUsersSortField, setUsersSortDir)}
+                />
+                <SortableHeader
+                  field="created_at"
+                  label="Created At"
+                  currentField={usersSortField}
+                  currentDir={usersSortDir}
+                  onSort={() => handleSort('created_at', usersSortField, usersSortDir, setUsersSortField, setUsersSortDir)}
+                />
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {usersData.map((userItem) => (
+              {sortedUsers.map((userItem) => (
                 <tr key={userItem.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{userItem.email}</div>
@@ -411,9 +536,13 @@ const AdminPanel: React.FC = () => {
         </div>
       )}
     </div>
-  );
+    );
+  };
 
-  const renderContractorsTable = () => (
+  const renderContractorsTable = () => {
+    const sortedContractors = sortData(contractors, contractorsSortField, contractorsSortDir);
+
+    return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
         <h3 className="text-lg font-semibold text-gray-900">All Contractors ({contractors.length})</h3>
@@ -436,16 +565,40 @@ const AdminPanel: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name / Email</th>
+                <SortableHeader
+                  field="name"
+                  label="Name / Email"
+                  currentField={contractorsSortField}
+                  currentDir={contractorsSortDir}
+                  onSort={() => handleSort('name', contractorsSortField, contractorsSortDir, setContractorsSortField, setContractorsSortDir)}
+                />
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service Area</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pricing</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subscription</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
+                <SortableHeader
+                  field="price_per_lead"
+                  label="Pricing"
+                  currentField={contractorsSortField}
+                  currentDir={contractorsSortDir}
+                  onSort={() => handleSort('price_per_lead', contractorsSortField, contractorsSortDir, setContractorsSortField, setContractorsSortDir)}
+                />
+                <SortableHeader
+                  field="is_active_subscriber"
+                  label="Subscription"
+                  currentField={contractorsSortField}
+                  currentDir={contractorsSortDir}
+                  onSort={() => handleSort('is_active_subscriber', contractorsSortField, contractorsSortDir, setContractorsSortField, setContractorsSortDir)}
+                />
+                <SortableHeader
+                  field="conversion_rate"
+                  label="Performance"
+                  currentField={contractorsSortField}
+                  currentDir={contractorsSortDir}
+                  onSort={() => handleSort('conversion_rate', contractorsSortField, contractorsSortDir, setContractorsSortField, setContractorsSortDir)}
+                />
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {contractors.map((contractorItem) => (
+              {sortedContractors.map((contractorItem) => (
                 <tr key={contractorItem.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{contractorItem.name}</div>
@@ -493,9 +646,13 @@ const AdminPanel: React.FC = () => {
         </div>
       )}
     </div>
-  );
+    );
+  };
 
-  const renderAssignmentsTable = () => (
+  const renderAssignmentsTable = () => {
+    const sortedAssignments = sortData(assignments, assignmentsSortField, assignmentsSortDir);
+
+    return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200">
         <h3 className="text-lg font-semibold text-gray-900">Lead Assignments ({assignments.length})</h3>
@@ -513,14 +670,38 @@ const AdminPanel: React.FC = () => {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lead</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contractor</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned At</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contractor Responded</th>
+                <SortableHeader
+                  field="assigned_at"
+                  label="Assigned At"
+                  currentField={assignmentsSortField}
+                  currentDir={assignmentsSortDir}
+                  onSort={() => handleSort('assigned_at', assignmentsSortField, assignmentsSortDir, setAssignmentsSortField, setAssignmentsSortDir)}
+                />
+                <SortableHeader
+                  field="assignment_method"
+                  label="Method"
+                  currentField={assignmentsSortField}
+                  currentDir={assignmentsSortDir}
+                  onSort={() => handleSort('assignment_method', assignmentsSortField, assignmentsSortDir, setAssignmentsSortField, setAssignmentsSortDir)}
+                />
+                <SortableHeader
+                  field="email_sent"
+                  label="Email Status"
+                  currentField={assignmentsSortField}
+                  currentDir={assignmentsSortDir}
+                  onSort={() => handleSort('email_sent', assignmentsSortField, assignmentsSortDir, setAssignmentsSortField, setAssignmentsSortDir)}
+                />
+                <SortableHeader
+                  field="contractor_responded"
+                  label="Contractor Responded"
+                  currentField={assignmentsSortField}
+                  currentDir={assignmentsSortDir}
+                  onSort={() => handleSort('contractor_responded', assignmentsSortField, assignmentsSortDir, setAssignmentsSortField, setAssignmentsSortDir)}
+                />
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {assignments.map((assignment) => (
+              {sortedAssignments.map((assignment) => (
                 <tr key={assignment.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{(assignment as any).leads?.email || 'N/A'}</div>
@@ -552,9 +733,13 @@ const AdminPanel: React.FC = () => {
         </div>
       )}
     </div>
-  );
+    );
+  };
 
-  const renderFeedbackTable = () => (
+  const renderFeedbackTable = () => {
+    const sortedFeedback = sortData(feedback, feedbackSortField, feedbackSortDir);
+
+    return (
     <div className="space-y-6">
       {feedbackStats && (
         <div className="bg-white rounded-xl shadow-sm p-6">
@@ -615,14 +800,32 @@ const AdminPanel: React.FC = () => {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                  <SortableHeader
+                    field="rating"
+                    label="Rating"
+                    currentField={feedbackSortField}
+                    currentDir={feedbackSortDir}
+                    onSort={() => handleSort('rating', feedbackSortField, feedbackSortDir, setFeedbackSortField, setFeedbackSortDir)}
+                  />
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comment</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <SortableHeader
+                    field="source"
+                    label="Source"
+                    currentField={feedbackSortField}
+                    currentDir={feedbackSortDir}
+                    onSort={() => handleSort('source', feedbackSortField, feedbackSortDir, setFeedbackSortField, setFeedbackSortDir)}
+                  />
+                  <SortableHeader
+                    field="created_at"
+                    label="Date"
+                    currentField={feedbackSortField}
+                    currentDir={feedbackSortDir}
+                    onSort={() => handleSort('created_at', feedbackSortField, feedbackSortDir, setFeedbackSortField, setFeedbackSortDir)}
+                  />
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {feedback.map((item) => (
+                {sortedFeedback.map((item) => (
                   <tr key={item.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{(item as any).leads?.name || 'N/A'}</div>
@@ -668,7 +871,8 @@ const AdminPanel: React.FC = () => {
         )}
       </div>
     </div>
-  );
+    );
+  };
 
   const renderDashboard = () => {
     return (
