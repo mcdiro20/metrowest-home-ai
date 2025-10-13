@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AnalyticsService } from '../services/analyticsService';
-import { Activity, Users, TrendingUp, Zap, Eye, LogIn, Image, Mail } from 'lucide-react';
+import { Activity, Users, TrendingUp, Zap, Eye, LogIn, Image, Mail, Calendar } from 'lucide-react';
 
 interface RealtimeStats {
   active_users_count: number;
@@ -33,6 +33,9 @@ export function ActivityDashboard() {
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
   const [recentEvents, setRecentEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | 'custom'>('7d');
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
 
   useEffect(() => {
     loadDashboardData();
@@ -42,7 +45,7 @@ export function ActivityDashboard() {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [dateRange, customStartDate, customEndDate]);
 
   const loadDashboardData = async () => {
     setLoading(true);
@@ -61,15 +64,34 @@ export function ActivityDashboard() {
     }
   };
 
+  const getDaysFromRange = () => {
+    if (dateRange === '7d') return 7;
+    if (dateRange === '30d') return 30;
+    if (dateRange === '90d') return 90;
+    return 30;
+  };
+
+  const getDateFilterParams = () => {
+    if (dateRange === 'custom' && (customStartDate || customEndDate)) {
+      return {
+        startDate: customStartDate || undefined,
+        endDate: customEndDate || undefined
+      };
+    }
+    return { days: getDaysFromRange() };
+  };
+
   const loadDailyData = async () => {
-    const data = await AnalyticsService.getDailyAnalytics(7);
+    const params = getDateFilterParams();
+    const data = await AnalyticsService.getDailyAnalytics(params.days || 30, params.startDate, params.endDate);
     if (data) {
       setDailyStats(data);
     }
   };
 
   const loadRecentEvents = async () => {
-    const data = await AnalyticsService.getRecentEvents(20);
+    const params = getDateFilterParams();
+    const data = await AnalyticsService.getRecentEvents(50, params.startDate, params.endDate);
     if (data) {
       setRecentEvents(data);
     }
@@ -142,6 +164,76 @@ export function ActivityDashboard() {
         </button>
       </div>
 
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-gray-500" />
+            <span className="text-sm font-medium text-gray-700">Date Range:</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setDateRange('7d')}
+              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                dateRange === '7d'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Last 7 Days
+            </button>
+            <button
+              onClick={() => setDateRange('30d')}
+              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                dateRange === '30d'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Last 30 Days
+            </button>
+            <button
+              onClick={() => setDateRange('90d')}
+              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                dateRange === '90d'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Last 90 Days
+            </button>
+            <button
+              onClick={() => setDateRange('custom')}
+              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                dateRange === 'custom'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Custom Range
+            </button>
+          </div>
+          {dateRange === 'custom' && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Start Date"
+              />
+              <span className="text-sm text-gray-500">to</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="End Date"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
           <div className="flex items-center justify-between mb-2">
@@ -204,10 +296,13 @@ export function ActivityDashboard() {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-blue-600" />
-            Last 7 Days Overview
+            {dateRange === '7d' && 'Last 7 Days Overview'}
+            {dateRange === '30d' && 'Last 30 Days Overview'}
+            {dateRange === '90d' && 'Last 90 Days Overview'}
+            {dateRange === 'custom' && 'Custom Date Range Overview'}
           </h3>
           <div className="space-y-3">
-            {dailyStats.slice(0, 7).map((day) => (
+            {dailyStats.slice(0, dateRange === '7d' ? 7 : dateRange === '30d' ? 15 : 20).map((day) => (
               <div key={day.date} className="flex items-center justify-between py-2 border-b border-gray-100">
                 <div>
                   <div className="font-medium text-gray-900">

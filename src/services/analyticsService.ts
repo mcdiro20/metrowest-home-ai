@@ -238,18 +238,27 @@ export class AnalyticsService {
     }
   }
 
-  static async getDailyAnalytics(days: number = 30) {
+  static async getDailyAnalytics(days: number = 30, startDate?: string, endDate?: string) {
     if (!supabase) return null;
 
     try {
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - days);
-
-      const { data, error } = await supabase
+      let query = supabase
         .from('daily_analytics_summary')
-        .select('*')
-        .gte('date', startDate.toISOString().split('T')[0])
-        .order('date', { ascending: false });
+        .select('*');
+
+      if (startDate && endDate) {
+        query = query.gte('date', startDate).lte('date', endDate);
+      } else if (startDate) {
+        query = query.gte('date', startDate);
+      } else if (endDate) {
+        query = query.lte('date', endDate);
+      } else {
+        const calculatedStartDate = new Date();
+        calculatedStartDate.setDate(calculatedStartDate.getDate() - days);
+        query = query.gte('date', calculatedStartDate.toISOString().split('T')[0]);
+      }
+
+      const { data, error } = await query.order('date', { ascending: false });
 
       if (error) {
         console.error('Failed to fetch daily analytics:', error);
@@ -263,13 +272,25 @@ export class AnalyticsService {
     }
   }
 
-  static async getRecentEvents(limit: number = 50) {
+  static async getRecentEvents(limit: number = 50, startDate?: string, endDate?: string) {
     if (!supabase) return null;
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('user_events')
-        .select('*')
+        .select('*');
+
+      if (startDate && endDate) {
+        const startDateTime = new Date(startDate).toISOString();
+        const endDateTime = new Date(endDate + 'T23:59:59.999Z').toISOString();
+        query = query.gte('created_at', startDateTime).lte('created_at', endDateTime);
+      } else if (startDate) {
+        query = query.gte('created_at', new Date(startDate).toISOString());
+      } else if (endDate) {
+        query = query.lte('created_at', new Date(endDate + 'T23:59:59.999Z').toISOString());
+      }
+
+      const { data, error } = await query
         .order('created_at', { ascending: false })
         .limit(limit);
 
