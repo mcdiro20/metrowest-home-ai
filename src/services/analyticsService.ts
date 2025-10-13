@@ -1,10 +1,61 @@
 import { supabase } from '../lib/supabase';
-import type { UserEvent } from '../lib/supabase';
+
+type EventType =
+  | 'page_view'
+  | 'login'
+  | 'signup'
+  | 'logout'
+  | 'ai_render_start'
+  | 'ai_render_complete'
+  | 'ai_render_error'
+  | 'upload'
+  | 'email_submit'
+  | 'quote_request'
+  | 'share'
+  | 'download'
+  | 'style_selection'
+  | 'room_selection'
+  | 'time_spent';
+
+type EventCategory = 'engagement' | 'conversion' | 'technical' | 'navigation';
 
 export class AnalyticsService {
-  // Track user events
+  private static sessionId: string | null = null;
+
+  private static getSessionId(): string {
+    if (!this.sessionId) {
+      this.sessionId = sessionStorage.getItem('analytics_session_id');
+      if (!this.sessionId) {
+        this.sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+        sessionStorage.setItem('analytics_session_id', this.sessionId);
+      }
+    }
+    return this.sessionId;
+  }
+
+  private static getEventCategory(eventType: EventType): EventCategory {
+    const categoryMap: Record<EventType, EventCategory> = {
+      page_view: 'navigation',
+      login: 'engagement',
+      signup: 'conversion',
+      logout: 'engagement',
+      ai_render_start: 'engagement',
+      ai_render_complete: 'conversion',
+      ai_render_error: 'technical',
+      upload: 'engagement',
+      email_submit: 'conversion',
+      quote_request: 'conversion',
+      share: 'engagement',
+      download: 'engagement',
+      style_selection: 'engagement',
+      room_selection: 'engagement',
+      time_spent: 'engagement'
+    };
+    return categoryMap[eventType];
+  }
+
   static async trackEvent(
-    eventType: 'login' | 'upload' | 'view' | 'share' | 'time_spent' | 'ai_render' | 'email_submit' | 'quote_request',
+    eventType: EventType,
     metadata?: Record<string, any>
   ): Promise<void> {
     if (!supabase) {
@@ -13,77 +64,112 @@ export class AnalyticsService {
     }
 
     try {
+      const sessionId = this.getSessionId();
       const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        console.warn('No authenticated user - cannot track event');
-        return;
+      const userId = user?.id || null;
+
+      const eventCategory = this.getEventCategory(eventType);
+
+      if (userId) {
+        if (eventType === 'login') {
+          await supabase.rpc('increment_login_count', {
+            user_uuid: userId,
+            user_email: user.email || ''
+          });
+        }
+
+        if (eventType === 'ai_render_complete') {
+          await supabase.rpc('increment_ai_rendering_count', {
+            user_uuid: userId
+          });
+        }
+
+        if (eventType === 'time_spent' && metadata?.time_spent_ms) {
+          await supabase.rpc('add_time_on_site', {
+            user_uuid: userId,
+            time_spent_ms: metadata.time_spent_ms
+          });
+        }
       }
 
-      // Update profile metrics for specific events
-      if (eventType === 'login') {
-        await supabase.rpc('increment_login_count', {
-          user_uuid: user.id,
-          user_email: user.email || ''
-        });
-      }
-      
-      if (eventType === 'ai_render' && metadata?.success) {
-        await supabase.rpc('increment_ai_rendering_count', {
-          user_uuid: user.id
-        });
-      }
-      
-      if (eventType === 'time_spent' && metadata?.time_spent_ms) {
-        await supabase.rpc('add_time_on_site', {
-          user_uuid: user.id,
-          time_spent_ms: metadata.time_spent_ms
-        });
-      }
       const { error } = await supabase
         .from('user_events')
         .insert({
-          user_id: user.id,
+          user_id: userId,
+          session_id: sessionId,
           event_type: eventType,
-          metadata: metadata || {}
+          event_category: eventCategory,
+          metadata: metadata || {},
+          user_agent: navigator.userAgent
         });
+
+      if (userId || sessionId) {
+        await supabase.rpc('update_session_activity', {
+          p_session_id: sessionId,
+          p_user_id: userId
+        });
+      }
 
       if (error) {
         console.error('Failed to track event:', error);
-      } else {
-        console.log(`✅ Tracked event: ${eventType}`);
       }
     } catch (error) {
       console.error('Analytics tracking error:', error);
     }
   }
 
-  // Track page views
   static async trackPageView(page: string, additionalData?: Record<string, any>): Promise<void> {
-    await this.trackEvent('view', {
+    await this.trackEvent('page_view', {
       page,
+      referrer: document.referrer,
+      url: window.location.href,
       timestamp: new Date().toISOString(),
       ...additionalData
     });
   }
 
-  // Track AI render completion
-  static async trackAIRender(
-    roomType: string,
-    style: string,
-    processingTime: number,
-    success: boolean
-  ): Promise<void> {
-    await this.trackEvent('ai_render', {
+  static async trackAIRenderStart(roomType: string, style: string): Promise<void> {
+    await this.trackEvent('ai_render_start', {
       room_type: roomType,
       style,
-      processing_time_ms: processingTime,
-      success,
       timestamp: new Date().toISOString()
     });
   }
 
-  // Track email submissions
+  static async trackAIRenderComplete(
+    roomType: string,
+    style: string,
+    processingTime: number
+  ): Promise<void> {
+    await this.trackEvent('ai_render_complete', {
+      room_type: roomType,
+      style,
+      processing_time_ms: processingTime,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  static async trackAIRenderError(
+    roomType: string,
+    style: string,
+    errorMessage: string
+  ): Promise<void> {
+    await this.trackEvent('ai_render_error', {
+      room_type: roomType,
+      style,
+      error: errorMessage,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  static async trackUpload(fileSize: number, fileType: string): Promise<void> {
+    await this.trackEvent('upload', {
+      file_size: fileSize,
+      file_type: fileType,
+      timestamp: new Date().toISOString()
+    });
+  }
+
   static async trackEmailSubmit(
     roomType: string,
     style: string,
@@ -99,46 +185,160 @@ export class AnalyticsService {
     });
   }
 
-  // Track time spent on page
+  static async trackQuoteRequest(details: Record<string, any>): Promise<void> {
+    await this.trackEvent('quote_request', {
+      ...details,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  static async trackStyleSelection(style: string): Promise<void> {
+    await this.trackEvent('style_selection', {
+      style,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  static async trackRoomSelection(roomType: string): Promise<void> {
+    await this.trackEvent('room_selection', {
+      room_type: roomType,
+      timestamp: new Date().toISOString()
+    });
+  }
+
   static trackTimeSpent(page: string, startTime: number): void {
     const endTime = Date.now();
     const timeSpent = endTime - startTime;
-    
-    // Only track if user spent more than 10 seconds on page
+
     if (timeSpent > 10000) {
       this.trackEvent('time_spent', {
         page,
         time_spent_ms: timeSpent,
+        duration_seconds: Math.floor(timeSpent / 1000),
         timestamp: new Date().toISOString()
       });
     }
   }
 
-  // Get user analytics (for admin dashboard)
-  static async getUserAnalytics(timeRange: '24h' | '7d' | '30d' | '90d' = '7d') {
+  static async getRealtimeActivity() {
     if (!supabase) return null;
 
-    const now = new Date();
-    const daysAgo = timeRange === '24h' ? 1 : 
-                   timeRange === '7d' ? 7 : 
-                   timeRange === '30d' ? 30 : 90;
-    const startDate = new Date(now.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
-
     try {
-      const { data: events, error } = await supabase
-        .from('user_events')
-        .select('*')
-        .gte('created_at', startDate.toISOString())
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.rpc('get_realtime_activity');
 
       if (error) {
-        console.error('Failed to fetch analytics:', error);
+        console.error('Failed to fetch realtime activity:', error);
         return null;
       }
 
-      return events;
+      return data?.[0] || null;
     } catch (error) {
-      console.error('Analytics fetch error:', error);
+      console.error('Realtime activity fetch error:', error);
+      return null;
+    }
+  }
+
+  static async getDailyAnalytics(days: number = 30) {
+    if (!supabase) return null;
+
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      const { data, error } = await supabase
+        .from('daily_analytics_summary')
+        .select('*')
+        .gte('date', startDate.toISOString().split('T')[0])
+        .order('date', { ascending: false });
+
+      if (error) {
+        console.error('Failed to fetch daily analytics:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Daily analytics fetch error:', error);
+      return null;
+    }
+  }
+
+  static async getRecentEvents(limit: number = 50) {
+    if (!supabase) return null;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_events')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error('Failed to fetch recent events:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Recent events fetch error:', error);
+      return null;
+    }
+  }
+
+  static async getEventsByType(eventType: EventType, limit: number = 100) {
+    if (!supabase) return null;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_events')
+        .select('*')
+        .eq('event_type', eventType)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error('Failed to fetch events by type:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Events by type fetch error:', error);
+      return null;
+    }
+  }
+
+  static async refreshDailyAnalytics(date?: string) {
+    if (!supabase) return;
+
+    try {
+      const targetDate = date || new Date().toISOString().split('T')[0];
+      await supabase.rpc('refresh_daily_analytics', {
+        summary_date: targetDate
+      });
+    } catch (error) {
+      console.error('Failed to refresh daily analytics:', error);
+    }
+  }
+
+  static async getActiveSessions() {
+    if (!supabase) return null;
+
+    try {
+      const { data, error } = await supabase
+        .from('active_sessions')
+        .select('*')
+        .eq('is_active', true)
+        .order('last_activity_at', { ascending: false });
+
+      if (error) {
+        console.error('Failed to fetch active sessions:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Active sessions fetch error:', error);
       return null;
     }
   }

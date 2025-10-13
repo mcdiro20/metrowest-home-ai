@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { CircleAlert as AlertCircle, ArrowLeft, Users, Briefcase, LayoutDashboard, Mail, Phone, MapPin, Calendar, DollarSign, TrendingUp, Star, Trash2, CreditCard as Edit, RefreshCcw, UserPlus, ListFilter as Filter, MessageSquare } from 'lucide-react';
+import { CircleAlert as AlertCircle, ArrowLeft, Users, Briefcase, LayoutDashboard, Mail, Phone, MapPin, Calendar, DollarSign, TrendingUp, Star, Trash2, CreditCard as Edit, RefreshCcw, UserPlus, ListFilter as Filter, MessageSquare, Activity } from 'lucide-react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import type { Lead, Profile, Contractor, LeadAssignment } from '../lib/supabase';
 import AddContractorModal from './AddContractorModal';
 import EditContractorModal from './EditContractorModal';
 import AssignLeadModal from './AssignLeadModal';
+import { ActivityDashboard } from './ActivityDashboard';
 
 const AdminPanel: React.FC = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -863,6 +864,17 @@ const AdminPanel: React.FC = () => {
                 <MessageSquare className="w-5 h-5" />
                 Feedback
               </button>
+              <button
+                onClick={() => setActiveTab('activity')}
+                className={`${
+                  activeTab === 'activity'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+              >
+                <Activity className="w-5 h-5" />
+                Activity
+              </button>
             </nav>
           </div>
         </div>
@@ -959,6 +971,7 @@ const AdminPanel: React.FC = () => {
         {activeTab === 'contractors' && renderContractorsTable()}
         {activeTab === 'assignments' && renderAssignmentsTable()}
         {activeTab === 'feedback' && renderFeedbackTable()}
+        {activeTab === 'activity' && <ActivityDashboard />}
       </div>
 
       <AddContractorModal

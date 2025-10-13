@@ -9,6 +9,7 @@ import QuoteRequestModal from './QuoteRequestModal';
 import AuthModal from './AuthModal';
 import type { User } from '@supabase/supabase-js';
 import { resizeImageForEmail, processImageForUpload, type ProcessedImage, type ImageValidationError } from '../utils/imageUtils';
+import { AnalyticsService } from '../services/analyticsService';
 
 interface AIWorkflowManagerProps {
   user: User | null;
@@ -131,6 +132,7 @@ const AIWorkflowManager = forwardRef<AIWorkflowHandle, AIWorkflowManagerProps>(
 
     const handleRoomTypeSelected = (selectedRoomType: string) => {
       setRoomType(selectedRoomType);
+      AnalyticsService.trackRoomSelection(selectedRoomType);
       setShowRoomTypeModal(false);
       setShowAIModelSelectionModal(true);
     };
@@ -144,6 +146,8 @@ const AIWorkflowManager = forwardRef<AIWorkflowHandle, AIWorkflowManagerProps>(
     const handleStyleSelected = (style: { id: string; name: string; description: string; imageUrl: string; prompt: string }) => {
       setSelectedStyle(style);
       setCustomPrompt('');
+      AnalyticsService.trackStyleSelection(style.name);
+      AnalyticsService.trackAIRenderStart(roomType, style.name);
       setShowStyleSelectionModal(false);
       setShowAIProcessingModal(true);
     };
@@ -151,6 +155,8 @@ const AIWorkflowManager = forwardRef<AIWorkflowHandle, AIWorkflowManagerProps>(
     const handleCustomStyleSelected = (customPromptText: string, baseStyle?: string) => {
       setCustomPrompt(customPromptText);
       setSelectedStyle({ id: baseStyle || 'custom', name: 'Custom Style', prompt: customPromptText });
+      AnalyticsService.trackStyleSelection('Custom Style');
+      AnalyticsService.trackAIRenderStart(roomType, 'Custom Style');
       setShowStyleSelectionModal(false);
       setShowAIProcessingModal(true);
     };

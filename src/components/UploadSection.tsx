@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Camera, QrCode, Image as ImageIcon, Sparkles, Loader2, AlertCircle, CheckCircle, Smartphone } from 'lucide-react';
 import { getFileSizeDisplay } from '../utils/imageUtils';
+import { AnalyticsService } from '../services/analyticsService';
 
 interface UploadSectionProps {
   onFileUpload: (file: File) => void;
@@ -32,20 +33,24 @@ const UploadSection: React.FC<UploadSectionProps> = ({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
+
     if (!isZipCodeApproved || isFileProcessing) return;
 
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-      onFileUpload(files[0]);
+      const file = files[0];
+      AnalyticsService.trackUpload(file.size, file.type);
+      onFileUpload(file);
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!isZipCodeApproved || isFileProcessing) return;
-    
+
     if (e.target.files && e.target.files.length > 0) {
-      onFileUpload(e.target.files[0]);
+      const file = e.target.files[0];
+      AnalyticsService.trackUpload(file.size, file.type);
+      onFileUpload(file);
     }
   };
 

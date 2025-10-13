@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { AnalyticsService } from '../services/analyticsService';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -34,8 +35,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess })
           email,
           password,
         });
-        
+
         if (error) throw error;
+
+        await AnalyticsService.trackEvent('login', {
+          email,
+          method: 'password'
+        });
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -46,8 +52,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess })
             }
           }
         });
-        
+
         if (error) throw error;
+
+        await AnalyticsService.trackEvent('signup', {
+          email,
+          name,
+          method: 'password'
+        });
       }
 
       onAuthSuccess();

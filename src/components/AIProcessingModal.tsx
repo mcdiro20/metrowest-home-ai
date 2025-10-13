@@ -161,25 +161,21 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
           prompt: selectedStyle?.prompt || 'Premium architectural transformation'
         };
 
-        // Track AI render completion
-        AnalyticsService.trackAIRender(
+        await AnalyticsService.trackAIRenderComplete(
           roomType,
           selectedStyle?.name || 'Custom',
-          timeElapsed * 1000,
-          true
+          timeElapsed * 1000
         );
         setTimeout(() => {
           onComplete(result);
         }, 1500);
       } catch (error) {
         console.error('❌ Premium Processing Error:', error);
-        
-        // Track AI render failure
-        AnalyticsService.trackAIRender(
+
+        await AnalyticsService.trackAIRenderError(
           roomType,
           selectedStyle?.name || 'Custom',
-          timeElapsed * 1000,
-          false
+          error instanceof Error ? error.message : 'Unknown error'
         );
         
         setTimeout(() => {
