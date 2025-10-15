@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin, Users } from 'lucide-react';
 import { towns } from '../data/towns';
+import { ContractorSignupSection } from './ContractorSignupSection';
 
 const Footer: React.FC = () => {
-  const [showContractorModal, setShowContractorModal] = useState(false);
-
   return (
     <footer className="bg-gray-900 text-white">
       <div className="max-w-6xl mx-auto px-4 py-12">
@@ -41,15 +40,7 @@ const Footer: React.FC = () => {
               <li><a href="#how-it-works" className="text-gray-400 hover:text-white transition-colors">How It Works</a></li>
               <li><a href="#inspiration-feed" className="text-gray-400 hover:text-white transition-colors">Inspiration Gallery</a></li>
               <li><a href="#contact" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
-              <li>
-                <button 
-                  onClick={() => setShowContractorModal(true)}
-                  className="text-gray-400 hover:text-white transition-colors flex items-center gap-1"
-                >
-                  <Users className="w-4 h-4" />
-                  Join as Contractor
-                </button>
-              </li>
+              <li><Link to="/feedback" className="text-gray-400 hover:text-white transition-colors">Feedback</Link></li>
             </ul>
           </div>
 
@@ -129,36 +120,8 @@ const Footer: React.FC = () => {
           </div>
         </div>
         
-        {/* Contractor Join Section */}
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-          <div className="bg-gradient-to-r from-blue-900/50 to-emerald-900/50 rounded-xl p-6">
-            <h4 className="text-lg font-semibold mb-2">Are you a contractor in MetroWest MA?</h4>
-            <p className="text-gray-300 mb-4">Join our network and connect with homeowners ready to transform their spaces.</p>
-            <button
-              onClick={() => setShowContractorModal(true)}
-              className="bg-white text-gray-900 hover:bg-gray-100 font-medium px-6 py-2 rounded-lg transition-colors"
-            >
-              Join Our Network
-            </button>
-          </div>
-        </div>
-        
-        {/* Simple Contractor Modal */}
-        {showContractorModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-lg w-full p-6 relative">
-              <p className="text-center text-gray-600 mb-4">
-                Contractor application form would appear here.
-              </p>
-              <button
-                onClick={() => setShowContractorModal(false)}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Exclusive Contractor Signup Section */}
+        <ContractorSignupSection />
       </div>
     </footer>
   );
