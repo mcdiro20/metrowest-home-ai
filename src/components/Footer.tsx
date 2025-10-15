@@ -55,7 +55,7 @@ const Footer: React.FC = () => {
           {/* MetroWest Towns Served */}
           <div>
             <h4 className="text-lg font-semibold mb-4">MetroWest Towns Served</h4>
-            <ul className="space-y-1 text-gray-400 text-sm">
+            <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-gray-400 text-sm">
               {towns.map((town) => (
                 <li key={town.slug}>
                   <Link
