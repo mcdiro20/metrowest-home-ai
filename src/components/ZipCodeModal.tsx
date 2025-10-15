@@ -12,16 +12,74 @@ const ZipCodeModal: React.FC<ZipCodeModalProps> = ({ isOpen, onClose, onZipCodeA
   const [error, setError] = useState('');
   const [isChecking, setIsChecking] = useState(false);
 
-  // MetroWest MA ZIP codes
+  // MetroWest MA ZIP codes aligned with footer towns
   const metroWestZipCodes = [
-    '01701', '01702', '01718', '01719', '01720', '01721', '01730', '01731',
-    '01740', '01741', '01742', '01746', '01747', '01748', '01749', '01752',
-    '01754', '01757', '01760', '01770', '01772', '01773', '01776', '01778',
-    '01784', '01801', '01803', '01890', '02030', '02032', '02052', '02054',
-    '02056', '02090', '02093', '02421', '02451', '02452', '02453', '02454',
-    '02458', '02459', '02460', '02461', '02462', '02464', '02465', '02466',
-    '02467', '02468', '02472', '02474', '02475', '02476', '02477', '02478',
-    '02479', '02481', '02482', '02492', '02493', '02494', '02495'
+    // Framingham
+    '01701', '01702',
+    // Natick
+    '01760',
+    // Wellesley
+    '02481', '02482',
+    // Acton
+    '01720',
+    // Ashland
+    '01721',
+    // Bedford
+    '01730', '01731',
+    // Bellingham
+    '02019',
+    // Berlin
+    '01503',
+    // Bolton
+    '01740',
+    // Boxborough
+    '01719',
+    // Concord
+    '01742',
+    // Dover
+    '02030',
+    // Franklin
+    '02038',
+    // Holliston
+    '01746',
+    // Hopkinton
+    '01748',
+    // Hudson
+    '01749',
+    // Lincoln
+    '01773',
+    // Maynard
+    '01754',
+    // Marlborough
+    '01752',
+    // Medfield
+    '02052',
+    // Medway
+    '02053',
+    // Milford
+    '01757',
+    // Millis
+    '02054',
+    // Needham
+    '02492', '02494',
+    // Newton
+    '02458', '02459', '02460', '02461', '02462', '02464', '02465', '02466', '02467', '02468',
+    // Sherborn
+    '01770',
+    // Southborough
+    '01772',
+    // Stow
+    '01775',
+    // Sudbury
+    '01776',
+    // Waltham
+    '02451', '02452', '02453', '02454',
+    // Weston
+    '02493',
+    // Westborough
+    '01581', '01582',
+    // Wayland
+    '01778'
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,7 +164,7 @@ const ZipCodeModal: React.FC<ZipCodeModalProps> = ({ isOpen, onClose, onZipCodeA
 
         <div className="mt-4 text-center">
           <p className="text-xs text-gray-500">
-            Serving: Framingham, Natick, Wellesley, Newton, Waltham, and surrounding MetroWest communities
+            Serving: Acton, Ashland, Bedford, Bellingham, Berlin, Bolton, Boxborough, Concord, Dover, Franklin, Framingham, Holliston, Hopkinton, Hudson, Lincoln, Maynard, Marlborough, Medfield, Medway, Milford, Millis, Natick, Needham, Newton, Sherborn, Southborough, Stow, Sudbury, Waltham, Wellesley, Weston, Westborough, Wayland and surrounding MetroWest communities
           </p>
         </div>
       </div>
