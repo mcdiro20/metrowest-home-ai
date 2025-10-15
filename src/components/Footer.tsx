@@ -6,8 +6,16 @@ import { ContractorSignupSection } from './ContractorSignupSection';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-gray-900 text-white">
-      <div className="max-w-6xl mx-auto px-4 py-12">
+    <>
+      {/* Exclusive Contractor Signup Section - Above Footer */}
+      <div className="bg-gray-900 text-white">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <ContractorSignupSection />
+        </div>
+      </div>
+
+      <footer className="bg-gray-900 text-white border-t border-gray-800">
+        <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="col-span-1 md:col-span-2">
@@ -119,11 +127,9 @@ const Footer: React.FC = () => {
             <a href="#cookies" className="text-gray-400 hover:text-white text-sm transition-colors">Cookie Policy</a>
           </div>
         </div>
-        
-        {/* Exclusive Contractor Signup Section */}
-        <ContractorSignupSection />
       </div>
     </footer>
+    </>
   );
 };
 
