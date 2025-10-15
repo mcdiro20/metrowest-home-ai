@@ -58,21 +58,44 @@ const Footer: React.FC = () => {
             <ul className="space-y-1 text-gray-400 text-sm">
               {towns.map((town) => (
                 <li key={town.slug}>
-                  <Link 
-                    to={`/${town.slug}-ma-ai-home-renovations`} 
+                  <Link
+                    to={`/${town.slug}-ma-ai-home-renovations`}
                     className="hover:text-white transition-colors"
                   >
                     {town.name}, {town.state}
                   </Link>
                 </li>
               ))}
-              <li><a href="#" className="hover:text-white transition-colors">Newton, MA</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Waltham, MA</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Wayland, MA</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Sudbury, MA</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Marlborough, MA</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Hudson, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Acton, MA</a></li>
               <li><a href="#" className="hover:text-white transition-colors">Ashland, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Bedford, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Bellingham, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Berlin, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Bolton, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Boxborough, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Concord, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Dover, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Franklin, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Holliston, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Hopkinton, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Hudson, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Lincoln, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Maynard, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Marlborough, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Medfield, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Medway, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Milford, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Millis, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Needham, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Newton, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Sherborn, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Southborough, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Stow, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Sudbury, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Waltham, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Weston, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Westborough, MA</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Wayland, MA</a></li>
             </ul>
           </div>
 
