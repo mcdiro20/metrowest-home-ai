@@ -360,6 +360,7 @@ const AdminPanel: React.FC = () => {
                     currentDir={leadsSortDir}
                     onSort={() => handleSort('room_type', leadsSortField, leadsSortDir, setLeadsSortField, setLeadsSortDir)}
                   />
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Images</th>
                   <SortableHeader
                     field="probability_to_close_score"
                     label="Scores"
@@ -397,6 +398,40 @@ const AdminPanel: React.FC = () => {
                     <div className="text-sm text-gray-900">{lead.room_type} - {lead.style}</div>
                     <div className="text-sm text-gray-500">ZIP: {lead.zip}</div>
                     <div className="text-sm text-gray-500">Wants Quote: {lead.wants_quote ? 'Yes' : 'No'}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
+                      {lead.image_url ? (
+                        <div className="flex flex-col items-center">
+                          <img
+                            src={lead.image_url}
+                            alt="Before"
+                            className="w-24 h-24 object-cover rounded border border-gray-300 cursor-pointer hover:scale-105 transition-transform"
+                            onClick={() => window.open(lead.image_url, '_blank')}
+                          />
+                          <span className="text-xs text-gray-500 mt-1">Before</span>
+                        </div>
+                      ) : (
+                        <div className="w-24 h-24 bg-gray-100 rounded flex items-center justify-center">
+                          <span className="text-xs text-gray-400">No image</span>
+                        </div>
+                      )}
+                      {lead.ai_url ? (
+                        <div className="flex flex-col items-center">
+                          <img
+                            src={lead.ai_url}
+                            alt="After (AI)"
+                            className="w-24 h-24 object-cover rounded border border-gray-300 cursor-pointer hover:scale-105 transition-transform"
+                            onClick={() => window.open(lead.ai_url, '_blank')}
+                          />
+                          <span className="text-xs text-gray-500 mt-1">After (AI)</span>
+                        </div>
+                      ) : (
+                        <div className="w-24 h-24 bg-gray-100 rounded flex items-center justify-center">
+                          <span className="text-xs text-gray-400">No AI image</span>
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">Prob: {lead.probability_to_close_score}%</div>
