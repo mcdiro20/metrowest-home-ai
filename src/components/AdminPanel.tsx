@@ -121,6 +121,7 @@ const AdminPanel: React.FC = () => {
           console.log('🖼️ Sample lead images:', {
             hasImageUrl: !!leadsResult.leads?.[0]?.image_url,
             hasAiUrl: !!leadsResult.leads?.[0]?.ai_url,
+            fullAiUrl: leadsResult.leads?.[0]?.ai_url,
             imageUrlStart: leadsResult.leads?.[0]?.image_url?.substring(0, 50),
             aiUrlStart: leadsResult.leads?.[0]?.ai_url?.substring(0, 50)
           });
@@ -435,7 +436,9 @@ const AdminPanel: React.FC = () => {
                             className="w-24 h-24 object-cover rounded border border-gray-300 cursor-pointer hover:scale-105 transition-transform"
                             onClick={() => window.open(lead.ai_url, '_blank')}
                             onError={(e) => {
-                              console.error('Failed to load AI image:', lead.ai_url?.substring(0, 100));
+                              console.error('❌ Failed to load AI image - Full URL:', lead.ai_url);
+                              console.error('   Lead ID:', lead.id);
+                              console.error('   Lead email:', lead.email);
                               e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="96" height="96"%3E%3Crect fill="%23f3f4f6" width="96" height="96"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="12"%3EError%3C/text%3E%3C/svg%3E';
                             }}
                           />
