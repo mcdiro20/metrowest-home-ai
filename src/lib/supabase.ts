@@ -42,6 +42,10 @@ export interface Lead {
   social_engaged: boolean;
   is_repeat_visitor: boolean;
   lead_score: number;
+  engagement_score?: number;
+  intent_score?: number;
+  lead_quality_score?: number;
+  probability_to_close_score?: number;
   created_at: string;
   user_id?: string;
   status: 'new' | 'assigned' | 'contacted' | 'quoted' | 'converted' | 'dead' | 'unqualified';
