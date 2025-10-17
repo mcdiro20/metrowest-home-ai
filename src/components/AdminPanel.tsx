@@ -117,6 +117,13 @@ const AdminPanel: React.FC = () => {
           });
           const leadsResult = await response.json();
           if (!leadsResult.success) throw new Error(leadsResult.error);
+          console.log('📊 Leads data received:', leadsResult.leads?.slice(0, 2));
+          console.log('🖼️ Sample lead images:', {
+            hasImageUrl: !!leadsResult.leads?.[0]?.image_url,
+            hasAiUrl: !!leadsResult.leads?.[0]?.ai_url,
+            imageUrlStart: leadsResult.leads?.[0]?.image_url?.substring(0, 50),
+            aiUrlStart: leadsResult.leads?.[0]?.ai_url?.substring(0, 50)
+          });
           setLeads(leadsResult.leads);
           break;
         case 'users':
