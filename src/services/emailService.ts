@@ -1,3 +1,5 @@
+import { imageStorageService } from './imageStorageService';
+
 export interface EmailImageRequest {
   email: string;
   name?: string;
@@ -21,26 +23,62 @@ export interface EmailResponse {
 export class EmailService {
   static async sendDesignImages(request: EmailImageRequest): Promise<EmailResponse> {
     try {
+      const userId = request.userId || `guest-${Date.now()}`;
+
+      let beforeImageUrl = request.beforeImage;
+      let afterImageUrl = request.afterImage;
+
+      if (beforeImageUrl?.startsWith('data:image/')) {
+        console.log('📤 Uploading before image to Supabase Storage...');
+        const uploadedBeforeUrl = await imageStorageService.uploadBase64Image(
+          beforeImageUrl,
+          userId,
+          'before'
+        );
+        if (uploadedBeforeUrl) {
+          beforeImageUrl = uploadedBeforeUrl;
+          console.log('✅ Before image uploaded:', uploadedBeforeUrl);
+        }
+      }
+
+      if (afterImageUrl?.startsWith('http')) {
+        console.log('📤 Uploading AI image to Supabase Storage...');
+        const uploadedAfterUrl = await imageStorageService.uploadAIImage(
+          afterImageUrl,
+          userId
+        );
+        if (uploadedAfterUrl) {
+          afterImageUrl = uploadedAfterUrl;
+          console.log('✅ AI image uploaded:', uploadedAfterUrl);
+        }
+      }
+
+      const requestWithStorageUrls = {
+        ...request,
+        beforeImage: beforeImageUrl,
+        afterImage: afterImageUrl
+      };
+
       // Check if we're in development mode
       const isDevelopment = import.meta.env.DEV;
       
       if (isDevelopment) {
         // Development mode - simulate email sending
         const emailId = `email_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
+
         const emailData = {
           id: emailId,
-          recipient: request.email,
+          recipient: requestWithStorageUrls.email,
           sentAt: new Date().toISOString(),
-          roomType: request.roomType,
-          selectedStyle: request.selectedStyle,
-          subscribe: request.subscribe,
-          beforeImageUrl: request.beforeImage,
-          afterImageUrl: request.afterImage
+          roomType: requestWithStorageUrls.roomType,
+          selectedStyle: requestWithStorageUrls.selectedStyle,
+          subscribe: requestWithStorageUrls.subscribe,
+          beforeImageUrl: beforeImageUrl,
+          afterImageUrl: afterImageUrl
         };
-        
+
         console.log('📧 Development Mode: Simulating email send with data:', emailData);
-        
+
         // Store email data locally for testing
         const sentEmails = JSON.parse(localStorage.getItem('sentEmails') || '[]');
         const emailRecord = {
@@ -51,10 +89,10 @@ export class EmailService {
         };
         sentEmails.push(emailRecord);
         localStorage.setItem('sentEmails', JSON.stringify(sentEmails));
-        
+
         // Simulate realistic network delay
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         return {
           success: true,
           message: 'Design images sent successfully! (Development Mode)',
@@ -67,7 +105,7 @@ export class EmailService {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(request)
+          body: JSON.stringify(requestWithStorageUrls)
         });
         
         if (!response.ok) {
