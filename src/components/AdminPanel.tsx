@@ -407,7 +407,7 @@ const AdminPanel: React.FC = () => {
                     <div className="text-sm text-gray-500">Wants Quote: {lead.wants_quote ? 'Yes' : 'No'}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 min-w-[220px]">
                       {lead.image_url ? (
                         <div className="flex flex-col items-center">
                           <img
@@ -415,6 +415,10 @@ const AdminPanel: React.FC = () => {
                             alt="Before"
                             className="w-24 h-24 object-cover rounded border border-gray-300 cursor-pointer hover:scale-105 transition-transform"
                             onClick={() => window.open(lead.image_url, '_blank')}
+                            onError={(e) => {
+                              console.error('Failed to load before image:', lead.image_url?.substring(0, 100));
+                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="96" height="96"%3E%3Crect fill="%23f3f4f6" width="96" height="96"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="12"%3EError%3C/text%3E%3C/svg%3E';
+                            }}
                           />
                           <span className="text-xs text-gray-500 mt-1">Before</span>
                         </div>
@@ -430,6 +434,10 @@ const AdminPanel: React.FC = () => {
                             alt="After (AI)"
                             className="w-24 h-24 object-cover rounded border border-gray-300 cursor-pointer hover:scale-105 transition-transform"
                             onClick={() => window.open(lead.ai_url, '_blank')}
+                            onError={(e) => {
+                              console.error('Failed to load AI image:', lead.ai_url?.substring(0, 100));
+                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="96" height="96"%3E%3Crect fill="%23f3f4f6" width="96" height="96"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="12"%3EError%3C/text%3E%3C/svg%3E';
+                            }}
                           />
                           <span className="text-xs text-gray-500 mt-1">After (AI)</span>
                         </div>
