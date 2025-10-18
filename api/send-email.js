@@ -1,6 +1,54 @@
 import { createClient } from '@supabase/supabase-js';
 import { calculateAdvancedScores } from './utils/scoringLogic.js';
 
+async function uploadImageToStorage(supabase, imageUrl, userId, prefix = 'ai') {
+  try {
+    if (!imageUrl) return null;
+
+    let imageBuffer;
+
+    if (imageUrl.startsWith('data:image/')) {
+      const base64Content = imageUrl.split(',')[1];
+      imageBuffer = Buffer.from(base64Content, 'base64');
+    } else if (imageUrl.startsWith('http')) {
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        console.error('❌ Failed to fetch image from URL:', imageUrl);
+        return null;
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      imageBuffer = Buffer.from(arrayBuffer);
+    } else {
+      return null;
+    }
+
+    const fileName = `${prefix}-${userId}-${Date.now()}.jpg`;
+    const filePath = `${userId}/${fileName}`;
+
+    const { data, error } = await supabase.storage
+      .from('ai-images')
+      .upload(filePath, imageBuffer, {
+        contentType: 'image/jpeg',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('❌ Failed to upload image to Supabase Storage:', error);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('ai-images')
+      .getPublicUrl(filePath);
+
+    console.log('✅ Image uploaded to Supabase Storage:', publicUrl);
+    return publicUrl;
+  } catch (error) {
+    console.error('❌ Error uploading image to storage:', error);
+    return null;
+  }
+}
+
 export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -41,7 +89,31 @@ export default async function handler(req, res) {
       
       if (supabaseUrl && supabaseServiceKey) {
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
-        
+
+        const userIdForStorage = userId || `guest-${Date.now()}`;
+
+        console.log('📤 Uploading images to Supabase Storage...');
+        let storedBeforeImageUrl = beforeImage;
+        let storedAfterImageUrl = afterImage;
+
+        if (beforeImage?.startsWith('data:image/')) {
+          console.log('📤 Uploading before image...');
+          const uploadedUrl = await uploadImageToStorage(supabase, beforeImage, userIdForStorage, 'before');
+          if (uploadedUrl) {
+            storedBeforeImageUrl = uploadedUrl;
+            console.log('✅ Before image uploaded:', uploadedUrl);
+          }
+        }
+
+        if (afterImage?.startsWith('http')) {
+          console.log('📤 Uploading AI image from Replicate...');
+          const uploadedUrl = await uploadImageToStorage(supabase, afterImage, userIdForStorage, 'ai');
+          if (uploadedUrl) {
+            storedAfterImageUrl = uploadedUrl;
+            console.log('✅ AI image uploaded:', uploadedUrl);
+          }
+        }
+
         // Fetch existing lead and profile data for scoring
         let existingLead = null;
         let profileData = null;
@@ -110,8 +182,8 @@ export default async function handler(req, res) {
           zip: zipCode,
           room_type: roomType,
           style: selectedStyle,
-          image_url: beforeImage,
-          ai_url: afterImage,
+          image_url: storedBeforeImageUrl,
+          ai_url: storedAfterImageUrl,
           render_count: leadDataForScoring.render_count,
           wants_quote: subscribe || false,
           social_engaged: leadDataForScoring.social_engaged,
