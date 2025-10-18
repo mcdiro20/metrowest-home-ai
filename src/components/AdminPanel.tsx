@@ -391,6 +391,7 @@ const AdminPanel: React.FC = () => {
                     currentDir={leadsSortDir}
                     onSort={() => handleSort('created_at', leadsSortField, leadsSortDir, setLeadsSortField, setLeadsSortDir)}
                   />
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Created</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -473,6 +474,16 @@ const AdminPanel: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{new Date(lead.created_at).toLocaleDateString()}</div>
                     <div className="text-xs text-gray-500">{new Date(lead.created_at).toLocaleTimeString()}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {(lead as any).profiles?.created_at ? (
+                      <>
+                        <div className="text-sm text-gray-900">{new Date((lead as any).profiles.created_at).toLocaleDateString()}</div>
+                        <div className="text-xs text-gray-500">{new Date((lead as any).profiles.created_at).toLocaleTimeString()}</div>
+                      </>
+                    ) : (
+                      <div className="text-sm text-gray-500">Guest</div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button

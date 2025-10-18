@@ -98,7 +98,8 @@ export default async function handler(req, res) {
           login_count,
           total_time_on_site_ms,
           ai_renderings_count,
-          last_login_at
+          last_login_at,
+          created_at
         ),
         contractors:assigned_contractor_id (
           id,
