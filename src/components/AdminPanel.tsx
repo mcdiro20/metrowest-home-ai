@@ -386,7 +386,7 @@ const AdminPanel: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
                   <SortableHeader
                     field="created_at"
-                    label="Created At"
+                    label="Date Generated"
                     currentField={leadsSortField}
                     currentDir={leadsSortDir}
                     onSort={() => handleSort('created_at', leadsSortField, leadsSortDir, setLeadsSortField, setLeadsSortDir)}
@@ -470,8 +470,9 @@ const AdminPanel: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {(lead as any).contractors ? (lead as any).contractors.name : 'N/A'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(lead.created_at).toLocaleDateString()}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{new Date(lead.created_at).toLocaleDateString()}</div>
+                    <div className="text-xs text-gray-500">{new Date(lead.created_at).toLocaleTimeString()}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
