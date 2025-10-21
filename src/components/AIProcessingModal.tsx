@@ -58,7 +58,10 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
         setCurrentStep('generation');
         
         console.log('🏛️ Starting premium architectural rendering...');
-        
+        console.log('🏛️ AI Engine:', selectedAIEngine);
+        console.log('🏛️ Room Type:', roomType);
+        console.log('🏛️ Style:', selectedStyle);
+
         let generatedImageUrl: string;
         
         // Create blob URL from processed base64 for display
