@@ -276,7 +276,7 @@ async function sendContractorNotification(contractor, lead, assignmentId) {
                          lead.lead_score >= 50 ? '#d97706' : '#059669';
 
     const emailResult = await resend.emails.send({
-      from: 'MetroWest Home AI <leads@metrowesthome.ai>',
+      from: 'MetroWest Home AI <leads@ai.metrowesthomerenovation.com>',
       to: [contractor.email],
       subject: `🏠 New ${leadPriority} Lead - ${lead.room_type} in ${lead.zip}`,
       html: `

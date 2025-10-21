@@ -52,7 +52,7 @@ export default async function handler(req, res) {
     const resend = new Resend(resendApiKey);
 
     const testEmailData = {
-      from: 'MetroWest Home AI Notifications <onboarding@resend.dev>',
+      from: 'MetroWest Home AI Notifications <noreply@ai.metrowesthomerenovation.com>',
       to: [adminEmail],
       subject: '🧪 Test Notification - System Check',
       html: `

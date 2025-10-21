@@ -421,7 +421,7 @@ export default async function handler(req, res) {
         console.log(`📤 Attempting to send to: ${finalAdminEmail} with subject: ${subject}`);
 
         const emailResult = await resend.emails.send({
-          from: 'MetroWest Home AI Notifications <onboarding@resend.dev>',
+          from: 'MetroWest Home AI Notifications <noreply@ai.metrowesthomerenovation.com>',
           to: [finalAdminEmail],
           subject: subject,
           html: htmlContent
@@ -515,7 +515,7 @@ export default async function handler(req, res) {
     }
 
     const emailResult = await resend.emails.send({
-      from: 'MetroWest Home AI <onboarding@resend.dev>',
+      from: 'MetroWest Home AI <noreply@ai.metrowesthomerenovation.com>',
       to: [email],
       subject: 'Your AI Design is Ready!',
       attachments: attachments.length > 0 ? attachments : undefined,
