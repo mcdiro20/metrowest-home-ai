@@ -75,6 +75,9 @@ export default async function handler(req, res) {
     console.log('🎯 Architectural Vision Engine parameters:');
     console.log('- Model: Google Nano Banana (Gemini 2.5 Flash)');
     console.log('- Prompt:', fullPrompt);
+    console.log('- Prompt length:', fullPrompt.length);
+    console.log('- Has image data:', !!imageData);
+    console.log('- Image data length:', imageData ? imageData.length : 0);
 
     let generationResponse;
     
@@ -92,7 +95,9 @@ export default async function handler(req, res) {
         
       } catch (primaryError) {
         console.log('🔄 Trying fallback model for Architectural Vision Engine...');
-        console.log('❌ Nano Banana error:', primaryError.message);
+        console.error('❌ Nano Banana error:', primaryError);
+        console.error('❌ Nano Banana error message:', primaryError.message);
+        console.error('❌ Nano Banana error stack:', primaryError.stack);
 
         // Fallback: SDXL with architectural focus
         const sdxlArchitecturalParams = {
@@ -149,6 +154,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('❌ Architectural Vision Engine failed:', error);
+    console.error('❌ Error message:', error.message);
+    console.error('❌ Error stack:', error.stack);
+    console.error('❌ Full error object:', JSON.stringify(error, null, 2));
     
     return res.status(200).json({
       success: true,

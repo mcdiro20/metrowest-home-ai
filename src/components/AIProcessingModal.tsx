@@ -109,11 +109,16 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
           });
           
           if (!response.ok) {
-            throw new Error(`Premium rendering failed: ${response.status}`);
+            const errorText = await response.text();
+            console.error('❌ API Response not OK:', response.status, errorText);
+            throw new Error(`Premium rendering failed: ${response.status} - ${errorText}`);
           }
-          
+
           const renovationResult = await response.json();
           console.log('🏆 Premium renovation result:', renovationResult);
+          console.log('🏆 Success status:', renovationResult.success);
+          console.log('🏆 Generated URL:', renovationResult.generatedImageUrl);
+          console.log('🏆 Error (if any):', renovationResult.error);
           
           if (renovationResult.success) {
             generatedImageUrl = renovationResult.generatedImageUrl!;
@@ -123,6 +128,9 @@ const AIProcessingModal: React.FC<AIProcessingModalProps> = ({
           }
         } catch (aiError) {
           console.error('❌ Premium rendering failed:', aiError);
+          console.error('❌ Error message:', aiError instanceof Error ? aiError.message : String(aiError));
+          console.error('❌ Error stack:', aiError instanceof Error ? aiError.stack : 'No stack trace');
+          alert(`AI Rendering Error: ${aiError instanceof Error ? aiError.message : String(aiError)}`);
           // Premium fallback images
           const premiumDemoImages = {
             kitchen: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80',
