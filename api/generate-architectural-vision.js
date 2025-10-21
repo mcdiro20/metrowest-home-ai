@@ -29,37 +29,38 @@ export default async function handler(req, res) {
     const { default: Replicate } = await import('replicate');
     const replicate = new Replicate({ auth: replicateToken });
 
-    // ARCHITECTURAL VISION ENGINE PROMPTS - Ultra-luxurious magazine quality
+    // ARCHITECTURAL VISION ENGINE PROMPTS - Concise for Gemini/Nano Banana
     const architecturalPrompts = {
-      'Modern Minimalist': 'professional architectural photography by renowned photographer, ultra-luxury modern minimalist kitchen, pristine bright white handleless cabinets with flawless finish, luminous waterfall Calacatta quartz countertops catching natural light, museum-grade integrated appliances, brilliant LED accent lighting creating depth and drama, premium large-format porcelain tiles with mirror-like polish, exquisite brushed steel accents, flooded with natural daylight, perfectly balanced artificial lighting, crystal clear details, Architectural Digest cover-worthy, VOGUE Living editorial standard, showroom perfection',
+      'Modern Minimalist': 'Modern minimalist kitchen with pristine white handleless cabinets, waterfall quartz countertops, integrated premium appliances, bright natural lighting, sleek brushed steel fixtures, professional magazine-quality photography',
 
-      'Farmhouse Chic': 'professional architectural photography by master photographer, ultra-bright luxury farmhouse kitchen bathed in natural light, custom pristine white shaker cabinets with gleaming brass hardware catching light, luminous honed Carrara marble countertops, statement professional farmhouse sink, museum-quality vintage pendant lighting creating warm glow, rich wide plank hardwood floors reflecting light, impeccable rustic luxury finishes, abundant natural light from oversized windows, perfectly lit for magazine editorial, Southern Living cover story quality, Martha Stewart Living excellence',
+      'Farmhouse Chic': 'Luxury farmhouse kitchen with white shaker cabinets, brass hardware, marble countertops, farmhouse sink, vintage lighting, hardwood floors, bright natural light flooding through windows, magazine editorial quality',
 
-      'Contemporary Luxe': 'professional architectural photography by award-winning photographer, contemporary ultra-luxury kitchen with dramatic lighting, high-gloss charcoal cabinets with mirror-perfect finish reflecting light, breathtaking dramatic Calacatta Gold marble with brilliant veining, gleaming brushed gold fixtures, dazzling designer crystal chandelier lighting, premium appliances with showroom finish, sophisticated modern elegance with perfect lighting balance, bright and luminous yet moody, Robb Report cover feature, Christie's Real Estate photography standard, luxury property magazine excellence',
+      'Contemporary Luxe': 'Contemporary luxury kitchen with high-gloss cabinets, dramatic marble, brushed gold fixtures, crystal lighting, premium appliances, perfectly balanced bright and dramatic lighting, high-end photography',
 
-      'Industrial Loft': 'professional architectural photography by elite photographer, industrial luxury loft kitchen with perfect studio lighting, custom steel-framed cabinets with pristine finish, luminous polished concrete waterfall counters reflecting ambient light, artisan copper pipe details catching warm glow, Edison bulb statement lighting creating atmosphere, mirror-polished concrete floors, abundant natural light through industrial windows, urban sophistication meets luxury, bright and airy yet dramatic, Dwell magazine cover feature, Kinfolk editorial perfection',
+      'Industrial Loft': 'Industrial loft kitchen with steel-framed cabinets, concrete counters, copper details, Edison bulbs, polished concrete floors, abundant natural light through large windows, sophisticated urban elegance',
 
-      'Transitional': 'professional architectural photography by celebrated photographer, transitional ultra-luxury kitchen with flawless lighting, raised panel cabinetry in luminous warm neutrals, premium natural granite countertops with brilliant polish, classic subway tile with perfect grout lines catching light, gleaming brushed nickel fixtures, designer traditional pendant lighting creating perfect ambiance, rich hardwood floors reflecting natural light, timeless elegance with magazine-perfect lighting, bright and welcoming, Traditional Home cover story, Veranda magazine excellence',
+      'Transitional': 'Transitional luxury kitchen with raised panel cabinetry in warm neutrals, granite countertops, subway tile, brushed nickel fixtures, traditional pendant lights, bright welcoming natural light, timeless elegance',
 
-      'Coastal New England': 'professional architectural photography by master photographer, coastal New England luxury kitchen flooded with natural seaside light, pristine white shaker cabinets with beadboard details, luminous white marble countertops reflecting ocean light, brilliant glass subway tile backsplash, gleaming nautical brass hardware catching sunlight, oversized windows allowing abundant natural light, crisp and bright with coastal elegance, museum-quality finish, Coastal Living cover feature, Hamptons magazine perfection, resort-quality brilliance',
+      'Coastal New England': 'Coastal New England kitchen with white shaker cabinets, beadboard details, white marble, glass tile backsplash, brass hardware, flooded with bright natural seaside light, crisp coastal elegance',
 
-      'Eclectic Bohemian': 'professional architectural photography by renowned photographer, eclectic bohemian luxury kitchen with perfect natural lighting, curated mixed wood and painted cabinets with artisan finish, premium natural stone countertops with rich texture, handcrafted statement tile backsplash catching light, artisanal brass fixtures with warm glow, abundant natural light creating rich textures, bright and airy yet intimate, curated global luxury elegance, Elle Decor cover editorial, Architectural Digest feature quality, boutique hotel perfection'
+      'Eclectic Bohemian': 'Eclectic bohemian kitchen with mixed wood cabinets, natural stone countertops, handcrafted tile, brass fixtures, abundant natural light, bright airy atmosphere, curated artistic elegance'
     };
 
-    // ARCHITECTURAL VISION ENGINE QUALITY ENHANCERS - Magazine perfection
-    const architecturalQuality = '(award-winning architectural photography:1.5), (professional interior design photography:1.4), (ultra-luxury renovation:1.3), (magazine cover quality:1.4), photorealistic perfection, razor-sharp focus, perfect professional lighting with natural daylight, abundant bright natural light, perfectly balanced exposure, premium luxury materials, museum-grade high-end finishes, showroom perfection, crystal clear ultra-high definition details, brilliant luminosity, rich color depth, immaculate surfaces reflecting light, Architectural Digest cover photography, VOGUE Living editorial excellence, Christie's luxury property photography standard, bright and luminous yet dramatic atmosphere';
+    // ARCHITECTURAL VISION ENGINE QUALITY ENHANCERS - Concise for Gemini
+    const architecturalQuality = 'Professional architectural photography with bright natural lighting, ultra-high quality, sharp focus, luxury materials, premium finishes, magazine-worthy';
 
     // STRUCTURE PRESERVATION FOR ARCHITECTURAL VISION ENGINE
-    const structuralPreservation = 'Edit this kitchen image: Keep the EXACT same room size, ceiling height, and wall layout. Do NOT add an island, do NOT enlarge the window, do NOT expand the space. Only update';
+    const structuralPreservation = 'Keep the exact same room layout, ceiling height, wall positions, and window size';
 
     // ARCHITECTURAL VISION ENGINE NEGATIVE PROMPTS - Avoid any amateur qualities
     const architecturalNegatives = 'cartoon, 3d render, sketch, drawing, amateur photography, phone camera, instagram filter, oversaturated, distorted architecture, impossible geometry, floating elements, structural damage, unrealistic proportions, cheap materials, builder grade finishes, enlarged room, expanded space, added windows, new walls, different room size, loft conversion, open concept, removed walls, bigger kitchen, added island, expanded ceiling height, warehouse space, commercial space, dark shadows, underexposed, dim lighting, murky atmosphere, dull colors, flat lighting, harsh shadows, poor lighting, gloomy, dingy, dated finishes, low quality materials, cluttered, messy, unprofessional staging, poor composition, blurry details, grainy texture, low resolution, washed out colors, lifeless atmosphere';
 
-    const selectedStylePrompt = architecturalPrompts[selectedStyle.name] || architecturalPrompts['Modern Minimalist'];
-    
     // ARCHITECTURAL VISION ENGINE PROMPT CONSTRUCTION
+    const selectedStylePrompt = architecturalPrompts[selectedStyle.name] || architecturalPrompts['Modern Minimalist'];
     const customAddition = customPrompt ? ` ${customPrompt}` : '';
-    const fullPrompt = `${structuralPreservation} the cabinet style to ${selectedStyle.name.toLowerCase()}, update countertops and backsplash.${customAddition} Maintain all original architectural elements and room proportions.`;
+
+    // Concise, effective prompt for Nano Banana (Gemini) - natural language instruction
+    const fullPrompt = `Transform this kitchen to: ${selectedStylePrompt}. ${structuralPreservation}. Use ${architecturalQuality}.${customAddition || ''} Make it significantly brighter with abundant natural light.`;
 
     console.log('🏛️ Using Architectural Vision Engine pipeline...');
     console.log('📏 Prompt optimized for architectural quality');
