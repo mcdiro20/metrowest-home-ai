@@ -16,6 +16,7 @@ import AdminDashboard from './components/AdminDashboard';
 import ContractorDashboard from './pages/ContractorDashboard';
 import LeadDossierDemo from './components/LeadDossierDemo';
 import FeedbackPage from './pages/FeedbackPage';
+import AuthModal from './components/AuthModal';
 import { supabase } from './lib/supabase';
 import { AnalyticsService } from './services/analyticsService';
 import type { User } from '@supabase/supabase-js';
@@ -178,6 +179,13 @@ function App() {
         onZipCodeApproved={handleZipCodeApproved}
         onSignOut={handleSignOut}
         onShowAuth={() => setShowAuthModal(true)}
+      />
+
+      {/* Auth Modal - Global component */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onAuthSuccess={() => setShowAuthModal(false)}
       />
     </Router>
   );
