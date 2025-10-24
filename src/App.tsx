@@ -16,6 +16,7 @@ import AdminDashboard from './components/AdminDashboard';
 import ContractorDashboard from './pages/ContractorDashboard';
 import LeadDossierDemo from './components/LeadDossierDemo';
 import FeedbackPage from './pages/FeedbackPage';
+import InspirationFeedPage from './pages/InspirationFeedPage';
 import AuthModal from './components/AuthModal';
 import { supabase } from './lib/supabase';
 import { AnalyticsService } from './services/analyticsService';
@@ -119,6 +120,15 @@ function App() {
         <Route
           path="/feedback"
           element={<FeedbackPage />}
+        />
+        <Route
+          path="/inspiration-feed"
+          element={
+            <InspirationFeedPage
+              user={user}
+              onShowAuth={() => setShowAuthModal(true)}
+            />
+          }
         />
         <Route
           path="/:townSlug-ma-ai-home-renovations"

@@ -17,7 +17,7 @@ const InspirationFeed: React.FC<InspirationFeedProps> = ({ user, onShowAuth, fil
   const [inspirationItems, setInspirationItems] = useState<RenovationItem[]>([]);
   const [validItems, setValidItems] = useState<RenovationItem[]>([]);
   const [displayedItems, setDisplayedItems] = useState<RenovationItem[]>([]);
-  const [showingCount, setShowingCount] = useState(8);
+  const [showingCount, setShowingCount] = useState(6);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -338,17 +338,19 @@ const InspirationFeed: React.FC<InspirationFeedProps> = ({ user, onShowAuth, fil
           ))}
           </div>
           
-          {/* Load More Button */}
-          {hasMoreItems && (
-            <div className="text-center mt-8">
-              <button
-                onClick={handleLoadMore}
-                className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300"
-              >
-                Load More Designs ({filteredItems.length - displayedItems.length} remaining)
-              </button>
-            </div>
-          )}
+          {/* View Full Feed Button */}
+          <div className="text-center mt-8">
+            <a
+              href="/inspiration-feed"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300"
+            >
+              View Full Inspiration Feed
+              <ArrowRight className="w-5 h-5" />
+            </a>
+            <p className="text-gray-600 mt-3 text-sm">
+              Browse {filteredItems.length} designs and scroll through endless inspiration
+            </p>
+          </div>
           </>
         )}
         
